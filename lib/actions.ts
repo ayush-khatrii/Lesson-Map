@@ -100,7 +100,7 @@ async function createModulesAction(data: unknown) {
       throw new Error("Invalid course. You do not own this course.");
     }
 
-    const created = await db.module.createMany({
+    const created = await db.module.createManyAndReturn({
       data: modules.map((m) => ({
         moduleName: m.moduleName,
         description: m.description,
@@ -114,8 +114,7 @@ async function createModulesAction(data: unknown) {
 
     return {
       success: true,
-      message: "Modules created successfully!",
-      count: created.count,
+      data: created,
     };
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -169,7 +168,7 @@ async function createLessonsAction(data: unknown) {
       throw new Error("Module not found or not owned by user.");
     }
 
-    const createdLessons = await db.lesson.createMany({
+    const created = await db.lesson.createManyAndReturn({
       data: lessons.map((l) => ({
         moduleId,
         lessonName: l.lessonName,
@@ -181,8 +180,7 @@ async function createLessonsAction(data: unknown) {
     revalidatePath("/");
     return {
       success: true,
-      message: "Lessons created successfully!",
-      count: createdLessons.count,
+      data: created,
     };
   } catch (error) {
     if (error instanceof z.ZodError) {

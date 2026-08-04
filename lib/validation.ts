@@ -6,10 +6,12 @@ export const createCourseSchema = z.object({
   description: z.string().min(1, "Description is required"),
 });
 
-// Schema for updating a course (includes optional id)
+// Schema for updating a course (all fields optional for partial updates)
 export const updateCourseSchema = z.object({
-  courseName: z.string().min(1, "Course name is required"),
-  description: z.string().min(1, "Description is required"),
+  courseName: z.string().min(1, "Course name is required").optional(),
+  description: z.string().min(1, "Description is required").optional(),
+  isPublic: z.boolean().optional(),
+  shareSlug: z.string().nullable().optional(),
 });
 
 export const moduleSchema = z.object({

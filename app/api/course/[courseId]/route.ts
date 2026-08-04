@@ -96,14 +96,24 @@ export async function PUT(req: Request, context: Context) {
     }
 
     const updateData: {
-      courseName: string;
-      description: string;
+      courseName?: string;
+      description?: string;
       isPublic?: boolean;
       shareSlug?: string | null;
-    } = {
-      courseName: result.data.courseName,
-      description: result.data.description,
-    };
+    } = {};
+
+    if (result.data.courseName !== undefined) {
+      updateData.courseName = result.data.courseName;
+    }
+    if (result.data.description !== undefined) {
+      updateData.description = result.data.description;
+    }
+    if (Object.keys(updateData).length === 0 && result.data.isPublic === undefined) {
+      return NextResponse.json(
+        { error: "No fields to update" },
+        { status: 400 },
+      );
+    }
 
     if (result.data.isPublic !== undefined) {
       updateData.isPublic = result.data.isPublic;
@@ -115,7 +125,7 @@ export async function PUT(req: Request, context: Context) {
         });
         if (!existing?.shareSlug) {
           updateData.shareSlug = await generateUniqueShareSlug(
-            result.data.courseName,
+            result.data.courseName ?? "course",
             courseId,
           );
         }
