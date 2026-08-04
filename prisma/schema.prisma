@@ -52,6 +52,8 @@ model Course {
   courseName  String
   description String
   isPublic    Boolean  @default(false)
+  isPublished Boolean  @default(false)
+  shareSlug   String?  @unique
   userId      String
   user        User     @relation(fields: [userId], references: [id])
   Module      Module[]
