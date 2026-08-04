@@ -27,7 +27,7 @@ const PricingPage = () => {
       return;
     }
 
-    if (plan === "Free") {
+    if (plan === "FREE") {
       router.push("/dashboard");
       return;
     }

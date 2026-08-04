@@ -69,8 +69,8 @@ export async function POST(req: NextRequest) {
         plan: plan,
         userId: session.user.id,
       },
-      return_url: process.env.NEXT_PUBLIC_APP_URL
-        ? `${process.env.NEXT_PUBLIC_APP_URL}/dashboard`
+      return_url: process.env.NEXT_PUBLIC_BASE_URL
+        ? `${process.env.NEXT_PUBLIC_BASE_URL}/dashboard`
         : "http://localhost:3000/dashboard",
     });
 

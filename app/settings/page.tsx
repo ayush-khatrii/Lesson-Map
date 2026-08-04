@@ -55,6 +55,13 @@ const SettingsPage = async () => {
 
   const user = session.user;
 
+  // Read the plan straight from the DB so it always reflects the latest
+  // value (e.g. right after a purchase), independent of the session payload.
+  const dbUser = await db.user.findUnique({
+    where: { id: user.id },
+    select: { plan: true },
+  });
+
   const courses = await db.course.findMany({
     where: { userId: user.id },
     orderBy: { createdAt: "desc" },
@@ -115,7 +122,7 @@ const SettingsPage = async () => {
                 <h2 className="text-xl font-semibold">{user.name}</h2>
                 <Badge variant="secondary" className="capitalize">
                   <Sparkles className="mr-1 h-3 w-3" />
-                  {(user as { plan?: string }).plan || "FREE"}
+                  {dbUser?.plan ?? "FREE"}
                 </Badge>
               </div>
 
