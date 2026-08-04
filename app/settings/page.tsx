@@ -110,7 +110,7 @@ const SettingsPage = async () => {
             <Avatar className="h-20 w-20">
               <AvatarImage
                 src={user.image || undefined}
-                alt={user.name || "User"}
+                alt={user.name || "Unknown User"}
               />
               <AvatarFallback className="text-2xl">
                 {getInitials(user.name)}
