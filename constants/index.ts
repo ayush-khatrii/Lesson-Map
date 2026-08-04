@@ -30,6 +30,7 @@ export const exampleCourses = [
 export const plans = [
   {
     name: "Free",
+    type: "FREE",
     description:
       "For first-time creators who want to test the idea, map a few lessons, and share a simple course outline.",
     price: "$0",
@@ -46,6 +47,7 @@ export const plans = [
   },
   {
     name: "Creator",
+    type: "CREATOR",
     description:
       "For creators who want a polished, shareable, and more visual course map with AI support and creator-native branding.",
     price: "$12",

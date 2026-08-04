@@ -239,13 +239,13 @@ const SettingsPage = async () => {
                       </div>
 
                       {/* Public URL or "Not public" label */}
-                      {course.isPublic ? (
+                      {course.isPublic && course.shareSlug ? (
                         <Link
-                          href={`/outline/${course.id}`}
+                          href={`/p/${course.shareSlug}`}
                           className="mt-2 inline-flex items-center gap-1 text-xs text-primary hover:underline break-all"
                         >
                           <ExternalLink className="h-3 w-3 flex-shrink-0" />
-                          {appUrl}/outline/{course.id}
+                          {appUrl}/p/{course.shareSlug}
                         </Link>
                       ) : (
                         <p className="mt-2 text-xs text-muted-foreground flex items-center gap-1">
@@ -256,7 +256,7 @@ const SettingsPage = async () => {
 
                     <div className="flex items-center gap-2">
                       <Button variant="link" size="sm" asChild>
-                        <Link href={`/outline/${course.id}`}>View</Link>
+                        <Link href={`/p/${course.shareSlug ?? course.id}`}>View</Link>
                       </Button>
                       <ToggleCoursePublicButton
                         courseId={course.id}

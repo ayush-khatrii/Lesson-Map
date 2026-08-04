@@ -122,7 +122,7 @@ const PricingPage = () => {
 
               <CardFooter className="pt-6">
                 <Button
-                  onClick={() => handlePurchase(plan.name)}
+                  onClick={() => handlePurchase(plan.type)}
                   size="lg"
                   className={cn(
                     "h-12 w-full rounded-xl text-sm font-medium",
