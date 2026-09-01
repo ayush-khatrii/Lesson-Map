@@ -306,7 +306,13 @@ function CourseAccordionItem({
             className="h-8 gap-1.5 text-xs"
             asChild
           >
-            <Link href={`/p/${course.shareSlug ?? course.id}`}>
+            <Link
+              href={`/p/${
+                course.isPublic && course.shareSlug
+                  ? course.shareSlug
+                  : course.id
+              }`}
+            >
               <Eye className="w-3.5 h-3.5" /> View Outline
             </Link>
           </Button>

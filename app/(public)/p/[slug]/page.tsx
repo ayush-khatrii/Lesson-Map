@@ -2,6 +2,8 @@ import { db } from "@/lib/prisma";
 import LessonMapPublicPage from "@/components/CoursePreview";
 import type { Course } from "@/components/CoursePreview";
 import { notFound } from "next/navigation";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
 
 export default async function CoursePreviewPage({
   params,
@@ -10,10 +12,20 @@ export default async function CoursePreviewPage({
 }) {
   const { slug } = await params;
 
+  // Public courses are resolved by their stable share slug. The course ID is
+  // also accepted for an authenticated owner so the dashboard can use this
+  // same page as a preview before the course is made public.
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+  const userId = session?.session.userId;
+
   const course = await db.course.findFirst({
     where: {
-      shareSlug: slug,
-      isPublic: true,
+      OR: [
+        { shareSlug: slug, isPublic: true },
+        ...(userId ? [{ id: slug, userId }] : []),
+      ],
     },
     include: {
       user: {

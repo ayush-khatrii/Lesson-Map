@@ -263,7 +263,15 @@ const SettingsPage = async () => {
 
                     <div className="flex items-center gap-2">
                       <Button variant="link" size="sm" asChild>
-                        <Link href={`/p/${course.shareSlug ?? course.id}`}>View</Link>
+                        <Link
+                          href={`/p/${
+                            course.isPublic && course.shareSlug
+                              ? course.shareSlug
+                              : course.id
+                          }`}
+                        >
+                          View
+                        </Link>
                       </Button>
                       <ToggleCoursePublicButton
                         courseId={course.id}
