@@ -10,8 +10,6 @@ export const createCourseSchema = z.object({
 export const updateCourseSchema = z.object({
   courseName: z.string().min(1, "Course name is required").optional(),
   description: z.string().min(1, "Description is required").optional(),
-  isPublic: z.boolean().optional(),
-  shareSlug: z.string().nullable().optional(),
 });
 
 export const moduleSchema = z.object({

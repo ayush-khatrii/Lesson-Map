@@ -262,20 +262,16 @@ const SettingsPage = async () => {
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <Button variant="link" size="sm" asChild>
-                        <Link
-                          href={`/p/${
-                            course.isPublic && course.shareSlug
-                              ? course.shareSlug
-                              : course.id
-                          }`}
-                        >
-                          View
-                        </Link>
-                      </Button>
+                      {course.isPublic && course.shareSlug && (
+                        <Button variant="link" size="sm" asChild>
+                          <Link href={`/p/${course.shareSlug}`}>View</Link>
+                        </Button>
+                      )}
                       <ToggleCoursePublicButton
                         courseId={course.id}
                         isPublic={course.isPublic}
+                        shareSlug={course.shareSlug}
+                        canPublish={course.Module.length > 0}
                       />
                     </div>
                   </div>

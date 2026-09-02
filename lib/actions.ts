@@ -279,46 +279,6 @@ async function updateProfileAction(data: unknown) {
   }
 }
 
-// toggleCoursePublicAction
-async function toggleCoursePublicAction(courseId: string) {
-  try {
-    const session = await auth.api.getSession({ headers: await headers() });
-    const userId = session?.session?.userId;
-
-    if (!userId) {
-      throw new Error("Unauthorized: Please log in to continue.");
-    }
-
-    const course = await db.course.findFirst({
-      where: { id: courseId, userId },
-    });
-
-    if (!course) {
-      throw new Error("Course not found or not owned by user.");
-    }
-
-    const updated = await db.course.update({
-      where: { id: courseId },
-      data: { isPublic: !course.isPublic },
-    });
-
-    revalidatePath("/settings");
-    revalidatePath("/dashboard");
-
-    return {
-      success: true,
-      message: updated.isPublic
-        ? "Course is now public!"
-        : "Course is now private.",
-    };
-  } catch (error) {
-    return {
-      success: false,
-      error: (error as Error).message || "Failed to update course visibility.",
-    };
-  }
-}
-
 // updateCourseAction
 async function updateCourseAction(courseId: string, data: unknown) {
   try {
@@ -444,7 +404,6 @@ export {
   createLessonsAction,
   reorderModulesAction,
   updateProfileAction,
-  toggleCoursePublicAction,
   updateCourseAction,
   deleteCourseAction,
   reorderLessonsAction,

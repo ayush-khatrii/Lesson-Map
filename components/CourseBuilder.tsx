@@ -1944,14 +1944,8 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
     if (!courseId) return;
     setIsTogglingPublic(true);
     try {
-      const response = await fetch(`/api/course/${courseId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          courseName: title.trim(),
-          description: description.trim(),
-          isPublic: checked,
-        }),
+      const response = await fetch(`/api/course/${courseId}/publish`, {
+        method: checked ? "POST" : "DELETE",
       });
       if (!response.ok) {
         const err = await response.json();
