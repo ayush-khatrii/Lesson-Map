@@ -2,170 +2,238 @@ import { NextRequest, NextResponse } from "next/server";
 import { Webhook } from "standardwebhooks";
 import { db } from "@/lib/prisma";
 
-const webhookSecret = process.env.DODOPAYMENTS_WEBHOOK_SECRET!;
+type PaidPlan = "CREATOR" | "PROFESSIONAL";
 
-// ─── Map Dodo Payments product IDs back to our plan names ──────────────────
-// Must match the reverse of PLAN_PRODUCT_MAP in the checkout route
-function getPlanFromProductId(productId: string): string | null {
-  if (productId === (process.env.DODO_PRODUCT_CREATOR || "pdt_placeholder_creator")) {
-    return "CREATOR";
-  }
-  if (productId === (process.env.DODO_PRODUCT_PROFESSIONAL || "pdt_placeholder_professional")) {
+type DodoWebhookPayload = {
+  type?: string;
+  data?: {
+    subscription_id?: string;
+    product_id?: string;
+    status?: string;
+    next_billing_date?: string;
+    cancel_at_next_billing_date?: boolean;
+    customer_id?: string;
+    customer?: {
+      customer_id?: string;
+      id?: string;
+      email?: string;
+    };
+    metadata?: Record<string, string | undefined>;
+  };
+};
+
+function paidPlanForProduct(productId: string | undefined): PaidPlan | null {
+  if (!productId) return null;
+
+  const creatorProductId = process.env.DODO_PRODUCT_CREATOR;
+  const professionalProductId = process.env.DODO_PRODUCT_PROFESSIONAL;
+
+  if (creatorProductId && productId === creatorProductId) return "CREATOR";
+  if (professionalProductId && productId === professionalProductId) {
     return "PROFESSIONAL";
   }
+
   return null;
 }
 
+function optionalDate(value: string | undefined): Date | null {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
 export async function POST(req: NextRequest) {
+  const webhookSecret = process.env.DODOPAYMENTS_WEBHOOK_SECRET;
+  if (!webhookSecret) {
+    console.error("DODOPAYMENTS_WEBHOOK_SECRET is not configured");
+    return NextResponse.json(
+      { error: "Webhook is not configured" },
+      { status: 500 },
+    );
+  }
+
+  const webhookId = req.headers.get("webhook-id");
+  const webhookSignature = req.headers.get("webhook-signature");
+  const webhookTimestamp = req.headers.get("webhook-timestamp");
+
+  if (!webhookId || !webhookSignature || !webhookTimestamp) {
+    return NextResponse.json(
+      { error: "Missing webhook headers" },
+      { status: 400 },
+    );
+  }
+
+  const rawBody = await req.text();
+
   try {
-    // Get webhook headers
-    const webhookId = req.headers.get("webhook-id");
-    const webhookSignature = req.headers.get("webhook-signature");
-    const webhookTimestamp = req.headers.get("webhook-timestamp");
-
-    if (!webhookId || !webhookSignature || !webhookTimestamp) {
-      return NextResponse.json(
-        { error: "Missing webhook headers" },
-        { status: 400 },
-      );
-    }
-
-    // Get raw body
-    const body = await req.text();
-
-    // Verify webhook signature
     const webhook = new Webhook(webhookSecret);
+    await webhook.verify(rawBody, {
+      "webhook-id": webhookId,
+      "webhook-signature": webhookSignature,
+      "webhook-timestamp": webhookTimestamp,
+    });
+  } catch {
+    console.warn("Rejected webhook with an invalid signature", { webhookId });
+    return NextResponse.json(
+      { error: "Invalid webhook signature" },
+      { status: 401 },
+    );
+  }
 
-    try {
-      await webhook.verify(body, {
-        "webhook-id": webhookId,
-        "webhook-signature": webhookSignature,
-        "webhook-timestamp": webhookTimestamp,
+  let payload: DodoWebhookPayload;
+  try {
+    payload = JSON.parse(rawBody) as DodoWebhookPayload;
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON payload" }, { status: 400 });
+  }
+
+  const eventType = payload.type;
+  const data = payload.data;
+  if (!eventType || !data) {
+    return NextResponse.json({ error: "Invalid webhook payload" }, { status: 400 });
+  }
+
+  try {
+    const processed = await db.$transaction(async (tx) => {
+      const existing = await tx.webhookEvent.findUnique({
+        where: { id: webhookId },
+        select: { id: true },
       });
-    } catch (err) {
-      console.error("Webhook verification failed:", err);
-      return NextResponse.json(
-        { error: "Invalid webhook signature" },
-        { status: 400 },
-      );
-    }
+      if (existing) return false;
 
-    // Parse the verified payload
-    const payload = JSON.parse(body);
-    console.log("WEBHOOK", payload.data);
+      const subscriptionId = data.subscription_id;
+      const customerId =
+        data.customer?.customer_id ?? data.customer?.id ?? data.customer_id;
+      const customerEmail = data.customer?.email;
+      const metadataUserId = data.metadata?.userId;
+      const plan = paidPlanForProduct(data.product_id);
+      const periodEnd = optionalDate(data.next_billing_date);
 
-    // Helper: extract the customer email and plan from the payload
-    // The payload structure varies by event type, so we try a few paths
-    const customerEmail: string | undefined =
-      payload.data?.customer?.email ||
-      payload.data?.email ||
-      payload.data?.customer_email;
+      const userWhere = metadataUserId
+        ? { id: metadataUserId }
+        : subscriptionId
+          ? { subscriptionId }
+          : customerId
+            ? { customerId }
+            : customerEmail
+              ? { email: customerEmail }
+              : null;
 
-    const productId: string | undefined =
-      payload.data?.product_id ||
-      payload.data?.product?.id ||
-      payload.data?.items?.[0]?.product_id;
+      const grantEvents = new Set([
+        "subscription.active",
+        "subscription.renewed",
+        "subscription.plan_changed",
+      ]);
+      const revokeEvents = new Set([
+        "subscription.on_hold",
+        "subscription.failed",
+        "subscription.expired",
+      ]);
 
-    // Also check for metadata we passed during checkout
-    const metaPlan: string | undefined =
-      payload.data?.metadata?.plan;
+      if (grantEvents.has(eventType)) {
+        if (!userWhere || !subscriptionId || !customerId || !plan) {
+          throw new Error(`Cannot safely grant access for ${eventType}`);
+        }
 
-    // Determine which plan to grant
-    const planToGrant = metaPlan || (productId ? getPlanFromProductId(productId) : null);
+        const result = await tx.user.updateMany({
+          where: userWhere,
+          data: {
+            plan,
+            subscriptionId,
+            customerId,
+            subscriptionProductId: data.product_id,
+            subscriptionStatus: data.status ?? "active",
+            subscriptionCurrentPeriodEnd: periodEnd,
+            subscriptionCancelAtPeriodEnd:
+              data.cancel_at_next_billing_date ?? false,
+          },
+        });
+        if (result.count !== 1) {
+          throw new Error(`No matching user for ${eventType}`);
+        }
+      } else if (eventType === "subscription.updated") {
+        if (userWhere) {
+          const activePlan = data.status === "active" ? plan : null;
+          const accessContinues =
+            data.status === "cancelled" &&
+            data.cancel_at_next_billing_date === true &&
+            periodEnd !== null &&
+            periodEnd.getTime() > Date.now();
+          const shouldRevoke =
+            data.status === "on_hold" ||
+            data.status === "failed" ||
+            data.status === "expired" ||
+            (data.status === "cancelled" && !accessContinues);
 
-    // Handle different webhook events
-    switch (payload.type) {
-      case "payment.succeeded":
-        console.log("Payment succeeded:", payload.data);
-
-        if (customerEmail && planToGrant) {
-          // Find the user by email and upgrade their plan
-          const updatedUser = await db.user.updateMany({
-            where: { email: customerEmail },
+          await tx.user.updateMany({
+            where: userWhere,
             data: {
-              plan: planToGrant as "CREATOR" | "PROFESSIONAL",
-              subscriptionStatus: "active",
-              subscriptionId: payload.data?.subscription_id || payload.data?.subscription?.id || null,
-              customerId: payload.data?.customer?.id || payload.data?.customer_id || null,
+              ...(activePlan ? { plan: activePlan } : {}),
+              ...(shouldRevoke ? { plan: "FREE" as const } : {}),
+              ...(subscriptionId ? { subscriptionId } : {}),
+              ...(customerId ? { customerId } : {}),
+              ...(data.product_id
+                ? { subscriptionProductId: data.product_id }
+                : {}),
+              ...(data.status ? { subscriptionStatus: data.status } : {}),
+              subscriptionCurrentPeriodEnd: periodEnd,
+              subscriptionCancelAtPeriodEnd:
+                data.status === "cancelled"
+                  ? accessContinues
+                  : (data.cancel_at_next_billing_date ?? false),
             },
           });
-
-          if (updatedUser.count > 0) {
-            console.log(
-              `✅ Upgraded user ${customerEmail} to plan: ${planToGrant}`
-            );
-          } else {
-            console.log(
-              `⚠️ No user found with email: ${customerEmail}`
-            );
-          }
         }
-        break;
+      } else if (eventType === "subscription.cancelled") {
+        if (userWhere) {
+          const accessContinues =
+            data.cancel_at_next_billing_date === true &&
+            periodEnd !== null &&
+            periodEnd.getTime() > Date.now();
 
-      case "payment.failed":
-        console.log("Payment failed:", payload.data);
-        break;
-
-      case "subscription.created":
-        console.log("Subscription created:", payload.data);
-
-        if (customerEmail && planToGrant) {
-          const updated = await db.user.updateMany({
-            where: { email: customerEmail },
+          await tx.user.updateMany({
+            where: userWhere,
             data: {
-              plan: planToGrant as "CREATOR" | "PROFESSIONAL",
-              subscriptionStatus: "active",
-              subscriptionId: payload.data?.subscription_id || payload.data?.id || null,
-              customerId: payload.data?.customer?.id || payload.data?.customer_id || null,
+              ...(accessContinues ? {} : { plan: "FREE" }),
+              subscriptionStatus: "cancelled",
+              subscriptionCurrentPeriodEnd: periodEnd,
+              subscriptionCancelAtPeriodEnd: accessContinues,
             },
           });
-
-          if (updated.count > 0) {
-            console.log(
-              `✅ Subscription active for ${customerEmail} → plan: ${planToGrant}`
-            );
-          } else {
-            console.log(
-              `⚠️ No user found with email: ${customerEmail}`
-            );
-          }
         }
-        break;
-
-      case "subscription.cancelled":
-        console.log("Subscription cancelled:", payload.data);
-
-        if (customerEmail) {
-          // Downgrade the user back to FREE when subscription ends
-          await db.user.updateMany({
-            where: { email: customerEmail },
+      } else if (revokeEvents.has(eventType)) {
+        if (userWhere) {
+          await tx.user.updateMany({
+            where: userWhere,
             data: {
               plan: "FREE",
-              subscriptionStatus: "cancelled",
+              subscriptionStatus: data.status ?? eventType.split(".")[1],
+              subscriptionCurrentPeriodEnd: periodEnd,
+              subscriptionCancelAtPeriodEnd: false,
             },
           });
-          console.log(
-            `🔄 Downgraded user ${customerEmail} to FREE plan`
-          );
         }
-        break;
+      }
 
-      case "subscription.updated":
-        console.log("Subscription updated:", payload.data);
-        // Could update subscriptionStatus if needed in the future
-        break;
+      await tx.webhookEvent.create({
+        data: { id: webhookId, type: eventType },
+      });
 
-      default:
-        console.log("Unhandled webhook event:", payload.type);
+      return true;
+    });
+
+    console.info("Dodo webhook handled", { webhookId, eventType, processed });
+    return NextResponse.json({ received: true, eventType, processed });
+  } catch (error) {
+    if ((error as { code?: string }).code === "P2002") {
+      return NextResponse.json({ received: true, eventType, processed: false });
     }
 
-    // Return success response
-    return NextResponse.json(
-      { received: true, type: payload.type },
-      { status: 200 },
-    );
-  } catch (error) {
-    console.error("Webhook processing error:", error);
+    console.error("Dodo webhook processing failed", {
+      webhookId,
+      eventType,
+      error: error instanceof Error ? error.message : "Unknown error",
+    });
     return NextResponse.json(
       { error: "Webhook processing failed" },
       { status: 500 },

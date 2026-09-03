@@ -18,12 +18,23 @@ model User {
   accounts      Account[]
   sessions      Session[]
 
-  plan               Plan    @default(FREE)
-  subscriptionId     String? @unique
-  customerId         String? @unique
-  subscriptionStatus String?
+  plan                          Plan      @default(FREE)
+  subscriptionId                String?   @unique
+  customerId                    String?   @unique
+  subscriptionStatus            String?
+  subscriptionProductId         String?
+  subscriptionCurrentPeriodEnd  DateTime?
+  subscriptionCancelAtPeriodEnd Boolean   @default(false)
 
   @@map("user")
+}
+
+model WebhookEvent {
+  id          String   @id
+  type        String
+  processedAt DateTime @default(now())
+
+  @@index([type])
 }
 
 model Example {
@@ -73,14 +84,14 @@ model Module {
 }
 
 model Lesson {
-  id         String   @id @default(cuid())
+  id         String     @id @default(cuid())
   lessonName String
   order      Int
   moduleId   String
-  module     Module   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  module     Module     @relation(fields: [moduleId], references: [id], onDelete: Cascade)
   resources  Resource[]
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @default(now()) @updatedAt
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @default(now()) @updatedAt
 }
 
 model Resource {
