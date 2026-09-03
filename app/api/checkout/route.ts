@@ -1,4 +1,5 @@
 import { auth } from "@/lib/auth";
+import { db } from "@/lib/prisma";
 import { dodoPayments } from "@/lib/payments/dodopayments";
 import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
@@ -43,6 +44,21 @@ export async function POST(req: NextRequest) {
     }
 
     const plan = body.plan;
+
+    const existingSubscription = await db.user.findUnique({
+      where: { id: userId },
+      select: { plan: true, subscriptionStatus: true },
+    });
+    if (
+      existingSubscription?.plan !== "FREE" &&
+      existingSubscription?.subscriptionStatus === "active"
+    ) {
+      return NextResponse.json(
+        { error: "You already have an active paid subscription." },
+        { status: 409 },
+      );
+    }
+
     const productId = PLAN_PRODUCT_MAP[plan];
     if (!productId) {
       console.error(`Missing Dodo product ID for ${plan}`);

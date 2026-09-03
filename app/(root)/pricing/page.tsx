@@ -10,7 +10,7 @@ import {
 import { comparisonRows, plans } from "@/constants";
 import { cn } from "@/lib/utils";
 import { Check, Sparkles, Workflow, ShieldCheck, Layers3, BrainCircuit, Share2 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { FaSpinner } from "react-icons/fa";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -18,8 +18,42 @@ import { useSession } from "@/lib/auth-client";
 
 const PricingPage = () => {
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+  const [currentPlan, setCurrentPlan] = useState<string | null>(null);
+  const [isPlanPending, setIsPlanPending] = useState(false);
   const router = useRouter();
-  const { data: session } = useSession();
+  const { data: session, isPending: isSessionPending } = useSession();
+
+  useEffect(() => {
+    if (isSessionPending) return;
+    if (!session?.user) {
+      setCurrentPlan(null);
+      setIsPlanPending(false);
+      return;
+    }
+
+    const controller = new AbortController();
+    setIsPlanPending(true);
+
+    fetch("/api/subscription/status", {
+      cache: "no-store",
+      signal: controller.signal,
+    })
+      .then(async (response) => {
+        if (!response.ok) throw new Error("Could not load subscription");
+        return response.json() as Promise<{ plan: string }>;
+      })
+      .then((subscription) => setCurrentPlan(subscription.plan))
+      .catch((error) => {
+        if ((error as Error).name !== "AbortError") {
+          toast.error("Could not load your current plan. Please refresh.");
+        }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setIsPlanPending(false);
+      });
+
+    return () => controller.abort();
+  }, [isSessionPending, session?.user?.id]);
 
   const handlePurchase = async (plan: string) => {
     if (!session?.user) {
@@ -29,6 +63,11 @@ const PricingPage = () => {
 
     if (plan === "FREE") {
       router.push("/dashboard");
+      return;
+    }
+
+    if (currentPlan === plan) {
+      toast.info("You are already subscribed to this plan.");
       return;
     }
 
@@ -75,7 +114,24 @@ const PricingPage = () => {
         </div>
 
         <div className="grid gap-6 lg:grid-cols-2 lg:gap-8">
-          {plans.map((plan, index) => (
+          {plans.map((plan, index) => {
+            const isCurrentPlan = Boolean(
+              session?.user && currentPlan === plan.type,
+            );
+            const hasPaidPlan = Boolean(
+              session?.user && currentPlan && currentPlan !== "FREE",
+            );
+            const buttonLabel = isPlanPending
+              ? "Checking your plan…"
+              : isCurrentPlan
+                ? plan.type === "FREE"
+                  ? "Current Plan"
+                  : "Already Subscribed"
+                : hasPaidPlan && plan.type === "FREE"
+                  ? "Included in Your Plan"
+                  : plan.cta;
+
+            return (
             <Card
               key={index}
               className={cn(
@@ -88,6 +144,14 @@ const PricingPage = () => {
               {plan.isPopular && (
                 <Badge className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 rounded-full px-4 py-1 text-xs font-medium shadow-sm">
                   {plan.accent}
+                </Badge>
+              )}
+              {isCurrentPlan && (
+                <Badge
+                  variant="secondary"
+                  className="absolute right-5 top-5 rounded-full"
+                >
+                  Current plan
                 </Badge>
               )}
               {!plan.isPopular && (
@@ -128,14 +192,24 @@ const PricingPage = () => {
                     "h-12 w-full rounded-xl text-sm font-medium",
                     !plan.isPopular && "bg-secondary text-secondary-foreground hover:bg-secondary/80",
                   )}
-                  disabled={loadingPlan === plan.name}
+                  aria-current={isCurrentPlan ? "true" : undefined}
+                  disabled={
+                    isSessionPending ||
+                    isPlanPending ||
+                    isCurrentPlan ||
+                    (hasPaidPlan && plan.type === "FREE") ||
+                    loadingPlan === plan.type
+                  }
                 >
-                  {loadingPlan === plan.name && <FaSpinner className="mr-2 h-4 w-4 animate-spin" />}
-                  {plan.cta}
+                  {(loadingPlan === plan.type || isPlanPending) && (
+                    <FaSpinner className="mr-2 h-4 w-4 animate-spin" />
+                  )}
+                  {buttonLabel}
                 </Button>
               </CardFooter>
             </Card>
-          ))}
+            );
+          })}
         </div>
 
         <section className="mt-14 rounded-3xl border border-border bg-card/70 p-6 shadow-sm md:p-8">
