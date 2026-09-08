@@ -1,5 +1,7 @@
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/prisma";
+import { userCoursesTag } from "@/lib/course-cache";
+import { revalidateTag } from "next/cache";
 import { createResourceSchema } from "@/lib/validation";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
@@ -82,6 +84,7 @@ export async function POST(request: Request) {
       data: result.data,
     });
 
+    revalidateTag(userCoursesTag(userId), { expire: 0 });
     return NextResponse.json(resource, { status: 201 });
   } catch (error) {
     return NextResponse.json(

@@ -1974,7 +1974,7 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
 
   return (
     <div className="min-h-screen w-full bg-background text-foreground">
-      <div className="max-w-4xl w-full mx-auto px-4 sm:px-6 py-8 sm:py-10">
+      <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
         {/* ── Page Header ─────────────────────────────────────────────── */}
         <div className="mt-16 mb-8">
           <div className="flex items-start justify-between gap-4 flex-wrap">

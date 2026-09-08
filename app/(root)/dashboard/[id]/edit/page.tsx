@@ -1,5 +1,5 @@
 import { auth } from "@/lib/auth";
-import { db } from "@/lib/prisma";
+import { getUserCourse } from "@/lib/course-cache";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { CourseBuilder } from "@/components/CourseBuilder";
@@ -20,25 +20,11 @@ const EditCoursePage = async ({
 
   const { id } = await params;
 
-  const selectedCourse = await db.course.findUnique({
-    where: { id, userId: session.session.userId },
-    include: {
-      Module: {
-        include: {
-          Lesson: {
-            include: {
-              resources: true,
-            },
-          },
-        },
-        orderBy: { order: "asc" },
-      },
-    },
-  });
+  const selectedCourse = await getUserCourse(session.session.userId, id);
 
   if (!selectedCourse) {
     return (
-      <div className="px-5 flex items-center justify-center text-center my-20">
+      <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 flex items-center justify-center text-center my-20">
         <h1 className="font-medium text-sm md:text-xl max-w-xs mx-auto md:w-full">
           Course with id <span className="text-primary px-2">{id}</span> not
           found!

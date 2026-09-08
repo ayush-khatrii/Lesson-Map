@@ -1,4 +1,6 @@
 import { db } from "@/lib/prisma";
+import { getUserCourse, userCoursesTag } from "@/lib/course-cache";
+import { revalidateTag } from "next/cache";
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
@@ -26,23 +28,7 @@ export async function GET(_: Request, context: Context) {
   }
 
   try {
-    const course = await db.course.findFirst({
-      where: {
-        id: courseId,
-        userId: userID,
-      },
-      include: {
-        Module: {
-          include: {
-            Lesson: {
-              include: {
-                resources: true,
-              },
-            },
-          },
-        },
-      },
-    });
+    const course = await getUserCourse(userID, courseId);
 
     if (!course)
       return NextResponse.json({ error: "Course not found" }, { status: 404 });
@@ -129,6 +115,7 @@ export async function PUT(req: Request, context: Context) {
       data: updateData,
     });
 
+    revalidateTag(userCoursesTag(userId), { expire: 0 });
     return NextResponse.json(updated, { status: 200 });
   } catch (error) {
     return NextResponse.json(
@@ -162,6 +149,7 @@ export async function DELETE(_: Request, context: Context) {
       return NextResponse.json({ error: "Course not found" }, { status: 404 });
     }
 
+    revalidateTag(userCoursesTag(userId), { expire: 0 });
     return NextResponse.json(
       { message: "Course deleted successfully" },
       { status: 200 }

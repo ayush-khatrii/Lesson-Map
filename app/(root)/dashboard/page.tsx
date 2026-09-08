@@ -1,5 +1,5 @@
 import { auth } from "@/lib/auth";
-import { db } from "@/lib/prisma";
+import { getUserCourses } from "@/lib/course-cache";
 import { headers } from "next/headers";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -72,15 +72,7 @@ const Dashboard = async () => {
 
   const userId = session.session.userId;
 
-  const courses = await db.course.findMany({
-    where: { userId },
-    orderBy: { createdAt: "desc" },
-    include: {
-      Module: {
-        include: { Lesson: true },
-      },
-    },
-  });
+  const courses = await getUserCourses(userId);
 
   const initialCourses: CourseWithRelations[] = courses.map((course) => ({
     ...course,
@@ -108,7 +100,7 @@ const Dashboard = async () => {
 
   return (
     <div className="min-h-screen my-20 bg-background text-foreground">
-      <main className="mx-auto container space-y-8 px-5 py-8 md:px-8">
+      <main className="mx-auto w-full max-w-7xl space-y-8 px-4 py-8 sm:px-6 lg:px-8">
         <section className="relative overflow-hidden px-6 py-8 md:px-10">
           <div className="flex flex-col items-center justify-center gap-4 text-center relative z-10">
             <div>

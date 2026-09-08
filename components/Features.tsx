@@ -30,7 +30,7 @@ const features = [
 const Features = () => {
 	return (
 		<section className="pb-20">
-			<div className="max-w-7xl mx-auto px-6 md:px-12 text-center">
+			<div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
 				<motion.div
 					initial={{ scale: 1, y: 100, opacity: 0 }}
 					whileInView={{ scale: 1, y: 0, opacity: 1, transition: { duration: 0.5 } }}

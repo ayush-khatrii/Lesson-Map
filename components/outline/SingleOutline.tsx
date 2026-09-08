@@ -69,7 +69,7 @@ const SingleOutline = ({ course }: { course: Course }) => {
   )
 
   return (
-    <section className="container mx-auto px-6 py-20 space-y-6">
+    <section className="mx-auto w-full max-w-7xl px-4 py-20 sm:px-6 lg:px-8 space-y-6">
       <div>
         <h1 className="text-3xl font-bold">{course.courseName}</h1>
         <p className="text-muted-foreground">{course.description}</p>

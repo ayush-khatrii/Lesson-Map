@@ -218,19 +218,23 @@ export default function Navbar({ className }: { className?: string }) {
   return (
     <nav
       className={cn(
-        "fixed top-0 z-[999] border-b inset-x-0 md:px-5 shadow-sm bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60",
+        "fixed top-0 z-[999] border-b inset-x-0 shadow-sm bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60",
         className,
       )}
     >
-      <nav className="container mx-auto flex h-14 items-center px-4">
-        <div className="flex">
-          <Link href="/" className="relative flex items-center group shrink-0">
-            <img
-              src="/logo.png"
-              alt="LessonMap Logo"
-              className="absolute w-full h-full transition-transform duration-200 group-hover:scale-[1.03]"
-            />
-            <span className="text-xl font-semibold tracking-tight">
+      <nav className="mx-auto flex h-14 w-full max-w-7xl items-center px-4 sm:px-6 lg:px-8">
+        <div className="flex shrink-0">
+          <Link href="/" aria-label="LessonMap home" className="group inline-flex shrink-0 items-center gap-2 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background">
+            <span className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-lg" aria-hidden="true">
+              <Image
+                src="/logo.png"
+                alt=""
+                width={80}
+                height={80}
+                className="size-20 max-w-none shrink-0 translate-y-1 object-contain transition-transform duration-200 motion-safe:group-hover:scale-[1.03]"
+              />
+            </span>
+            <span className="whitespace-nowrap text-xl font-semibold leading-none tracking-tight">
               Lesson<span className="text-orange-500">Map</span>
             </span>
           </Link>

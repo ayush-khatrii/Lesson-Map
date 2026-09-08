@@ -1,4 +1,4 @@
-import { db } from "@/lib/prisma";
+import { getUserCourses } from "@/lib/course-cache";
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
@@ -17,20 +17,7 @@ export async function GET() {
     );
   }
   try {
-    const courses = await db.course.findMany({
-      where: { userId: userID },
-      include: {
-        Module: {
-          include: {
-            Lesson: {
-              include: {
-                resources: true,
-              },
-            },
-          },
-        },
-      },
-    });
+    const courses = await getUserCourses(userID);
     return NextResponse.json(courses ?? []);
   } catch (error) {
     return NextResponse.json(

@@ -20,7 +20,8 @@
 
 "use client";
 
-import { Suspense, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import CurrentYear from "@/components/CurrentYear";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -31,7 +32,6 @@ import { motion } from "motion/react";
 import Link from "next/link";
 import { BackgroundRippleEffect } from "@/components/ui/background-ripple-effect";
 import { useSession } from "@/lib/auth-client";
-import PostPurchaseHandler from "@/components/PostPurchaseHandler";
 // ─── tiny helpers ────────────────────────────────────────────────────────────
 
 function useInView(threshold = 0.15) {
@@ -117,7 +117,7 @@ function Hero() {
 
   return (
     <section className="relative z-50">
-      <div className="container mx-auto px-4 py-28 md:py-36">
+      <div className="mx-auto w-full max-w-7xl px-4 py-28 sm:px-6 lg:px-8 md:py-36">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -262,7 +262,7 @@ function Stats() {
 
   return (
     <section className="border-y border-border/50 bg-muted/20 py-12">
-      <div className="max-w-5xl mx-auto px-6">
+      <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
           {stats.map((s, i) => (
             <FadeUp key={s.label} delay={i * 80}>
@@ -333,8 +333,8 @@ const FEATURES = [
 
 function Features() {
   return (
-    <section id="features" className="py-28 px-6">
-      <div className="max-w-7xl mx-auto">
+    <section id="features" className="py-28">
+      <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <FadeUp>
             <Badge
@@ -419,10 +419,10 @@ function HowItWorks() {
   return (
     <section
       id="how"
-      className="py-28 px-6 bg-muted/20 relative overflow-hidden"
+      className="py-28 bg-muted/20 relative overflow-hidden"
     >
       <DotGrid className="opacity-50" />
-      <div className="max-w-5xl mx-auto relative z-10">
+      <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="text-center mb-16">
           <FadeUp>
             <Badge
@@ -505,8 +505,8 @@ const AUDIENCES = [
 
 function WhoItsFor() {
   return (
-    <section id="who" className="py-28 px-6">
-      <div className="max-w-6xl mx-auto">
+    <section id="who" className="py-28">
+      <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <FadeUp>
             <Badge
@@ -589,10 +589,10 @@ function Testimonials() {
   return (
     <section
       id="testimonials"
-      className="py-28 px-6 bg-muted/20 relative overflow-hidden"
+      className="py-28 bg-muted/20 relative overflow-hidden"
     >
       <DotGrid className="opacity-40" />
-      <div className="max-w-6xl mx-auto relative z-10">
+      <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="text-center mb-16">
           <FadeUp>
             <Badge
@@ -679,7 +679,7 @@ function CallToAction() {
   const { primaryHref, isLoggedIn } = useAuthCtaLinks();
 
   return (
-    <section className="py-28 px-6 relative overflow-hidden">
+    <section className="py-28 relative overflow-hidden">
       {/* radial glow */}
       <div
         aria-hidden
@@ -691,7 +691,7 @@ function CallToAction() {
       />
       <DotGrid />
 
-      <div className="max-w-3xl mx-auto text-center relative z-10">
+      <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 text-center relative z-10">
         <FadeUp>
           <Badge
             variant="outline"
@@ -701,7 +701,7 @@ function CallToAction() {
           </Badge>
         </FadeUp>
         <FadeUp delay={100}>
-          <h2 className="text-4xl md:text-6xl font-bold tracking-tight leading-tight">
+          <h2 className="mx-auto max-w-3xl text-4xl md:text-6xl font-bold tracking-tight leading-tight">
             Start Your Next Course Outline Today
           </h2>
         </FadeUp>
@@ -751,8 +751,8 @@ function CallToAction() {
 
 function Footer() {
   return (
-    <footer className="border-t border-border/50 py-12 px-6 bg-muted/10">
-      <div className="max-w-7xl mx-auto">
+    <footer className="border-t border-border/50 py-12 bg-muted/10">
+      <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
           <div className="col-span-2 md:col-span-1">
             <div className="flex items-center gap-2 mb-4">
@@ -828,7 +828,7 @@ function Footer() {
         <Separator className="mb-6" />
 
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-muted-foreground">
-          <p>© {new Date().getFullYear()} LessonMap. All rights reserved.</p>
+          <p>© <CurrentYear /> LessonMap. All rights reserved.</p>
           <p>Built for educators who deserve better tools.</p>
         </div>
       </div>
@@ -841,9 +841,6 @@ function Footer() {
 export default function LessonMapLandingPage() {
   return (
     <div className="relative min-h-screen bg-background text-foreground overflow-hidden">
-      <Suspense fallback={null}>
-        <PostPurchaseHandler />
-      </Suspense>
       <main className="relative z-10">
         <Hero />
         <Stats />

@@ -61,7 +61,7 @@ const PricingPage = () => {
   };
   return (
     <section className="relative overflow-hidden py-24 sm:py-32">
-      <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mx-auto mb-10 max-w-3xl text-center">
           <Badge variant="secondary" className="mb-4 rounded-full px-4 py-1 text-xs font-medium">
             Pricing

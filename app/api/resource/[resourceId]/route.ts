@@ -1,5 +1,7 @@
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/prisma";
+import { userCoursesTag } from "@/lib/course-cache";
+import { revalidateTag } from "next/cache";
 import { updateResourceSchema } from "@/lib/validation";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
@@ -97,6 +99,7 @@ export async function PUT(request: Request, context: Context) {
       data: result.data,
     });
 
+    revalidateTag(userCoursesTag(userId), { expire: 0 });
     return NextResponse.json(updated, { status: 200 });
   } catch (error) {
     return NextResponse.json(
@@ -140,6 +143,7 @@ export async function DELETE(_: Request, context: Context) {
 
     await db.resource.delete({ where: { id: resourceId } });
 
+    revalidateTag(userCoursesTag(userId), { expire: 0 });
     return NextResponse.json(
       { message: "Resource deleted successfully" },
       { status: 200 },

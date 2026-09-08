@@ -711,7 +711,7 @@ export default function SettingsPage() {
     <div className="min-h-screen bg-background text-foreground antialiased">
       {/* Top bar */}
       <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur-md">
-        <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
+        <div className="mx-auto h-14 w-full max-w-7xl px-4 sm:px-6 lg:px-8 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-6 h-6 rounded-md bg-primary flex items-center justify-center">
               <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
@@ -736,7 +736,7 @@ export default function SettingsPage() {
         </div>
       </header>
 
-      <div className="max-w-6xl mx-auto px-6 py-8">
+      <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         {/* Mobile: tabs at top */}
         <div className="md:hidden mb-6">
           <Tabs value={active} onValueChange={setActive}>

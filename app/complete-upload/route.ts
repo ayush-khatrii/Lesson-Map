@@ -1,4 +1,6 @@
 import { db } from "@/lib/prisma";
+import { userCoursesTag } from "@/lib/course-cache";
+import { revalidateTag } from "next/cache";
 import { auth } from "@/lib/auth";
 import { createResourceSchema } from "@/lib/validation";
 import { headers } from "next/headers";
@@ -56,6 +58,7 @@ export async function POST(request: Request) {
       },
     });
 
+    revalidateTag(userCoursesTag(userId), { expire: 0 });
     return NextResponse.json(resource, { status: 201 });
   } catch (error) {
     return NextResponse.json(

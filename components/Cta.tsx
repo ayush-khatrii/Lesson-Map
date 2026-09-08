@@ -61,7 +61,7 @@ const CallToAction = () => {
           }}
         />
         <section className="relative py-28 overflow-hidden">
-          <div className="max-w-5xl mx-auto px-6 md:px-12 text-center relative z-10">
+          <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 text-center relative z-10">
             <motion.div
               initial={{ opacity: 0, y: 50 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -76,7 +76,7 @@ const CallToAction = () => {
               initial={{ opacity: 0, y: 40 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.1 }}
-              className="text-4xl md:text-5xl font-bold mb-6"
+              className="mx-auto max-w-5xl text-4xl md:text-5xl font-bold mb-6"
             >
 
               <AuroraText>Start Your Next Course Outline Today</AuroraText>

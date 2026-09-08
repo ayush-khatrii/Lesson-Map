@@ -276,7 +276,7 @@ const ExamplePage = () => {
 
   return (
     <div className="min-h-screen mt-10 bg-background text-foreground">
-      <main className="max-w-7xl mx-auto px-5 md:px-8 py-10 space-y-8">
+      <main className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 lg:px-8 space-y-8">
         {/* ── Hero ────────────────────────────────────────────────────── */}
         <section className="relative rounded-2xl border border-border bg-card overflow-hidden px-6 md:px-12 py-10 text-center">
           {/* Grid bg */}

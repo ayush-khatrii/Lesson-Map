@@ -1,5 +1,8 @@
 import { auth } from "@/lib/auth";
-import { dodoPayments } from "@/lib/payments/dodopayments";
+import {
+  creatorProductId,
+  dodoPayments,
+} from "@/lib/payments/dodopayments";
 import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -21,19 +24,21 @@ export async function POST(req: NextRequest) {
       );
     }
     const body = await req.json();
-    // validations logic
-    if (!body) {
+    if (body?.plan !== "Creator") {
       return NextResponse.json(
-        { error: "Invalid request body." },
+        { error: "Invalid plan." },
         { status: 400 },
       );
     }
 
-    // Process the checkout logic here using the username and email
+    const baseUrl = (
+      process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000"
+    ).replace(/\/$/, "");
+
     const checkout = await dodoPayments.checkoutSessions.create({
       product_cart: [
         {
-          product_id: "pdt_0NepeRJFaOCuAzpBbqEJY",
+          product_id: creatorProductId,
           quantity: 1,
         },
       ],
@@ -41,7 +46,12 @@ export async function POST(req: NextRequest) {
         name: username,
         email: email,
       },
-      return_url: process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000",
+      metadata: {
+        user_id: session.session.userId,
+        plan: "CREATOR",
+      },
+      return_url: `${baseUrl}/dashboard?checkout=success`,
+      cancel_url: `${baseUrl}/pricing`,
     });
 
     return NextResponse.json({

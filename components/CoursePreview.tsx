@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useCallback } from "react";
+import CurrentYear from "@/components/CurrentYear";
 import type { LucideIcon } from "lucide-react";
 import {
   CheckCircle2,
@@ -363,7 +364,7 @@ function CourseNavbar({ creator }: { creator: Creator }) {
       className="border-b border-white/[0.06] bg-zinc-950/80 backdrop-blur-xl"
       style={{ position: "relative" }}
     >
-      <div className="mx-auto flex max-w-[90rem] items-center justify-between px-5 py-4 md:px-8">
+      <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
         <div className="flex items-center gap-2.5">
           <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-500">
             <Layers className="h-4 w-4 text-black" />
@@ -1054,7 +1055,7 @@ export default function LessonMapPublicPage({
       <CourseNavbar creator={course.creator} />
       <UpgradeDialog open={upgradeOpen} onClose={() => setUpgradeOpen(false)} />
 
-      <main className="mx-auto max-w-[90rem] px-5 py-8 md:px-8">
+      <main className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         {/* ── Dashboard shell (wireframe container) ── */}
         <div className="overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-950 shadow-2xl shadow-black/40">
           {/* Header strip */}
@@ -1211,7 +1212,7 @@ export default function LessonMapPublicPage({
       </main>
 
       <footer className="border-t border-zinc-800/50 py-8 text-center">
-        <div className="flex flex-col items-center gap-1.5">
+        <div className="mx-auto flex w-full max-w-7xl flex-col items-center gap-1.5 px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-1.5 text-xs text-zinc-600">
             <span>Made with</span>
             <Heart className="h-3 w-3 fill-rose-600 text-rose-600" />
@@ -1221,7 +1222,7 @@ export default function LessonMapPublicPage({
             <span>Syntaxio Technologies</span>
           </div>
           <p className="text-xs text-zinc-700">
-            © {new Date().getFullYear()} Syntaxio Technologies. All rights
+            © <CurrentYear /> Syntaxio Technologies. All rights
             reserved.
           </p>
         </div>

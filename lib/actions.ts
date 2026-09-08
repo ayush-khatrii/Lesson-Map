@@ -9,7 +9,8 @@ import {
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/prisma";
 import { headers } from "next/headers";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
+import { userCoursesTag } from "@/lib/course-cache";
 import z from "zod";
 
 async function createCourseAction(data: unknown) {
@@ -59,6 +60,7 @@ async function createCourseAction(data: unknown) {
     },
   });
 
+  updateTag(userCoursesTag(userId));
   revalidatePath("/dashboard/create/new");
 
   return { success: true, data: course };
@@ -112,6 +114,7 @@ async function createModulesAction(data: unknown) {
       ),
     );
 
+    updateTag(userCoursesTag(userId));
     revalidatePath("/dashboard/create/new");
     revalidatePath("/");
 
@@ -184,6 +187,7 @@ async function createLessonsAction(data: unknown) {
       ),
     );
 
+    updateTag(userCoursesTag(userId));
     revalidatePath("/dashboard/create/new");
     revalidatePath("/");
     return {
@@ -235,6 +239,7 @@ async function reorderModulesAction(courseId: string, moduleIds: string[]) {
       ),
     );
 
+    updateTag(userCoursesTag(userId));
     revalidatePath(`/dashboard/${courseId}/edit`);
     revalidatePath("/dashboard");
     revalidatePath("/");
@@ -274,6 +279,7 @@ async function reorderLessonsAction(moduleId: string, lessonIds: string[]) {
       ),
     );
 
+    updateTag(userCoursesTag(userId));
     revalidatePath("/dashboard/create/new");
     revalidatePath("/");
 
@@ -321,6 +327,7 @@ async function updateCourseAction(courseId: string, data: unknown) {
       },
     });
 
+    updateTag(userCoursesTag(userId));
     revalidatePath("/dashboard/create/new");
     revalidatePath("/dashboard");
     revalidatePath("/");
@@ -361,6 +368,7 @@ async function deleteCourseAction(courseId: string) {
       db.course.delete({ where: { id: courseId } }),
     ]);
 
+    updateTag(userCoursesTag(userId));
     revalidatePath("/dashboard/create/new");
     revalidatePath("/dashboard");
     revalidatePath("/");

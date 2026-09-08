@@ -13,25 +13,27 @@ const Hero = () => {
 
   return (
     <>
-      <section className="relative overflow-hidden flex justify-center items-center flex-col h-screen mx-auto p-4">
-        <div className="text-center flex justify-center items-center flex-col">
-          <h1 className="text-4xl md:text-6xl font-bold w-full max-w-5xl">
-            Map Out Your
-            <AuroraText className="mx-2"> Courses </AuroraText>
-            in Minutes{" "}
-          </h1>
-          <p className="py-4 text-sm md:text-2xl opacity-80 w-full max-w-xs md:max-w-4xl">
-            Easily outline modules, lessons, and steps with a clean, visual
-            dashboard designed to give structure to your entire course journey.
-          </p>
-        </div>
-        <div className="my-4 flex md:flex-row flex-col w-full px-5 justify-center items-center gap-3">
-          <Button variant={"default"} asChild>
-            <Link href={ctaHref}>
-              {session?.user ? "Go to Dashboard" : "Get Started"}
-              <LiaAngleRightSolid />
-            </Link>
-          </Button>
+      <section className="relative overflow-hidden flex justify-center items-center flex-col h-screen py-4">
+        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="text-center flex justify-center items-center flex-col">
+            <h1 className="text-4xl md:text-6xl font-bold w-full max-w-5xl">
+              Map Out Your
+              <AuroraText className="mx-2"> Courses </AuroraText>
+              in Minutes{" "}
+            </h1>
+            <p className="py-4 text-sm md:text-2xl opacity-80 w-full max-w-xs md:max-w-4xl">
+              Easily outline modules, lessons, and steps with a clean, visual
+              dashboard designed to give structure to your entire course journey.
+            </p>
+          </div>
+          <div className="my-4 flex md:flex-row flex-col w-full px-5 justify-center items-center gap-3">
+            <Button variant={"default"} asChild>
+              <Link href={ctaHref}>
+                {session?.user ? "Go to Dashboard" : "Get Started"}
+                <LiaAngleRightSolid />
+              </Link>
+            </Button>
+          </div>
         </div>
         <LightRays />
         {/* <LightRays /> */}

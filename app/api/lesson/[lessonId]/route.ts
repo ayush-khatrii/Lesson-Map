@@ -1,4 +1,6 @@
 import { db } from "@/lib/prisma";
+import { userCoursesTag } from "@/lib/course-cache";
+import { revalidateTag } from "next/cache";
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
@@ -77,6 +79,7 @@ export async function PUT(req: Request, context: Context) {
       },
     });
 
+    revalidateTag(userCoursesTag(userId), { expire: 0 });
     return NextResponse.json(updated, { status: 200 });
   } catch (error) {
     return NextResponse.json(
@@ -108,6 +111,7 @@ export async function DELETE(_: Request, context: Context) {
 
     await db.lesson.delete({ where: { id: lessonId } });
 
+    revalidateTag(userCoursesTag(userId), { expire: 0 });
     return NextResponse.json(
       { message: "Lesson deleted successfully" },
       { status: 200 }
