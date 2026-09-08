@@ -189,6 +189,12 @@ body {
   letter-spacing: var(--tracking-normal);
 }
 
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

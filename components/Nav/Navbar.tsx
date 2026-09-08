@@ -214,11 +214,11 @@ export default function Navbar({ className }: { className?: string }) {
   return (
     <nav
       className={cn(
-        "fixed top-0 z-[999]  inset-x-0 md:px-5 shadow-sm bg-transparent backdrop-blur",
+        "fixed inset-x-0 top-0 z-40 border-b border-border/70 bg-background/90 shadow-sm backdrop-blur-xl md:px-5",
         className,
       )}
     >
-      <nav className="container mx-auto flex h-14 py-2 max-w-screen-2xl items-center px-4">
+      <nav className="container mx-auto flex h-16 max-w-screen-2xl items-center px-4 py-2">
         <div className="mr-4 flex">
           <Link href="/" className="flex items-center">
             <span className="font-bold text-xl">LessonMap</span>
@@ -260,7 +260,7 @@ export default function Navbar({ className }: { className?: string }) {
               </SheetTrigger>
               <SheetContent
                 side="right"
-                className="w-[300px] px-3 py-4 sm:w-[400px] flex flex-col h-full"
+                className="h-dvh w-[min(22rem,calc(100vw-1rem))] overflow-y-auto px-3 py-4"
               >
                 <SheetHeader className="mb-6">
                   <SheetTitle className="text-2xl font-bold text-left">
