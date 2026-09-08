@@ -76,6 +76,7 @@ import {
 import { toast } from "sonner";
 import { useSession } from "@/lib/auth-client";
 import FileUpload, { type UploadedResource } from "@/components/forms/FileUpload";
+import { AiCourseGenerator } from "@/components/forms/AiCourseGenerator";
 import {
   createCourseAction,
   createModulesAction,
@@ -135,6 +136,7 @@ export interface Lesson {
 export interface Module {
   id: string;
   name: string;
+  description?: string;
   lessons: Lesson[];
 }
 
@@ -142,6 +144,7 @@ export interface CourseInitialData {
   courseId: string;
   title: string;
   description: string;
+  audience?: string | null;
   modules: Module[];
   isPublic?: boolean;
   shareSlug?: string | null;
@@ -390,7 +393,11 @@ function AddResourceDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="h-7 text-xs px-2">
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-8 w-full px-2 text-xs sm:h-7 sm:w-auto"
+        >
           <Plus className="w-3 h-3 mr-1" />
           Add Resource
         </Button>
@@ -841,7 +848,7 @@ function OutlineTab({
         const created = result.data[0];
         setModules((prev) => [
           ...prev,
-          { id: created.id, name: created.moduleName, lessons: [] },
+          { id: created.id, name: created.moduleName, description: created.description, lessons: [] },
         ]);
         toast.success("Module added!");
       } else {
@@ -1001,21 +1008,21 @@ function OutlineTab({
               <Accordion type="single" collapsible defaultValue={module.id}>
                 <AccordionItem
                   value={module.id}
-                  className="border rounded-2xl overflow-hidden"
+                  className="min-w-0 overflow-hidden rounded-2xl border"
                 >
-                  <AccordionTrigger className="px-4 py-3.5 hover:no-underline hover:bg-muted/30 transition-colors [&>svg]:hidden group">
-                    <div className="flex items-center gap-3 w-full">
+                  <AccordionTrigger className="group px-2.5 py-3 transition-colors hover:bg-muted/30 hover:no-underline sm:px-4 sm:py-3.5 [&>svg]:hidden">
+                    <div className="flex min-w-0 w-full items-start gap-1.5 sm:items-center sm:gap-3">
                       <DragHandle>
                         <GripVertical className="w-4 h-4 text-muted-foreground/50 flex-shrink-0" />
                       </DragHandle>
                       {/* ── Module index circular badge ── */}
                       <IndexBadge index={moduleIndex + 1} />
-                      <p className="text-sm font-semibold flex-1 text-left truncate">
+                      <p className="min-w-0 flex-1 break-words text-left text-xs font-semibold leading-snug [overflow-wrap:anywhere] sm:text-sm">
                         {module.name}
                       </p>
                       <Badge
                         variant="secondary"
-                        className="text-[10px] font-medium flex-shrink-0"
+                        className="hidden flex-shrink-0 text-[10px] font-medium sm:inline-flex"
                       >
                         {module.lessons.length}{" "}
                         {module.lessons.length === 1 ? "lesson" : "lessons"}
@@ -1024,7 +1031,8 @@ function OutlineTab({
                     </div>
                   </AccordionTrigger>
 
-                  <AccordionContent className="px-4 pb-4">
+                  <AccordionContent className="px-3 pb-3 sm:px-4 sm:pb-4">
+                    {module.description && <p className="mb-3 break-words text-sm text-muted-foreground">{module.description}</p>}
                     <div className="space-y-2.5 mt-1">
                       <DndContext
                         collisionDetection={closestCenter}
@@ -1043,8 +1051,8 @@ function OutlineTab({
                                 key={lesson.id}
                                 lessonId={lesson.id}
                               >
-                                <div className="rounded-xl border bg-background overflow-hidden shadow-none">
-                                  <div className="flex flex-row items-start gap-3 px-3.5 py-3">
+                                <div className="min-w-0 overflow-hidden rounded-xl border bg-background shadow-none">
+                                  <div className="flex min-w-0 flex-wrap items-start gap-2 px-3 py-3 sm:flex-nowrap sm:gap-3 sm:px-3.5">
                                     <DragHandle>
                                       <GripVertical className="w-3.5 h-3.5 text-muted-foreground/40 flex-shrink-0 mt-0.5" />
                                     </DragHandle>
@@ -1053,11 +1061,11 @@ function OutlineTab({
                                       {lessonIndex + 1}
                                     </span>
                                     <div className="flex-1 min-w-0">
-                                      <p className="text-sm font-semibold leading-snug">
+                                      <p className="break-words text-sm font-semibold leading-snug">
                                         {lesson.name}
                                       </p>
                                       {lesson.description && (
-                                        <p className="text-xs text-muted-foreground mt-0.5">
+                                        <p className="mt-0.5 break-words text-xs text-muted-foreground">
                                           {lesson.description}
                                         </p>
                                       )}
@@ -1355,17 +1363,17 @@ function ResourcesTab({
                 value={module.id}
                 className="border rounded-2xl overflow-hidden"
               >
-                <AccordionTrigger className="px-4 py-3.5 hover:no-underline hover:bg-muted/30 transition-colors [&>svg]:hidden group">
-                  <div className="flex items-center gap-2.5 w-full">
+                <AccordionTrigger className="group px-2.5 py-3 hover:bg-muted/30 hover:no-underline sm:px-4 sm:py-3.5 [&>svg]:hidden">
+                  <div className="flex w-full min-w-0 items-start gap-2 sm:items-center sm:gap-2.5">
                     <div className="flex-shrink-0 w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
                       <Paperclip className="w-3.5 h-3.5 text-primary" />
                     </div>
-                    <p className="text-sm font-semibold flex-1 text-left truncate">
+                    <p className="min-w-0 flex-1 break-words text-left text-xs font-semibold leading-snug [overflow-wrap:anywhere] sm:text-sm">
                       {module.name}
                     </p>
                     <Badge
                       variant="secondary"
-                      className="text-[10px] font-medium flex-shrink-0"
+                      className="hidden flex-shrink-0 text-[10px] font-medium sm:inline-flex"
                     >
                       {moduleResources.length} resources
                     </Badge>
@@ -1668,9 +1676,9 @@ function PreviewDialog({
           Preview
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
+      <DialogContent className="max-h-[calc(100dvh-1rem)] sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle className="text-xl">
+          <DialogTitle className="break-words pr-6 text-base leading-snug [overflow-wrap:anywhere] sm:text-xl">
             {title || "Untitled course"}
           </DialogTitle>
           <DialogDescription>{description}</DialogDescription>
@@ -1690,7 +1698,7 @@ function PreviewDialog({
         <div className="space-y-4">
           {modules.map((module, mi) => (
             <div key={module.id}>
-              <p className="text-sm font-semibold mb-2">{module.name}</p>
+              <p className="mb-2 break-words text-xs font-semibold [overflow-wrap:anywhere] sm:text-sm">{module.name}</p>
               <div className="space-y-1.5 pl-3 border-l">
                 {module.lessons.map((lesson, li) => (
                   <div key={lesson.id} className="text-xs">
@@ -1809,6 +1817,7 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
   const [modules, setModules] = useState<Module[]>(initialData?.modules ?? []);
   const [resources, setResources] = useState<Resource[]>(initialResources);
   const [isSaving, setIsSaving] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
   const [saved, setSaved] = useState(false);
   const [outlineView, setOutlineView] = useState("accordion");
 
@@ -1828,6 +1837,7 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
   const totalLessons = modules.reduce((a, m) => a + m.lessons.length, 0);
 
   const handleSave = async () => {
+    if (isGenerating) return;
     if (!session) {
       toast.error("Please log in to save your course.");
       return;
@@ -1944,14 +1954,8 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
     if (!courseId) return;
     setIsTogglingPublic(true);
     try {
-      const response = await fetch(`/api/course/${courseId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          courseName: title.trim(),
-          description: description.trim(),
-          isPublic: checked,
-        }),
+      const response = await fetch(`/api/course/${courseId}/publish`, {
+        method: checked ? "POST" : "DELETE",
       });
       if (!response.ok) {
         const err = await response.json();
@@ -1973,10 +1977,10 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
   };
 
   return (
-    <div className="min-h-screen w-full bg-background text-foreground">
-      <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
+    <div className="min-h-screen w-full overflow-x-hidden bg-background text-foreground">
+      <div className="mx-auto w-full min-w-0 max-w-4xl px-3 py-6 sm:px-6 sm:py-10">
         {/* ── Page Header ─────────────────────────────────────────────── */}
-        <div className="mt-16 mb-8">
+        <div className="mb-6 mt-16 sm:mb-8">
           <div className="flex items-start justify-between gap-4 flex-wrap">
             <div className="flex items-center gap-3 min-w-0">
               <div className="w-9 h-9 rounded-xl border bg-muted flex items-center justify-center flex-shrink-0">
@@ -1990,13 +1994,13 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
                     {initialData ? "Edit Course" : "Course Builder"}
                   </span>
                 </div>
-                <h1 className="text-xl font-bold leading-tight truncate">
+                <h1 className="break-words text-base font-bold leading-tight [overflow-wrap:anywhere] sm:text-xl">
                   {courseId ? title || "Untitled Course" : "New Course"}
                 </h1>
               </div>
             </div>
 
-            <div className="flex items-center gap-2 flex-shrink-0">
+            <div className="flex w-full items-center gap-2 sm:w-auto sm:flex-shrink-0">
               <PreviewDialog
                 title={title}
                 description={description}
@@ -2007,7 +2011,7 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
                 <Button
                   size="sm"
                   onClick={handleSave}
-                  disabled={isSaving}
+                  disabled={isSaving || isGenerating}
                   className="gap-1.5"
                 >
                   {isSaving ? (
@@ -2021,7 +2025,7 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
                 <Button
                   size="sm"
                   onClick={handleSave}
-                  disabled={isSaving}
+                  disabled={isSaving || isGenerating}
                   variant={saved ? "outline" : "default"}
                   className="gap-1.5"
                 >
@@ -2051,23 +2055,26 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
           )}
         </div>
 
+        {!courseId && <AiCourseGenerator disabled={isSaving} onGeneratingChange={setIsGenerating} />}
+
         {/* ── Course Info Card ──────────────────────────────────────── */}
         {courseId ? (
           <Card className="mb-6 border shadow-none">
-            <CardContent className="p-5">
-              <div className="flex items-start justify-between gap-3">
+            <CardContent className="p-4 sm:p-5">
+              <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0 flex-1">
                   <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-1">
                     Course
                   </p>
-                  <h2 className="text-lg font-bold leading-snug">{title}</h2>
+                  <h2 className="break-words text-lg font-bold leading-snug">{title}</h2>
                   {description && (
-                    <p className="text-sm text-muted-foreground mt-1.5 leading-relaxed">
+                    <p className="mt-1.5 break-words text-sm leading-relaxed text-muted-foreground">
                       {description}
                     </p>
                   )}
+                  {initialData?.audience && <p className="mt-2 text-sm text-muted-foreground">For: {initialData.audience}</p>}
                 </div>
-                <div className="flex items-center gap-1 flex-shrink-0 mt-0.5">
+                <div className="flex items-center justify-end gap-1 sm:mt-0.5 sm:flex-shrink-0">
                   <Button
                     variant="ghost"
                     size="icon"
@@ -2094,7 +2101,7 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
           <Card className="mb-6 border shadow-none">
             <CardHeader className="pb-3 pt-5 px-5">
               <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-                Course Details
+                Or create a course manually
               </p>
             </CardHeader>
             <CardContent className="px-5 pb-5 space-y-4">
@@ -2104,6 +2111,7 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
                 </Label>
                 <Input
                   id="course-title"
+                  disabled={isGenerating}
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="e.g. Mastering Modern Web Development"
@@ -2116,6 +2124,7 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
                 </Label>
                 <Textarea
                   id="course-desc"
+                  disabled={isGenerating}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="A brief overview of what learners will take away…"
@@ -2128,8 +2137,9 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
 
         {/* ── Main Tabs ────────────────────────────────────────────── */}
         <Tabs defaultValue="outline">
-          <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
-            <TabsList className="border bg-muted/50 h-9 p-1">
+          <div className="mb-6 flex min-w-0 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-4">
+            <div className="w-full max-w-full overflow-x-auto pb-1 sm:w-auto sm:pb-0">
+            <TabsList className="h-9 w-max min-w-full border bg-muted/50 p-1 sm:min-w-0">
               <TabsTrigger value="outline" className="gap-1.5 text-xs h-7 px-3">
                 <LayoutList className="w-3.5 h-3.5" />
                 Outline
@@ -2153,8 +2163,9 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
                 Share
               </TabsTrigger>
             </TabsList>
+            </div>
 
-            <div className="flex-shrink-0">
+            <div className="max-w-full self-start overflow-x-auto sm:flex-shrink-0">
               <ToggleGroup
                 type="single"
                 value={outlineView}

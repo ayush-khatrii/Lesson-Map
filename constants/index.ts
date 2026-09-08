@@ -1,3 +1,6 @@
+import { AI_LIMITS } from "@/lib/ai/schema";
+import { COURSE_LIMITS } from "@/lib/plans";
+
 export const exampleCourses = [
   {
     id: "1",
@@ -30,6 +33,7 @@ export const exampleCourses = [
 export const plans = [
   {
     name: "Free",
+    type: "FREE",
     description:
       "For first-time creators who want to test the idea, map a few lessons, and share a simple course outline.",
     price: "$0",
@@ -37,8 +41,8 @@ export const plans = [
     cta: "Start Free",
     accent: "Starter",
     features: [
-      "3 public course maps",
-      "Basic AI outline generation",
+      `${COURSE_LIMITS.FREE} course maps`,
+      `${AI_LIMITS.FREE.monthlyAttempts} AI attempts/month: 1 module and 1 lesson per course`,
       "Accordion-style course builder",
       "Shareable public link with LessonMap branding",
       "Basic customization and editing",
@@ -46,6 +50,7 @@ export const plans = [
   },
   {
     name: "Creator",
+    type: "CREATOR",
     description:
       "For creators who want a polished, shareable, and more visual course map with AI support and creator-native branding.",
     price: "$12",
@@ -54,8 +59,9 @@ export const plans = [
     cta: "Start Creator Plan",
     accent: "Most Popular",
     features: [
-      "Unlimited course maps",
-      "Unlimited AI generations",
+      `${COURSE_LIMITS.CREATOR} course maps`,
+      `${AI_LIMITS.CREATOR.monthlyAttempts} AI attempts/month: full course outlines`,
+      "Unlimited modules and lessons in every course",
       "Accordion view + Flow / node-like view",
       "Shareable links without LessonMap branding",
       "Creator-native branding and social-ready presentation",
@@ -66,14 +72,14 @@ export const plans = [
 
 export const comparisonRows = [
   {
-    label: "Public course maps",
-    free: "Up to 3",
-    creator: "Unlimited",
+    label: "Course maps",
+    free: `Up to ${COURSE_LIMITS.FREE}`,
+    creator: `Up to ${COURSE_LIMITS.CREATOR}`,
   },
   {
     label: "AI outline generation",
-    free: "Basic",
-    creator: "Unlimited + smarter drafts",
+    free: `${AI_LIMITS.FREE.monthlyAttempts} attempts/month · 1 module, 1 lesson`,
+    creator: `${AI_LIMITS.CREATOR.monthlyAttempts} attempts/month · full outlines`,
   },
   {
     label: "Builder style",

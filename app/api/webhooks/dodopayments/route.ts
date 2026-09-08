@@ -1,170 +1,239 @@
-import { db } from "@/lib/prisma";
-import {
-  creatorProductId,
-  dodoPayments,
-} from "@/lib/payments/dodopayments";
 import { NextRequest, NextResponse } from "next/server";
 import { Webhook } from "standardwebhooks";
+import { db } from "@/lib/prisma";
 
-type WebhookData = {
-  customer?: {
+type PaidPlan = "CREATOR" | "PROFESSIONAL";
+
+type DodoWebhookPayload = {
+  type?: string;
+  data?: {
+    subscription_id?: string;
+    product_id?: string;
+    status?: string;
+    next_billing_date?: string;
+    cancel_at_next_billing_date?: boolean;
     customer_id?: string;
+    customer?: {
+      customer_id?: string;
+      id?: string;
+      email?: string;
+    };
+    metadata?: Record<string, string | undefined>;
   };
-  is_partial?: boolean;
-  metadata?: Record<string, string>;
-  payment_id?: string;
-  product_id?: string;
-  status?: string;
-  subscription_id?: string;
 };
 
-type WebhookPayload = {
-  data: WebhookData;
-  type: string;
-};
+function paidPlanForProduct(productId: string | undefined): PaidPlan | null {
+  if (!productId) return null;
 
-async function activateSubscription(data: WebhookData, status: string) {
-  if (
-    !data.subscription_id ||
-    !data.product_id ||
-    data.product_id !== creatorProductId
-  ) {
-    return;
+  const creatorProductId = process.env.DODO_PRODUCT_CREATOR;
+  const professionalProductId = process.env.DODO_PRODUCT_PROFESSIONAL;
+
+  if (creatorProductId && productId === creatorProductId) return "CREATOR";
+  if (professionalProductId && productId === professionalProductId) {
+    return "PROFESSIONAL";
   }
 
-  const subscriptionData = {
-    plan: "CREATOR" as const,
-    subscriptionId: data.subscription_id,
-    subscriptionStatus: status,
-    customerId: data.customer?.customer_id,
-  };
-
-  const existingSubscription = await db.user.updateMany({
-    where: { subscriptionId: data.subscription_id },
-    data: subscriptionData,
-  });
-
-  if (existingSubscription.count > 0) return;
-
-  const userId = data.metadata?.user_id;
-  if (!userId) return;
-
-  await db.user.updateMany({
-    where: { id: userId },
-    data: subscriptionData,
-  });
+  return null;
 }
 
-async function deactivateSubscription(
-  subscriptionId: string | null | undefined,
-  status: string,
-) {
-  if (!subscriptionId) return;
-
-  await db.user.updateMany({
-    where: { subscriptionId },
-    data: {
-      plan: "FREE",
-      subscriptionStatus: status,
-    },
-  });
+function optionalDate(value: string | undefined): Date | null {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
 }
 
 export async function POST(req: NextRequest) {
+  const webhookSecret = process.env.DODOPAYMENTS_WEBHOOK_SECRET;
+  if (!webhookSecret) {
+    console.error("DODOPAYMENTS_WEBHOOK_SECRET is not configured");
+    return NextResponse.json(
+      { error: "Webhook is not configured" },
+      { status: 500 },
+    );
+  }
+
+  const webhookId = req.headers.get("webhook-id");
+  const webhookSignature = req.headers.get("webhook-signature");
+  const webhookTimestamp = req.headers.get("webhook-timestamp");
+
+  if (!webhookId || !webhookSignature || !webhookTimestamp) {
+    return NextResponse.json(
+      { error: "Missing webhook headers" },
+      { status: 400 },
+    );
+  }
+
+  const rawBody = await req.text();
+
   try {
-    const webhookSecret = process.env.DODO_PAYMENTS_WEBHOOK_SIGNING_SECRET;
-    if (!webhookSecret) {
-      return NextResponse.json(
-        { error: "Webhook secret is not configured" },
-        { status: 500 },
-      );
-    }
-
-    const webhookId = req.headers.get("webhook-id");
-    const webhookSignature = req.headers.get("webhook-signature");
-    const webhookTimestamp = req.headers.get("webhook-timestamp");
-
-    if (!webhookId || !webhookSignature || !webhookTimestamp) {
-      return NextResponse.json(
-        { error: "Missing webhook headers" },
-        { status: 400 },
-      );
-    }
-
-    const body = await req.text();
     const webhook = new Webhook(webhookSecret);
+    await webhook.verify(rawBody, {
+      "webhook-id": webhookId,
+      "webhook-signature": webhookSignature,
+      "webhook-timestamp": webhookTimestamp,
+    });
+  } catch {
+    console.warn("Rejected webhook with an invalid signature", { webhookId });
+    return NextResponse.json(
+      { error: "Invalid webhook signature" },
+      { status: 401 },
+    );
+  }
 
-    try {
-      await webhook.verify(body, {
-        "webhook-id": webhookId,
-        "webhook-signature": webhookSignature,
-        "webhook-timestamp": webhookTimestamp,
+  let payload: DodoWebhookPayload;
+  try {
+    payload = JSON.parse(rawBody) as DodoWebhookPayload;
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON payload" }, { status: 400 });
+  }
+
+  const eventType = payload.type;
+  const data = payload.data;
+  if (!eventType || !data) {
+    return NextResponse.json({ error: "Invalid webhook payload" }, { status: 400 });
+  }
+
+  try {
+    const processed = await db.$transaction(async (tx) => {
+      const existing = await tx.webhookEvent.findUnique({
+        where: { id: webhookId },
+        select: { id: true },
       });
-    } catch (error) {
-      console.error("Webhook verification failed:", error);
-      return NextResponse.json(
-        { error: "Invalid webhook signature" },
-        { status: 400 },
-      );
-    }
+      if (existing) return false;
 
-    const payload = JSON.parse(body) as WebhookPayload;
-    const { data } = payload;
+      const subscriptionId = data.subscription_id;
+      const customerId =
+        data.customer?.customer_id ?? data.customer?.id ?? data.customer_id;
+      const customerEmail = data.customer?.email;
+      const metadataUserId = data.metadata?.userId;
+      const plan = paidPlanForProduct(data.product_id);
+      const periodEnd = optionalDate(data.next_billing_date);
 
-    switch (payload.type) {
-      case "subscription.active":
-      case "subscription.renewed":
-      case "subscription.updated":
-      case "subscription.plan_changed":
-        if (data.status === "active" && data.product_id === creatorProductId) {
-          await activateSubscription(data, data.status);
-        } else {
-          await deactivateSubscription(
-            data.subscription_id,
-            data.status ?? "inactive",
-          );
+      const userWhere = metadataUserId
+        ? { id: metadataUserId }
+        : subscriptionId
+          ? { subscriptionId }
+          : customerId
+            ? { customerId }
+            : customerEmail
+              ? { email: customerEmail }
+              : null;
+
+      const grantEvents = new Set([
+        "subscription.active",
+        "subscription.renewed",
+        "subscription.plan_changed",
+      ]);
+      const revokeEvents = new Set([
+        "subscription.on_hold",
+        "subscription.failed",
+        "subscription.expired",
+      ]);
+
+      if (grantEvents.has(eventType)) {
+        if (!userWhere || !subscriptionId || !customerId || !plan) {
+          throw new Error(`Cannot safely grant access for ${eventType}`);
         }
-        break;
 
-      case "subscription.on_hold":
-      case "subscription.cancelled":
-      case "subscription.failed":
-      case "subscription.expired":
-        await deactivateSubscription(
-          data.subscription_id,
-          data.status ?? payload.type.replace("subscription.", ""),
-        );
-        break;
+        const result = await tx.user.updateMany({
+          where: userWhere,
+          data: {
+            plan,
+            subscriptionId,
+            customerId,
+            subscriptionProductId: data.product_id,
+            subscriptionStatus: data.status ?? "active",
+            subscriptionCurrentPeriodEnd: periodEnd,
+            subscriptionCancelAtPeriodEnd:
+              data.cancel_at_next_billing_date ?? false,
+          },
+        });
+        if (result.count !== 1) {
+          throw new Error(`No matching user for ${eventType}`);
+        }
+      } else if (eventType === "subscription.updated") {
+        if (userWhere) {
+          const activePlan = data.status === "active" ? plan : null;
+          const accessContinues =
+            data.status === "cancelled" &&
+            data.cancel_at_next_billing_date === true &&
+            periodEnd !== null &&
+            periodEnd.getTime() > Date.now();
+          const shouldRevoke =
+            data.status === "on_hold" ||
+            data.status === "failed" ||
+            data.status === "expired" ||
+            (data.status === "cancelled" && !accessContinues);
 
-      case "payment.failed":
-      case "payment.cancelled":
-        if (data.subscription_id) {
-          await db.user.updateMany({
-            where: { subscriptionId: data.subscription_id },
+          await tx.user.updateMany({
+            where: userWhere,
             data: {
-              subscriptionStatus: payload.type.replace("payment.", "payment_"),
+              ...(activePlan ? { plan: activePlan } : {}),
+              ...(shouldRevoke ? { plan: "FREE" as const } : {}),
+              ...(subscriptionId ? { subscriptionId } : {}),
+              ...(customerId ? { customerId } : {}),
+              ...(data.product_id
+                ? { subscriptionProductId: data.product_id }
+                : {}),
+              ...(data.status ? { subscriptionStatus: data.status } : {}),
+              subscriptionCurrentPeriodEnd: periodEnd,
+              subscriptionCancelAtPeriodEnd:
+                data.status === "cancelled"
+                  ? accessContinues
+                  : (data.cancel_at_next_billing_date ?? false),
             },
           });
         }
-        break;
+      } else if (eventType === "subscription.cancelled") {
+        if (userWhere) {
+          const accessContinues =
+            data.cancel_at_next_billing_date === true &&
+            periodEnd !== null &&
+            periodEnd.getTime() > Date.now();
 
-      case "refund.succeeded":
-        if (!data.is_partial && data.payment_id) {
-          const payment = await dodoPayments.payments.retrieve(data.payment_id);
-          await deactivateSubscription(payment.subscription_id, "refunded");
+          await tx.user.updateMany({
+            where: userWhere,
+            data: {
+              ...(accessContinues ? {} : { plan: "FREE" }),
+              subscriptionStatus: "cancelled",
+              subscriptionCurrentPeriodEnd: periodEnd,
+              subscriptionCancelAtPeriodEnd: accessContinues,
+            },
+          });
         }
-        break;
+      } else if (revokeEvents.has(eventType)) {
+        if (userWhere) {
+          await tx.user.updateMany({
+            where: userWhere,
+            data: {
+              plan: "FREE",
+              subscriptionStatus: data.status ?? eventType.split(".")[1],
+              subscriptionCurrentPeriodEnd: periodEnd,
+              subscriptionCancelAtPeriodEnd: false,
+            },
+          });
+        }
+      }
 
-      default:
-        break;
+      await tx.webhookEvent.create({
+        data: { id: webhookId, type: eventType },
+      });
+
+      return true;
+    });
+
+    console.info("Dodo webhook handled", { webhookId, eventType, processed });
+    return NextResponse.json({ received: true, eventType, processed });
+  } catch (error) {
+    if ((error as { code?: string }).code === "P2002") {
+      return NextResponse.json({ received: true, eventType, processed: false });
     }
 
-    return NextResponse.json(
-      { received: true, type: payload.type },
-      { status: 200 },
-    );
-  } catch (error) {
-    console.error("Webhook processing error:", error);
+    console.error("Dodo webhook processing failed", {
+      webhookId,
+      eventType,
+      error: error instanceof Error ? error.message : "Unknown error",
+    });
     return NextResponse.json(
       { error: "Webhook processing failed" },
       { status: 500 },

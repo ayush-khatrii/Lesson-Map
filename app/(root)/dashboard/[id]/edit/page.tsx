@@ -37,11 +37,13 @@ const EditCoursePage = async ({
     courseId: selectedCourse.id,
     title: selectedCourse.courseName,
     description: selectedCourse.description,
+    audience: selectedCourse.audience,
     isPublic: selectedCourse.isPublic,
     shareSlug: selectedCourse.shareSlug,
     modules: selectedCourse.Module.map((mod) => ({
       id: mod.id,
       name: mod.moduleName,
+      description: mod.description,
       lessons: mod.Lesson.sort((a, b) => (a.order || 0) - (b.order || 0)).map(
         (lesson) => ({
           id: lesson.id,

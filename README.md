@@ -113,6 +113,9 @@ it’s a **thinking tool for learning design.**
 
 ## ⚙️ Technology Stack (for Developers)
 
+For DeepSeek configuration, AI plan limits, and the full-course generation flow,
+see [AI generation setup](docs/ai-generation.md).
+
 While LessonMap focuses on simplicity for educators, it’s built with modern, scalable technologies to ensure a seamless experience:
 
 | Category               | Tech                         |

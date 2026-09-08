@@ -3,6 +3,11 @@ import { prismaAdapter } from "better-auth/adapters/prisma";
 import { db } from "@/lib/prisma";
 
 export const auth = betterAuth({
+  baseURL: {
+    allowedHosts: ["lessonmap.vercel.app", "*.vercel.app", "localhost:*"],
+    protocol: "auto",
+    fallback: "https://lessonmap.vercel.app",
+  },
   database: prismaAdapter(db, {
     provider: "postgresql",
   }),

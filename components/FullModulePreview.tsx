@@ -46,10 +46,10 @@ export default function FullModulePreview({
   }
 
   return (
-    <div className={`w-full my-10 mx-auto ${className}`}>
+    <div className={`my-6 w-full min-w-0 mx-auto sm:my-10 ${className}`}>
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-foreground flex items-center gap-2 mb-2">
-          <Library className="h-8 w-8" />
+        <h1 className="mb-2 flex items-center gap-2 text-xl font-bold text-foreground sm:text-3xl">
+          <Library className="h-6 w-6 shrink-0 sm:h-8 sm:w-8" />
           Module Outline Preview
         </h1>
         <p className="text-muted-foreground">
@@ -63,10 +63,10 @@ export default function FullModulePreview({
           .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
           .map((module, idx) => (
             <AccordionItem key={module.id} value={module.id} className="">
-              <AccordionTrigger className="py-4 hover:no-underline">
-                <div className="flex items-start gap-4 text-left w-full">
+              <AccordionTrigger className="py-3 hover:no-underline sm:py-4">
+                <div className="flex w-full min-w-0 items-start gap-2 text-left sm:gap-4">
                   <div className="flex-1 min-w-0">
-                    <h2 className="text-xl font-semibold text-foreground mb-1">{module.moduleName}</h2>
+                    <h2 className="mb-1 break-words text-sm font-semibold leading-snug text-foreground [overflow-wrap:anywhere] sm:text-xl">{module.moduleName}</h2>
                     {module.description && (
                       <p className="text-sm text-muted-foreground line-clamp-2">{module.description}</p>
                     )}
@@ -94,7 +94,7 @@ export default function FullModulePreview({
                             {lessonIdx + 1}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <h4 className="font-medium text-foreground text-sm">
+                            <h4 className="break-words text-xs font-medium leading-snug text-foreground [overflow-wrap:anywhere] sm:text-sm">
                               {lesson.lessonName || `Lesson ${lessonIdx + 1}`}
                             </h4>
                             {lesson.description && (

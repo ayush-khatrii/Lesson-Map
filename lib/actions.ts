@@ -5,6 +5,7 @@ import {
   createLessonsBulkSchema,
   createModulesBulkSchema,
   updateCourseSchema,
+  updateProfileSchema,
 } from "@/lib/validation";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/prisma";
@@ -12,6 +13,9 @@ import { headers } from "next/headers";
 import { revalidatePath, updateTag } from "next/cache";
 import { userCoursesTag } from "@/lib/course-cache";
 import z from "zod";
+import { lockCourseOwner } from "@/lib/course-access";
+import { effectiveAiPlan } from "@/lib/ai/schema";
+import { COURSE_LIMITS } from "@/lib/plans";
 
 async function createCourseAction(data: unknown) {
   const session = await auth.api.getSession({
@@ -23,25 +27,6 @@ async function createCourseAction(data: unknown) {
 
   const userId = session.session.userId;
 
-  // Fetch user plan and current course count
-  const user = await db.user.findUnique({
-    where: { id: userId },
-    select: { plan: true },
-  });
-
-  const courseCount = await db.course.count({
-    where: { userId },
-  });
-
-  // Limit check
-  if (user?.plan === "FREE" && courseCount >= 3) {
-    return {
-      success: false,
-      limitReached: true,
-      message: "You've reached the limit of 3 courses on the Free plan. Please upgrade to create more!",
-    };
-  }
-
   const result = createCourseSchema.safeParse(data);
   if (!result.success) {
     const errors: Record<string, string> = {};
@@ -52,18 +37,29 @@ async function createCourseAction(data: unknown) {
     return { success: false, errors };
   }
 
-  const course = await db.course.create({
-    data: {
-      courseName: result.data.courseName,
-      description: result.data.description,
-      userId: userId,
-    },
+  const creation = await db.$transaction(async (tx) => {
+    const user = await lockCourseOwner(tx, userId);
+    if (!user) throw new Error("Unauthorized");
+    const plan = effectiveAiPlan(user);
+    const courseLimit = COURSE_LIMITS[plan];
+    const count = await tx.course.count({ where: { userId } });
+    if (count >= courseLimit) return { course: null, courseLimit };
+    const course = await tx.course.create({ data: { ...result.data, userId } });
+    return { course, courseLimit };
   });
+
+  if (!creation.course) {
+    return {
+      success: false,
+      limitReached: true,
+      message: `You've reached your plan limit of ${creation.courseLimit} courses.`,
+    };
+  }
 
   updateTag(userCoursesTag(userId));
   revalidatePath("/dashboard/create/new");
 
-  return { success: true, data: course };
+  return { success: true, data: creation.course };
 }
 
 // createModulesAction
@@ -101,18 +97,14 @@ async function createModulesAction(data: unknown) {
       throw new Error("Invalid course. You do not own this course.");
     }
 
-    const created = await db.$transaction(
-      modules.map((m) =>
-        db.module.create({
-          data: {
-            moduleName: m.moduleName,
-            description: m.description,
-            order: m.order,
-            courseId: courseId,
-          },
-        }),
-      ),
-    );
+    const created = await db.module.createManyAndReturn({
+      data: modules.map((m) => ({
+        moduleName: m.moduleName,
+        description: m.description,
+        order: m.order,
+        courseId: courseId,
+      })),
+    });
 
     updateTag(userCoursesTag(userId));
     revalidatePath("/dashboard/create/new");
@@ -120,7 +112,6 @@ async function createModulesAction(data: unknown) {
 
     return {
       success: true,
-      message: "Modules created successfully!",
       data: created,
     };
   } catch (error) {
@@ -175,25 +166,19 @@ async function createLessonsAction(data: unknown) {
       throw new Error("Module not found or not owned by user.");
     }
 
-    const createdLessons = await db.$transaction(
-      lessons.map((l) =>
-        db.lesson.create({
-          data: {
-            moduleId,
-            lessonName: l.lessonName,
-            order: l.order,
-          },
-        }),
-      ),
-    );
+    const created = await db.lesson.createManyAndReturn({
+      data: lessons.map((l) => ({
+        moduleId,
+        lessonName: l.lessonName,
+        order: l.order,
+      })),
+    });
 
-    updateTag(userCoursesTag(userId));
     revalidatePath("/dashboard/create/new");
     revalidatePath("/");
     return {
       success: true,
-      message: "Lessons created successfully!",
-      data: createdLessons,
+      data: created,
     };
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -235,8 +220,8 @@ async function reorderModulesAction(courseId: string, moduleIds: string[]) {
         db.module.update({
           where: { id },
           data: { order: index },
-        }),
-      ),
+        })
+      )
     );
 
     updateTag(userCoursesTag(userId));
@@ -253,49 +238,51 @@ async function reorderModulesAction(courseId: string, moduleIds: string[]) {
   }
 }
 
-async function reorderLessonsAction(moduleId: string, lessonIds: string[]) {
+// updateProfileAction
+async function updateProfileAction(data: unknown) {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
-    const userId = session?.session.userId;
+    const userId = session?.session?.userId;
 
     if (!userId) {
       throw new Error("Unauthorized: Please log in to continue.");
     }
 
-    const module = await db.module.findFirst({
-      where: { id: moduleId, course: { userId } },
-    });
-
-    if (!module) {
-      throw new Error("Module not found or not owned by user.");
+    const result = updateProfileSchema.safeParse(data);
+    if (!result.success) {
+      const errors: Record<string, string> = {};
+      result.error.issues.forEach((issue) => {
+        const field = issue.path.join(".");
+        errors[field] = issue.message;
+      });
+      return { success: false, errors };
     }
 
-    await db.$transaction(
-      lessonIds.map((id, index) =>
-        db.lesson.update({
-          where: { id },
-          data: { order: index },
-        }),
-      ),
-    );
+    // Update the user via better-auth so the session cookie stays in sync
+    await auth.api.updateUser({
+      headers: await headers(),
+      body: {
+        name: result.data.name,
+      },
+    });
 
-    updateTag(userCoursesTag(userId));
-    revalidatePath("/dashboard/create/new");
-    revalidatePath("/");
+    revalidatePath("/settings");
+    revalidatePath("/dashboard");
 
-    return { success: true, message: "Lessons reordered successfully!" };
+    return { success: true, message: "Profile updated successfully!" };
   } catch (error) {
     return {
       success: false,
-      error: (error as Error).message || "Failed to reorder lessons.",
+      error: (error as Error).message || "Failed to update profile.",
     };
   }
 }
 
+// updateCourseAction
 async function updateCourseAction(courseId: string, data: unknown) {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
-    const userId = session?.session.userId;
+    const userId = session?.session?.userId;
 
     if (!userId) {
       throw new Error("Unauthorized: Please log in to continue.");
@@ -328,9 +315,10 @@ async function updateCourseAction(courseId: string, data: unknown) {
     });
 
     updateTag(userCoursesTag(userId));
-    revalidatePath("/dashboard/create/new");
+    revalidatePath(`/dashboard/${courseId}/edit`);
+    updateTag(userCoursesTag(userId));
     revalidatePath("/dashboard");
-    revalidatePath("/");
+    revalidatePath("/settings");
 
     return { success: true, data: updated };
   } catch (error) {
@@ -341,43 +329,73 @@ async function updateCourseAction(courseId: string, data: unknown) {
   }
 }
 
+// deleteCourseAction
 async function deleteCourseAction(courseId: string) {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
-    const userId = session?.session.userId;
+    const userId = session?.session?.userId;
 
     if (!userId) {
       throw new Error("Unauthorized: Please log in to continue.");
     }
 
-    const course = await db.course.findFirst({
+    const deleted = await db.course.deleteMany({
       where: { id: courseId, userId },
-      include: { Module: { include: { Lesson: true } } },
     });
 
-    if (!course) {
+    if (deleted.count === 0) {
       throw new Error("Course not found or not owned by user.");
     }
 
-    // Delete in order: lessons → modules → course
-    await db.$transaction([
-      ...course.Module.flatMap((m) =>
-        m.Lesson.map((l) => db.lesson.delete({ where: { id: l.id } })),
-      ),
-      ...course.Module.map((m) => db.module.delete({ where: { id: m.id } })),
-      db.course.delete({ where: { id: courseId } }),
-    ]);
-
-    updateTag(userCoursesTag(userId));
-    revalidatePath("/dashboard/create/new");
     revalidatePath("/dashboard");
-    revalidatePath("/");
+    revalidatePath("/settings");
 
-    return { success: true, message: "Course deleted permanently." };
+    return { success: true, message: "Course deleted successfully!" };
   } catch (error) {
     return {
       success: false,
       error: (error as Error).message || "Failed to delete course.",
+    };
+  }
+}
+
+// reorderLessonsAction
+async function reorderLessonsAction(moduleId: string, lessonIds: string[]) {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() });
+    const userId = session?.session?.userId;
+
+    if (!userId) {
+      throw new Error("Unauthorized: Please log in to continue.");
+    }
+
+    const module = await db.module.findFirst({
+      where: { id: moduleId, course: { userId } },
+    });
+
+    if (!module) {
+      throw new Error("Module not found or not owned by user.");
+    }
+
+    // Update lesson orders in a transaction
+    await db.$transaction(
+      lessonIds.map((id, index) =>
+        db.lesson.update({
+          where: { id },
+          data: { order: index },
+        })
+      )
+    );
+
+    updateTag(userCoursesTag(userId));
+    revalidatePath(`/dashboard/${module.courseId}/edit`);
+    revalidatePath("/dashboard");
+
+    return { success: true, message: "Lessons reordered successfully!" };
+  } catch (error) {
+    return {
+      success: false,
+      error: (error as Error).message || "Failed to reorder lessons.",
     };
   }
 }
@@ -387,7 +405,8 @@ export {
   createModulesAction,
   createLessonsAction,
   reorderModulesAction,
-  reorderLessonsAction,
+  updateProfileAction,
   updateCourseAction,
   deleteCourseAction,
+  reorderLessonsAction,
 };

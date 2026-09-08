@@ -172,15 +172,15 @@ function CourseAccordionItem({
       className="group overflow-hidden rounded-2xl border border-border transition-all duration-300 data-[state=open]:border-primary/30"
       style={{ animationDelay: `${index * 60}ms` }}
     >
-      <AccordionTrigger className="w-full px-6 py-5 text-left transition-colors hover:bg-accent/50 hover:no-underline [&>svg]:hidden [&[data-state=open]]:bg-primary/[0.03]">
-        <div className="flex items-center gap-4 w-full">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-border bg-muted text-sm font-bold text-muted-foreground">
+      <AccordionTrigger className="w-full px-3 py-3 text-left transition-colors hover:bg-accent/50 hover:no-underline sm:px-6 sm:py-5 [&>svg]:hidden [&[data-state=open]]:bg-primary/[0.03]">
+        <div className="flex w-full min-w-0 items-start gap-2.5 sm:items-center sm:gap-4">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border bg-muted text-xs font-bold text-muted-foreground sm:h-11 sm:w-11 sm:rounded-xl sm:text-sm">
             {course.courseName.charAt(0).toUpperCase()}
           </div>
 
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <h2 className="max-w-xs truncate text-base font-semibold leading-snug text-foreground">
+              <h2 className="break-words text-sm font-semibold leading-snug text-foreground [overflow-wrap:anywhere] sm:text-base">
                 {course.courseName}
               </h2>
               {course.Module.length === 0 && (
@@ -306,7 +306,13 @@ function CourseAccordionItem({
             className="h-8 gap-1.5 text-xs"
             asChild
           >
-            <Link href={`/outline/${course.id}`}>
+            <Link
+              href={`/p/${
+                course.isPublic && course.shareSlug
+                  ? course.shareSlug
+                  : course.id
+              }`}
+            >
               <Eye className="w-3.5 h-3.5" /> View Outline
             </Link>
           </Button>
@@ -316,7 +322,7 @@ function CourseAccordionItem({
             className="h-8 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
             asChild
           >
-            <Link href={`/dashboard/${course.id}/edit`}>
+            <Link href="/dashboard/create/new#ai-course">
               <Sparkles className="w-3.5 h-3.5 text-primary" /> AI Assist
             </Link>
           </Button>

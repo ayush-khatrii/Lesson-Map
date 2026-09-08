@@ -1,6 +1,7 @@
 "use client";
 import React, { useState } from "react";
-import { Menu, LogOut, User, Settings } from "lucide-react";
+import { motion } from "framer-motion";
+import { Menu, LogOut, User, Settings, Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -24,21 +25,16 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useSession, signOut } from "@/lib/auth-client";
 import ThemeToggle from "../ThemeToggle";
-import Image from "next/image";
 
 const NavbarItem = ({ item, href }: { item: string; href: string }) => {
   const pathName = usePathname();
-  const isActive =
-    href === "/"
-      ? pathName === "/"
-      : pathName === href || pathName.startsWith(`${href}/`);
 
   return (
     <Link
       href={href}
       className={cn(
         "relative text-sm font-medium transition-colors hover:text-foreground/80",
-        isActive ? "text-foreground" : "text-foreground/60",
+        pathName === href ? "text-foreground" : "text-foreground/60",
       )}
     >
       {item}
@@ -112,7 +108,7 @@ const UserProfileDropdown = ({
         <DropdownMenuItem asChild>
           <Link href="/settings" className="cursor-pointer">
             <Settings className="mr-2 h-4 w-4" />
-            <span>Settings</span>
+            <span>Profile</span>
           </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
@@ -174,7 +170,7 @@ const MobileUserSection = ({
         <Link href="/settings">
           <Button variant="ghost" className="w-full justify-start">
             <Settings className="mr-2 h-4 w-4" />
-            Settings
+            Profile
           </Button>
         </Link>
       </SheetClose>
@@ -218,25 +214,14 @@ export default function Navbar({ className }: { className?: string }) {
   return (
     <nav
       className={cn(
-        "fixed top-0 z-[999] border-b inset-x-0 shadow-sm bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60",
+        "fixed inset-x-0 top-0 z-40 border-b border-border/70 bg-background/90 shadow-sm backdrop-blur-xl md:px-5",
         className,
       )}
     >
-      <nav className="mx-auto flex h-14 w-full max-w-7xl items-center px-4 sm:px-6 lg:px-8">
-        <div className="flex shrink-0">
-          <Link href="/" aria-label="LessonMap home" className="group inline-flex shrink-0 items-center gap-2 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background">
-            <span className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-lg" aria-hidden="true">
-              <Image
-                src="/logo.png"
-                alt=""
-                width={80}
-                height={80}
-                className="size-20 max-w-none shrink-0 translate-y-1 object-contain transition-transform duration-200 motion-safe:group-hover:scale-[1.03]"
-              />
-            </span>
-            <span className="whitespace-nowrap text-xl font-semibold leading-none tracking-tight">
-              Lesson<span className="text-orange-500">Map</span>
-            </span>
+      <nav className="container mx-auto flex h-16 max-w-screen-2xl items-center px-4 py-2">
+        <div className="mr-4 flex">
+          <Link href="/" className="flex items-center">
+            <span className="font-bold text-xl">LessonMap</span>
           </Link>
         </div>
 
@@ -251,24 +236,14 @@ export default function Navbar({ className }: { className?: string }) {
             {!isPending && (
               <>
                 {session?.user ? (
-                  <>
-                    <Button size="sm" variant="outline" asChild>
-                      <Link href="/dashboard">Dashboard</Link>
-                    </Button>
-                    <UserProfileDropdown
-                      user={session.user}
-                      onSignOut={handleSignOut}
-                    />
-                  </>
+                  <UserProfileDropdown
+                    user={session.user}
+                    onSignOut={handleSignOut}
+                  />
                 ) : (
-                  <>
-                    <Button size="sm" variant="ghost" asChild>
-                      <Link href="/sign-in">Log in</Link>
-                    </Button>
-                    <Button size="sm" asChild>
-                      <Link href="/sign-in">Get Started</Link>
-                    </Button>
-                  </>
+                  <Button size="sm" asChild>
+                    <Link href="/sign-in">Get Started</Link>
+                  </Button>
                 )}
               </>
             )}
@@ -285,7 +260,7 @@ export default function Navbar({ className }: { className?: string }) {
               </SheetTrigger>
               <SheetContent
                 side="right"
-                className="w-[300px] px-3 py-4 sm:w-[400px] flex flex-col h-full"
+                className="h-dvh w-[min(22rem,calc(100vw-1rem))] overflow-y-auto px-3 py-4"
               >
                 <SheetHeader className="mb-6">
                   <SheetTitle className="text-2xl font-bold text-left">
@@ -305,30 +280,16 @@ export default function Navbar({ className }: { className?: string }) {
                 {!isPending && (
                   <div className="mt-auto pt-6 border-t">
                     {session?.user ? (
-                      <>
-                        <SheetClose asChild>
-                          <Button className="w-full mb-3" asChild>
-                            <Link href="/dashboard">Go to Dashboard</Link>
-                          </Button>
-                        </SheetClose>
-                        <MobileUserSection
-                          user={session.user}
-                          onSignOut={handleSignOut}
-                        />
-                      </>
+                      <MobileUserSection
+                        user={session.user}
+                        onSignOut={handleSignOut}
+                      />
                     ) : (
-                      <div className="space-y-2">
-                        <SheetClose asChild>
-                          <Button variant="outline" className="w-full" asChild>
-                            <Link href="/sign-in">Log in</Link>
-                          </Button>
-                        </SheetClose>
-                        <SheetClose asChild>
-                          <Button className="w-full" asChild>
-                            <Link href="/sign-in">Get Started</Link>
-                          </Button>
-                        </SheetClose>
-                      </div>
+                      <SheetClose asChild>
+                        <Button className="w-full" asChild>
+                          <Link href="/sign-in">Get Started</Link>
+                        </Button>
+                      </SheetClose>
                     )}
                   </div>
                 )}

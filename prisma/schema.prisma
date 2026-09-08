@@ -14,17 +14,28 @@ model User {
   emailVerified Boolean   @default(false)
   image         String?
   createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @default(now()) @updatedAt
   Course        Course[]
   accounts      Account[]
   sessions      Session[]
+  aiGenerations AiGeneration[]
 
-  plan               Plan    @default(FREE)
-  subscriptionId     String? @unique
-  customerId         String? @unique
-  subscriptionStatus String?
+  plan                          Plan      @default(FREE)
+  subscriptionId                String?   @unique
+  customerId                    String?   @unique
+  subscriptionStatus            String?
+  subscriptionProductId         String?
+  subscriptionCurrentPeriodEnd  DateTime?
+  subscriptionCancelAtPeriodEnd Boolean   @default(false)
 
   @@map("user")
+}
+
+model WebhookEvent {
+  id          String   @id
+  type        String
+  processedAt DateTime @default(now())
+
+  @@index([type])
 }
 
 model Example {
@@ -51,14 +62,38 @@ model Course {
   id          String   @id @default(cuid())
   courseName  String
   description String
-  isPublished Boolean  @default(false)
+  audience    String?
   isPublic    Boolean  @default(false)
+  isPublished Boolean  @default(false)
   shareSlug   String?  @unique
   userId      String
   user        User     @relation(fields: [userId], references: [id])
   Module      Module[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @default(now()) @updatedAt
+}
+
+// No prompt or generated text is stored here. Attempts include provider failures.
+model AiGeneration {
+  id               String   @id @default(cuid())
+  userId           String
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  requestId        String
+  inputHash        String
+  status           AiGenerationStatus @default(PENDING)
+  courseId         String?
+  promptTokens     Int      @default(0)
+  completionTokens Int      @default(0)
+  createdAt        DateTime @default(now())
+
+  @@unique([userId, requestId])
+  @@index([userId, createdAt])
+}
+
+enum AiGenerationStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
 }
 
 model Module {
@@ -74,14 +109,14 @@ model Module {
 }
 
 model Lesson {
-  id         String   @id @default(cuid())
+  id         String     @id @default(cuid())
   lessonName String
   order      Int
   moduleId   String
-  module     Module   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  module     Module     @relation(fields: [moduleId], references: [id], onDelete: Cascade)
   resources  Resource[]
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @default(now()) @updatedAt
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @default(now()) @updatedAt
 }
 
 model Resource {

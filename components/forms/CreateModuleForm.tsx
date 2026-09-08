@@ -211,7 +211,7 @@ export default function CreateModuleForm({ courses }: { courses: Course[] }) {
       const res = await createModulesAction(payload);
 
       if (res.success) {
-        toast.success(res.message);
+        toast.success("Modules created successfully!");
         setLoading(false);
       } else {
         console.error(res);

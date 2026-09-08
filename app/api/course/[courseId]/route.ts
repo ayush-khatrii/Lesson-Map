@@ -5,7 +5,6 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { updateCourseSchema } from "@/lib/validation";
-import { generateUniqueShareSlug } from "@/lib/slug";
 
 interface Context {
   params: Promise<{ courseId: string }>;
@@ -82,32 +81,21 @@ export async function PUT(req: Request, context: Context) {
     }
 
     const updateData: {
-      courseName: string;
-      description: string;
-      isPublic?: boolean;
-      shareSlug?: string | null;
-    } = {
-      courseName: result.data.courseName,
-      description: result.data.description,
-    };
+      courseName?: string;
+      description?: string;
+    } = {};
 
-    if (result.data.isPublic !== undefined) {
-      updateData.isPublic = result.data.isPublic;
-      if (result.data.isPublic) {
-        // Generate a share slug if making public and no slug exists yet
-        const existing = await db.course.findFirst({
-          where: { id: courseId, userId },
-          select: { shareSlug: true },
-        });
-        if (!existing?.shareSlug) {
-          updateData.shareSlug = await generateUniqueShareSlug(
-            result.data.courseName,
-            courseId,
-          );
-        }
-      } else {
-        updateData.shareSlug = null;
-      }
+    if (result.data.courseName !== undefined) {
+      updateData.courseName = result.data.courseName;
+    }
+    if (result.data.description !== undefined) {
+      updateData.description = result.data.description;
+    }
+    if (Object.keys(updateData).length === 0) {
+      return NextResponse.json(
+        { error: "No fields to update" },
+        { status: 400 },
+      );
     }
 
     const updated = await db.course.update({

@@ -69,7 +69,10 @@ function PreviewDialog({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-lg rounded-2xl p-0 overflow-hidden">
+      <DialogContent
+        showCloseButton={false}
+        className="flex max-h-[calc(100dvh-1rem)] max-w-lg flex-col overflow-hidden rounded-2xl p-0"
+      >
         {/* Colored header band */}
         <div
           className="px-6 pt-6 pb-5"
@@ -111,11 +114,11 @@ function PreviewDialog({
         </div>
 
         {/* Outline list */}
-        <div className="px-6 py-5">
+        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-5">
           <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3">
             Course Outline
           </p>
-          <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+          <div className="space-y-2 pr-1">
             {course.outline?.map((topic, i) => (
               <div
                 key={i}
@@ -134,7 +137,7 @@ function PreviewDialog({
         </div>
 
         <Separator />
-        <div className="px-6 py-4 flex gap-2 justify-end">
+        <div className="flex flex-col-reverse gap-2 px-4 py-4 sm:flex-row sm:justify-end sm:px-6">
           <DialogClose asChild>
             <Button variant="outline" size="sm">Close</Button>
           </DialogClose>

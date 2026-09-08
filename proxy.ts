@@ -5,7 +5,7 @@ import { getSessionCookie } from "better-auth/cookies";
 // ─── Route Definitions ──────────────────────────────────────────────────────
 
 // Pages that require authentication — unauthenticated users get redirected to /sign-in
-const PROTECTED_PAGES = ["/dashboard", "/outline"];
+const PROTECTED_PAGES = ["/dashboard", "/outline", "/settings"];
 
 // Auth pages — authenticated users get redirected to /dashboard
 const AUTH_PAGES = ["/sign-in", "/sign-up"];
