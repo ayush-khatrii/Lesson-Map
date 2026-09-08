@@ -77,7 +77,7 @@ function SortableModuleItem({ module, index }: SortableModuleItemProps) {
       </div>
 
       <div className="flex-1 min-w-0">
-        <h3 className="font-semibold text-foreground mb-1">
+        <h3 className="mb-1 break-words text-sm font-semibold leading-snug text-foreground [overflow-wrap:anywhere] sm:text-base">
           {module.moduleName}
         </h3>
         <p className="text-sm text-muted-foreground line-clamp-1">

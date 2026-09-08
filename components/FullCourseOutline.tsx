@@ -100,7 +100,7 @@ export default function FullCourseOutline({
                   </div>
 
                   <div className="flex-1 min-w-0 text-left">
-                    <p className="text-sm font-semibold leading-snug truncate">
+                    <p className="break-words text-xs font-semibold leading-snug [overflow-wrap:anywhere] sm:text-sm">
                       {course.courseName}
                     </p>
                     <div className="flex items-center gap-2 mt-0.5">
@@ -149,7 +149,7 @@ export default function FullCourseOutline({
                                 {idx + 1}
                               </div>
                               <div className="flex-1 min-w-0 text-left">
-                                <p className="text-xs font-semibold leading-snug truncate">
+                                <p className="break-words text-[11px] font-semibold leading-snug [overflow-wrap:anywhere] sm:text-xs">
                                   {module.moduleName}
                                 </p>
                                 {module.description && (
@@ -181,7 +181,7 @@ export default function FullCourseOutline({
                                     <div className="flex-shrink-0 w-4 h-4 rounded border border-border flex items-center justify-center text-[9px] font-semibold text-muted-foreground">
                                       {li + 1}
                                     </div>
-                                    <p className="text-xs font-medium leading-snug flex-1 truncate">
+                                    <p className="min-w-0 flex-1 break-words text-[11px] font-medium leading-snug [overflow-wrap:anywhere] sm:text-xs">
                                       {lesson.lessonName || `Lesson ${li + 1}`}
                                     </p>
                                   </div>

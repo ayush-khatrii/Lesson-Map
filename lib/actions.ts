@@ -14,6 +14,7 @@ import { revalidatePath } from "next/cache";
 import z from "zod";
 import { lockCourseOwner } from "@/lib/course-access";
 import { effectiveAiPlan } from "@/lib/ai/schema";
+import { COURSE_LIMITS } from "@/lib/plans";
 
 async function createCourseAction(data: unknown) {
   const session = await auth.api.getSession({
@@ -35,25 +36,28 @@ async function createCourseAction(data: unknown) {
     return { success: false, errors };
   }
 
-  const course = await db.$transaction(async (tx) => {
+  const creation = await db.$transaction(async (tx) => {
     const user = await lockCourseOwner(tx, userId);
     if (!user) throw new Error("Unauthorized");
+    const plan = effectiveAiPlan(user);
+    const courseLimit = COURSE_LIMITS[plan];
     const count = await tx.course.count({ where: { userId } });
-    if (effectiveAiPlan(user) === "FREE" && count >= 3) return null;
-    return tx.course.create({ data: { ...result.data, userId } });
+    if (count >= courseLimit) return { course: null, courseLimit };
+    const course = await tx.course.create({ data: { ...result.data, userId } });
+    return { course, courseLimit };
   });
 
-  if (!course) {
+  if (!creation.course) {
     return {
       success: false,
       limitReached: true,
-      message: "You've reached the limit of 3 courses on the Free plan. Please upgrade to create more!",
+      message: `You've reached your plan limit of ${creation.courseLimit} courses.`,
     };
   }
 
   revalidatePath("/dashboard/create/new");
 
-  return { success: true, data: course };
+  return { success: true, data: creation.course };
 }
 
 // createModulesAction

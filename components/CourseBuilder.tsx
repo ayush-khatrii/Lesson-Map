@@ -1010,14 +1010,14 @@ function OutlineTab({
                   value={module.id}
                   className="min-w-0 overflow-hidden rounded-2xl border"
                 >
-                  <AccordionTrigger className="group px-3 py-3.5 transition-colors hover:bg-muted/30 hover:no-underline sm:px-4 [&>svg]:hidden">
-                    <div className="flex min-w-0 w-full items-center gap-2 sm:gap-3">
+                  <AccordionTrigger className="group px-2.5 py-3 transition-colors hover:bg-muted/30 hover:no-underline sm:px-4 sm:py-3.5 [&>svg]:hidden">
+                    <div className="flex min-w-0 w-full items-start gap-1.5 sm:items-center sm:gap-3">
                       <DragHandle>
                         <GripVertical className="w-4 h-4 text-muted-foreground/50 flex-shrink-0" />
                       </DragHandle>
                       {/* ── Module index circular badge ── */}
                       <IndexBadge index={moduleIndex + 1} />
-                      <p className="text-sm font-semibold flex-1 text-left truncate">
+                      <p className="min-w-0 flex-1 break-words text-left text-xs font-semibold leading-snug [overflow-wrap:anywhere] sm:text-sm">
                         {module.name}
                       </p>
                       <Badge
@@ -1363,17 +1363,17 @@ function ResourcesTab({
                 value={module.id}
                 className="border rounded-2xl overflow-hidden"
               >
-                <AccordionTrigger className="px-4 py-3.5 hover:no-underline hover:bg-muted/30 transition-colors [&>svg]:hidden group">
-                  <div className="flex items-center gap-2.5 w-full">
+                <AccordionTrigger className="group px-2.5 py-3 hover:bg-muted/30 hover:no-underline sm:px-4 sm:py-3.5 [&>svg]:hidden">
+                  <div className="flex w-full min-w-0 items-start gap-2 sm:items-center sm:gap-2.5">
                     <div className="flex-shrink-0 w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
                       <Paperclip className="w-3.5 h-3.5 text-primary" />
                     </div>
-                    <p className="text-sm font-semibold flex-1 text-left truncate">
+                    <p className="min-w-0 flex-1 break-words text-left text-xs font-semibold leading-snug [overflow-wrap:anywhere] sm:text-sm">
                       {module.name}
                     </p>
                     <Badge
                       variant="secondary"
-                      className="text-[10px] font-medium flex-shrink-0"
+                      className="hidden flex-shrink-0 text-[10px] font-medium sm:inline-flex"
                     >
                       {moduleResources.length} resources
                     </Badge>
@@ -1678,7 +1678,7 @@ function PreviewDialog({
       </DialogTrigger>
       <DialogContent className="max-h-[calc(100dvh-1rem)] sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle className="text-xl">
+          <DialogTitle className="break-words pr-6 text-base leading-snug [overflow-wrap:anywhere] sm:text-xl">
             {title || "Untitled course"}
           </DialogTitle>
           <DialogDescription>{description}</DialogDescription>
@@ -1698,7 +1698,7 @@ function PreviewDialog({
         <div className="space-y-4">
           {modules.map((module, mi) => (
             <div key={module.id}>
-              <p className="text-sm font-semibold mb-2">{module.name}</p>
+              <p className="mb-2 break-words text-xs font-semibold [overflow-wrap:anywhere] sm:text-sm">{module.name}</p>
               <div className="space-y-1.5 pl-3 border-l">
                 {module.lessons.map((lesson, li) => (
                   <div key={lesson.id} className="text-xs">
@@ -1994,7 +1994,7 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
                     {initialData ? "Edit Course" : "Course Builder"}
                   </span>
                 </div>
-                <h1 className="text-xl font-bold leading-tight truncate">
+                <h1 className="break-words text-base font-bold leading-tight [overflow-wrap:anywhere] sm:text-xl">
                   {courseId ? title || "Untitled Course" : "New Course"}
                 </h1>
               </div>

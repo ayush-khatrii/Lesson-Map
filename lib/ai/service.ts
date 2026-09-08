@@ -4,12 +4,16 @@ import { lockCourseOwner } from "@/lib/course-access";
 import { AI_LIMITS, effectiveAiPlan, monthWindow, type AiPlan, type GenerateCourseInput } from "./schema";
 import { AiError } from "./http";
 import { generateCourse } from "./deepseek";
+import { COURSE_LIMITS } from "@/lib/plans";
 
 const REQUEST_LIFETIME_MS = 120_000;
 
 export function assertPlanAllows(plan: AiPlan, input: GenerateCourseInput) {
   const limits = AI_LIMITS[plan];
-  if (input.moduleCount > limits.modules || input.lessonsPerModule > limits.lessonsPerModule) {
+  if (
+    (limits.modules !== null && input.moduleCount > limits.modules) ||
+    (limits.lessonsPerModule !== null && input.lessonsPerModule > limits.lessonsPerModule)
+  ) {
     throw new AiError(403, "Free AI includes one module and one lesson. Upgrade to Creator for a full course.");
   }
 }
@@ -65,8 +69,9 @@ export async function createAiCourse(userId: string, input: GenerateCourseInput,
     if (!process.env.DEEPSEEK_API_KEY?.trim()) {
       throw new AiError(503, "AI generation is not configured yet.");
     }
-    if (plan === "FREE" && await tx.course.count({ where: { userId } }) >= 3) {
-      throw new AiError(403, "You have reached the Free limit of 3 courses. Upgrade to create more.");
+    const courseLimit = COURSE_LIMITS[plan];
+    if (await tx.course.count({ where: { userId } }) >= courseLimit) {
+      throw new AiError(403, `You have reached your plan limit of ${courseLimit} courses.`);
     }
     const now = new Date();
     const latest = await tx.aiGeneration.findFirst({
@@ -106,8 +111,9 @@ export async function createAiCourse(userId: string, input: GenerateCourseInput,
       if (!user) throw new AiError(401, "Please sign in again.");
       const plan = effectiveAiPlan(user);
       assertPlanAllows(plan, input);
-      if (plan === "FREE" && await tx.course.count({ where: { userId } }) >= 3) {
-        throw new AiError(403, "Your Free course slots are full. No AI course was saved.");
+      const courseLimit = COURSE_LIMITS[plan];
+      if (await tx.course.count({ where: { userId } }) >= courseLimit) {
+        throw new AiError(403, `Your ${courseLimit} course slots are full. No AI course was saved.`);
       }
       const generation = await tx.aiGeneration.findUniqueOrThrow({ where: { id: reservation.generationId } });
       if (generation.status !== "PENDING" || generation.createdAt.getTime() + REQUEST_LIFETIME_MS <= Date.now()) {

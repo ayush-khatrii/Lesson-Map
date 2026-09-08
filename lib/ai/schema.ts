@@ -1,11 +1,20 @@
 import { z } from "zod";
 
-// Shared with the UI. The server always checks these limits again.
+type AiLimits = {
+  modules: number | null;
+  lessonsPerModule: number | null;
+  monthlyAttempts: number;
+};
+
+// null means there is no plan-level module or lesson limit. The server still
+// applies a per-request safety limit so one AI response remains reliable.
 export const AI_LIMITS = {
   FREE: { modules: 1, lessonsPerModule: 1, monthlyAttempts: 5 },
-  CREATOR: { modules: 8, lessonsPerModule: 6, monthlyAttempts: 200 },
-  PROFESSIONAL: { modules: 8, lessonsPerModule: 6, monthlyAttempts: 200 },
-} as const;
+  CREATOR: { modules: null, lessonsPerModule: null, monthlyAttempts: 200 },
+  PROFESSIONAL: { modules: null, lessonsPerModule: null, monthlyAttempts: 200 },
+} as const satisfies Record<string, AiLimits>;
+
+export const MAX_AI_OUTLINE_ITEMS = 100;
 
 export type AiPlan = keyof typeof AI_LIMITS;
 
@@ -35,8 +44,17 @@ export const generateCourseSchema = z.strictObject({
   type: z.literal("course"),
   topic: z.string().trim().min(3).max(500),
   audience: z.string().trim().min(3).max(200),
-  moduleCount: z.number().int().min(1).max(8),
-  lessonsPerModule: z.number().int().min(1).max(6),
+  moduleCount: z.number().int().min(1).max(MAX_AI_OUTLINE_ITEMS),
+  lessonsPerModule: z.number().int().min(1).max(MAX_AI_OUTLINE_ITEMS),
+}).superRefine((input, context) => {
+  const outlineItems = input.moduleCount * (input.lessonsPerModule + 1);
+  if (outlineItems > MAX_AI_OUTLINE_ITEMS) {
+    context.addIssue({
+      code: "custom",
+      path: ["lessonsPerModule"],
+      message: `One AI request can generate up to ${MAX_AI_OUTLINE_ITEMS} total modules and lessons. You can add unlimited items manually afterward.`,
+    });
+  }
 });
 
 export type GenerateCourseInput = z.infer<typeof generateCourseSchema>;

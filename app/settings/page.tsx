@@ -210,7 +210,7 @@ const SettingsPage = async () => {
                   >
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="font-semibold truncate">
+                        <h3 className="min-w-0 break-words text-sm font-semibold leading-snug [overflow-wrap:anywhere] sm:text-base">
                           {course.courseName}
                         </h3>
                         {course.isPublic ? (

@@ -7,7 +7,7 @@ import { z } from "zod";
 import { Loader2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { useSession } from "@/lib/auth-client";
-import { generateCourseSchema, type AiPlan } from "@/lib/ai/schema";
+import { generateCourseSchema, MAX_AI_OUTLINE_ITEMS, type AiPlan } from "@/lib/ai/schema";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,7 +17,7 @@ import { Badge } from "@/components/ui/badge";
 
 type Allowance = {
   plan: AiPlan;
-  limits: { modules: number; lessonsPerModule: number; monthlyAttempts: number };
+  limits: { modules: number | null; lessonsPerModule: number | null; monthlyAttempts: number };
   remaining: number;
   resetsAt: string;
   enabled: boolean;
@@ -50,8 +50,12 @@ export function AiCourseGenerator({ disabled, onGeneratingChange }: {
       if (!response.ok) throw new Error(data.error || "Could not check AI availability.");
       const next = data as Allowance;
       setAllowance(next);
-      setModuleCount((value) => String(Math.min(Number(value) || 1, next.limits.modules)));
-      setLessonsPerModule((value) => String(Math.min(Number(value) || 1, next.limits.lessonsPerModule)));
+      setModuleCount((value) => String(next.limits.modules === null
+        ? Number(value) || 1
+        : Math.min(Number(value) || 1, next.limits.modules)));
+      setLessonsPerModule((value) => String(next.limits.lessonsPerModule === null
+        ? Number(value) || 1
+        : Math.min(Number(value) || 1, next.limits.lessonsPerModule)));
     } catch (error) {
       if (!signal?.aborted) {
         setAllowance(null);
@@ -161,17 +165,17 @@ export function AiCourseGenerator({ disabled, onGeneratingChange }: {
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-1.5">
                   <Label htmlFor="ai-modules">Number of modules</Label>
-                  <Input id="ai-modules" type="number" required min={1} max={allowance?.limits.modules ?? 1} step={1}
+                  <Input id="ai-modules" type="number" required min={1} max={allowance?.limits.modules ?? MAX_AI_OUTLINE_ITEMS} step={1}
                     disabled={isFree} value={moduleCount} onChange={(event) => { setModuleCount(event.target.value); changed(); }} />
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="ai-lessons">Lessons in each module</Label>
-                  <Input id="ai-lessons" type="number" required min={1} max={allowance?.limits.lessonsPerModule ?? 1} step={1}
+                  <Input id="ai-lessons" type="number" required min={1} max={allowance?.limits.lessonsPerModule ?? MAX_AI_OUTLINE_ITEMS} step={1}
                     disabled={isFree} value={lessonsPerModule} onChange={(event) => { setLessonsPerModule(event.target.value); changed(); }} />
                 </div>
               </div>
               {isFree && <p className="text-sm text-muted-foreground">Free generates 1 course, 1 module, and 1 lesson. <Link href="/pricing" className="text-primary underline">Upgrade to Creator</Link> to choose a larger outline.</p>}
-              {allowance && !isFree && <p className="text-xs text-muted-foreground">Up to {allowance.limits.modules} modules and {allowance.limits.lessonsPerModule} lessons per module.</p>}
+              {allowance && !isFree && <p className="text-xs text-muted-foreground">Your course has no module or lesson cap. For reliable output, one AI attempt can create up to {MAX_AI_OUTLINE_ITEMS} total modules and lessons; add as many as you want manually afterward.</p>}
               <p className="text-sm">1 course · {moduleCount || 0} modules · {(Number(moduleCount) || 0) * (Number(lessonsPerModule) || 0)} lessons total</p>
               <p className="text-xs text-muted-foreground">Your topic and audience are sent to DeepSeek. Review the generated outline before publishing.</p>
               <Button type="submit" disabled={!allowance || (!canRetry && allowance.remaining === 0)} className="gap-2">

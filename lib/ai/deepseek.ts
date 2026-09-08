@@ -64,7 +64,7 @@ export async function generateCourse(input: GenerateCourseInput) {
       body: JSON.stringify({
         model: DEEPSEEK_MODEL,
         thinking: { type: "disabled" },
-        max_tokens: Math.min(6000, 700 + input.moduleCount * (220 + input.lessonsPerModule * 80)),
+        max_tokens: Math.min(12000, 700 + input.moduleCount * (220 + input.lessonsPerModule * 80)),
         response_format: { type: "json_object" },
         messages: courseMessages(input),
       }),
@@ -76,7 +76,7 @@ export async function generateCourse(input: GenerateCourseInput) {
       throw new AiError(502, "The AI service is unavailable. Please try again later.");
     }
 
-    const envelope = responseSchema.parse(await readLimitedJson(response.body, 96_000));
+    const envelope = responseSchema.parse(await readLimitedJson(response.body, 256_000));
     const choice = envelope.choices[0];
     if (choice.finish_reason !== "stop") {
       throw new AiError(502, "AI returned an incomplete outline. Try a smaller course.");

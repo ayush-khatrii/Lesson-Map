@@ -607,8 +607,8 @@ function ModuleSidebar({
             value={mod.id}
             className="overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/40 data-[state=open]:border-amber-500/30"
           >
-            <AccordionTrigger className="select-text px-4 py-4 hover:no-underline hover:bg-white/[0.02] [&[data-state=open]]:bg-amber-500/[0.03]">
-              <div className="flex w-full items-center gap-3 pr-1">
+            <AccordionTrigger className="select-text px-3 py-3 hover:no-underline hover:bg-white/[0.02] sm:px-4 sm:py-4 [&[data-state=open]]:bg-amber-500/[0.03]">
+              <div className="flex w-full min-w-0 items-start gap-2 pr-1 sm:items-center sm:gap-3">
                 <div
                   className={cn(
                     "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold",
@@ -636,7 +636,7 @@ function ModuleSidebar({
                   >
                     {mod.label}
                   </p>
-                  <p className="truncate text-sm font-semibold text-white">
+                  <p className="break-words text-xs font-semibold leading-snug text-white [overflow-wrap:anywhere] sm:text-sm">
                     {mod.title}
                   </p>
                 </div>
@@ -702,7 +702,7 @@ function ModuleSidebar({
                         >
                           <span
                             className={cn(
-                              "block truncate text-sm font-medium",
+                              "block break-words text-xs font-medium leading-snug [overflow-wrap:anywhere] sm:text-sm",
                               done ? "text-zinc-500 line-through" : "text-zinc-200",
                             )}
                           >
@@ -761,7 +761,7 @@ function LessonContentPanel({
         <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl border border-amber-500/20 bg-amber-500/10">
           <BookOpen className="h-7 w-7 text-amber-400" />
         </div>
-        <h2 className="mb-2 text-xl font-bold text-white">
+        <h2 className="mb-2 break-words text-lg font-bold leading-snug text-white [overflow-wrap:anywhere] sm:text-xl">
           Welcome to {course.title}
         </h2>
         <p className="mx-auto mb-6 max-w-md text-sm leading-relaxed text-zinc-500">
@@ -791,7 +791,7 @@ function LessonContentPanel({
         <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-amber-500">
           {module.label}
         </p>
-        <h2 className="text-xl font-bold text-white">{lesson.title}</h2>
+        <h2 className="break-words text-lg font-bold leading-snug text-white [overflow-wrap:anywhere] sm:text-xl">{lesson.title}</h2>
         <p className="mt-1 text-sm text-zinc-500">{module.description}</p>
       </div>
 
@@ -800,7 +800,7 @@ function LessonContentPanel({
           <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-zinc-600">
             Lesson outline
           </p>
-          <h3 className="text-lg font-semibold text-white">{lesson.title}</h3>
+          <h3 className="break-words text-base font-semibold leading-snug text-white [overflow-wrap:anywhere] sm:text-lg">{lesson.title}</h3>
           <p className="mt-3 text-sm leading-relaxed text-zinc-400">
             {module.description}
           </p>
@@ -1055,11 +1055,11 @@ export default function LessonMapPublicPage({
       <CourseNavbar creator={course.creator} />
       <UpgradeDialog open={upgradeOpen} onClose={() => setUpgradeOpen(false)} />
 
-      <main className="mx-auto max-w-[90rem] px-5 py-8 md:px-8">
+      <main className="mx-auto max-w-[90rem] px-3 py-4 sm:px-5 sm:py-8 md:px-8">
         {/* ── Dashboard shell (wireframe container) ── */}
         <div className="overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-950 shadow-2xl shadow-black/40">
           {/* Header strip */}
-          <div className="border-b border-zinc-800 px-6 py-6 md:px-8">
+          <div className="border-b border-zinc-800 px-4 py-4 sm:px-6 sm:py-6 md:px-8">
             <div className="mb-3 flex flex-wrap items-center gap-2">
               <Badge className="border-amber-500/25 bg-amber-500/10 text-xs font-bold uppercase tracking-wide text-amber-400">
                 Public Course
@@ -1071,7 +1071,7 @@ export default function LessonMapPublicPage({
                 Shared by {course.creator.name}
               </Badge>
             </div>
-            <h1 className="text-2xl font-extrabold leading-tight tracking-tight text-white md:text-3xl">
+            <h1 className="break-words text-lg font-extrabold leading-tight tracking-tight text-white [overflow-wrap:anywhere] sm:text-2xl md:text-3xl">
               {course.title}
             </h1>
             <p className="mt-2 max-w-3xl text-sm leading-relaxed text-zinc-400">
