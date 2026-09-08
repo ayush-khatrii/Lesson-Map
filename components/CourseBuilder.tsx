@@ -75,7 +75,9 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useSession } from "@/lib/auth-client";
-import FileUpload, { type UploadedResource } from "@/components/forms/FileUpload";
+import FileUpload, {
+  type UploadedResource,
+} from "@/components/forms/FileUpload";
 import { AiCourseGenerator } from "@/components/forms/AiCourseGenerator";
 import {
   createCourseAction,
@@ -352,7 +354,7 @@ function AddResourceDialog({
         ? `${codeContent.split("\n").length} lines · ${name}`
         : type === "Note"
           ? meta.trim() || noteContent.slice(0, 80) || "Note"
-        : meta.trim() || "Untitled resource";
+          : meta.trim() || "Untitled resource";
 
     setIsSaving(true);
     try {
@@ -446,24 +448,24 @@ function AddResourceDialog({
             <Input
               id="res-name"
               placeholder={
-                  type === "PDF"
-                    ? "e.g. Week 1 Reading.pdf"
-                    : type === "Image"
-                      ? "e.g. Architecture Diagram.png"
-                      : type === "Note"
-                        ? "e.g. Key Takeaways"
-                        : type === "Code"
-                          ? "e.g. async-await.js"
-                            : "e.g. MDN Docs"
-                }
-                value={name}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                  setName(e.target.value)
-                }
-              />
-            </div>
+                type === "PDF"
+                  ? "e.g. Week 1 Reading.pdf"
+                  : type === "Image"
+                    ? "e.g. Architecture Diagram.png"
+                    : type === "Note"
+                      ? "e.g. Key Takeaways"
+                      : type === "Code"
+                        ? "e.g. async-await.js"
+                        : "e.g. MDN Docs"
+              }
+              value={name}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                setName(e.target.value)
+              }
+            />
+          </div>
 
-            {/* ── Type-specific inputs ── */}
+          {/* ── Type-specific inputs ── */}
           {type === "PDF" && (
             <div className="space-y-1.5">
               <Label>PDF File</Label>
@@ -476,7 +478,9 @@ function AddResourceDialog({
                 icon={FileText}
                 hint="PDF up to 50 MB"
                 onSelected={(f) =>
-                  setMeta(f ? `${(f.size / 1024).toFixed(1)} KB · ${f.name}` : "")
+                  setMeta(
+                    f ? `${(f.size / 1024).toFixed(1)} KB · ${f.name}` : "",
+                  )
                 }
                 onUploaded={handleUploaded}
                 disabled={!name.trim()}
@@ -496,7 +500,9 @@ function AddResourceDialog({
                 icon={FileImage}
                 hint="PNG, JPG, GIF, SVG up to 10 MB"
                 onSelected={(f) =>
-                  setMeta(f ? `${(f.size / 1024).toFixed(1)} KB · ${f.name}` : "")
+                  setMeta(
+                    f ? `${(f.size / 1024).toFixed(1)} KB · ${f.name}` : "",
+                  )
                 }
                 onUploaded={handleUploaded}
                 disabled={!name.trim()}
@@ -549,9 +555,7 @@ function AddResourceDialog({
               <Label htmlFor="res-meta">Details</Label>
               <Input
                 id="res-meta"
-                placeholder={
-                  "e.g. https://developer.mozilla.org"
-                }
+                placeholder={"e.g. https://developer.mozilla.org"}
                 value={meta}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                   setMeta(e.target.value)
@@ -567,10 +571,16 @@ function AddResourceDialog({
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={!name.trim() || isSaving || type === "PDF" || type === "Image"}
+            disabled={
+              !name.trim() || isSaving || type === "PDF" || type === "Image"
+            }
           >
-            {isSaving && <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />}
-            {type === "PDF" || type === "Image" ? "Upload file" : "Add resource"}
+            {isSaving && (
+              <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />
+            )}
+            {type === "PDF" || type === "Image"
+              ? "Upload file"
+              : "Add resource"}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -848,7 +858,12 @@ function OutlineTab({
         const created = result.data[0];
         setModules((prev) => [
           ...prev,
-          { id: created.id, name: created.moduleName, description: created.description, lessons: [] },
+          {
+            id: created.id,
+            name: created.moduleName,
+            description: created.description,
+            lessons: [],
+          },
         ]);
         toast.success("Module added!");
       } else {
@@ -1032,7 +1047,11 @@ function OutlineTab({
                   </AccordionTrigger>
 
                   <AccordionContent className="px-3 pb-3 sm:px-4 sm:pb-4">
-                    {module.description && <p className="mb-3 break-words text-sm text-muted-foreground">{module.description}</p>}
+                    {module.description && (
+                      <p className="mb-3 break-words text-sm text-muted-foreground">
+                        {module.description}
+                      </p>
+                    )}
                     <div className="space-y-2.5 mt-1">
                       <DndContext
                         collisionDetection={closestCenter}
@@ -1103,15 +1122,12 @@ function OutlineTab({
                                                     key={res.id}
                                                     type="single"
                                                     collapsible
-                                                    onValueChange={(
-                                                      v,
-                                                    ) => {
+                                                    onValueChange={(v) => {
                                                       if (v === res.id) {
                                                         setOpenedCodeAccordions(
                                                           (prev) => {
-                                                            const next = new Set(
-                                                              prev,
-                                                            );
+                                                            const next =
+                                                              new Set(prev);
                                                             next.add(res.id);
                                                             return next;
                                                           },
@@ -1164,9 +1180,7 @@ function OutlineTab({
                                                                   </div>
                                                                 </CodeBlockHeader>
                                                                 <CodeBlockBody>
-                                                                  {(
-                                                                    item,
-                                                                  ) => (
+                                                                  {(item) => (
                                                                     <CodeBlockItem
                                                                       value={
                                                                         item.filename
@@ -1584,9 +1598,7 @@ function ShareTab({
   isToggling: boolean;
 }) {
   const [copied, setCopied] = useState(false);
-  const shareLink = shareSlug
-    ? `${window.location.origin}/p/${shareSlug}`
-    : "";
+  const shareLink = shareSlug ? `${window.location.origin}/p/${shareSlug}` : "";
 
   const handleCopy = () => {
     if (!shareLink) return;
@@ -1698,7 +1710,9 @@ function PreviewDialog({
         <div className="space-y-4">
           {modules.map((module, mi) => (
             <div key={module.id}>
-              <p className="mb-2 break-words text-xs font-semibold [overflow-wrap:anywhere] sm:text-sm">{module.name}</p>
+              <p className="mb-2 break-words text-xs font-semibold [overflow-wrap:anywhere] sm:text-sm">
+                {module.name}
+              </p>
               <div className="space-y-1.5 pl-3 border-l">
                 {module.lessons.map((lesson, li) => (
                   <div key={lesson.id} className="text-xs">
@@ -1965,9 +1979,7 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
       setIsPublic(updated.isPublic);
       setShareSlug(updated.shareSlug);
       toast.success(
-        checked
-          ? "Course is now publicly visible."
-          : "Course is now private.",
+        checked ? "Course is now publicly visible." : "Course is now private.",
       );
     } catch (error) {
       toast.error((error as Error).message || "Failed to update visibility.");
@@ -1978,7 +1990,7 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
 
   return (
     <div className="min-h-screen w-full overflow-x-hidden bg-background text-foreground">
-      <div className="mx-auto w-full min-w-0 max-w-4xl px-3 py-6 sm:px-6 sm:py-10">
+      <div className="mx-auto w-full min-w-0 max-w-7xl px-4 py-6 sm:px-6 lg:px-8 sm:py-10">
         {/* ── Page Header ─────────────────────────────────────────────── */}
         <div className="mb-6 mt-16 sm:mb-8">
           <div className="flex items-start justify-between gap-4 flex-wrap">
@@ -2055,7 +2067,12 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
           )}
         </div>
 
-        {!courseId && <AiCourseGenerator disabled={isSaving} onGeneratingChange={setIsGenerating} />}
+        {!courseId && (
+          <AiCourseGenerator
+            disabled={isSaving}
+            onGeneratingChange={setIsGenerating}
+          />
+        )}
 
         {/* ── Course Info Card ──────────────────────────────────────── */}
         {courseId ? (
@@ -2066,13 +2083,19 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
                   <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-1">
                     Course
                   </p>
-                  <h2 className="break-words text-lg font-bold leading-snug">{title}</h2>
+                  <h2 className="break-words text-lg font-bold leading-snug">
+                    {title}
+                  </h2>
                   {description && (
                     <p className="mt-1.5 break-words text-sm leading-relaxed text-muted-foreground">
                       {description}
                     </p>
                   )}
-                  {initialData?.audience && <p className="mt-2 text-sm text-muted-foreground">For: {initialData.audience}</p>}
+                  {initialData?.audience && (
+                    <p className="mt-2 text-sm text-muted-foreground">
+                      For: {initialData.audience}
+                    </p>
+                  )}
                 </div>
                 <div className="flex items-center justify-end gap-1 sm:mt-0.5 sm:flex-shrink-0">
                   <Button
@@ -2139,30 +2162,33 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
         <Tabs defaultValue="outline">
           <div className="mb-6 flex min-w-0 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-4">
             <div className="w-full max-w-full overflow-x-auto pb-1 sm:w-auto sm:pb-0">
-            <TabsList className="h-9 w-max min-w-full border bg-muted/50 p-1 sm:min-w-0">
-              <TabsTrigger value="outline" className="gap-1.5 text-xs h-7 px-3">
-                <LayoutList className="w-3.5 h-3.5" />
-                Outline
-              </TabsTrigger>
-              <TabsTrigger
-                value="resources"
-                className="gap-1.5 text-xs h-7 px-3"
-              >
-                <Paperclip className="w-3.5 h-3.5" />
-                Resources
-              </TabsTrigger>
-              <TabsTrigger
-                value="settings"
-                className="gap-1.5 text-xs h-7 px-3"
-              >
-                <Settings2 className="w-3.5 h-3.5" />
-                Settings
-              </TabsTrigger>
-              <TabsTrigger value="share" className="gap-1.5 text-xs h-7 px-3">
-                <Share2 className="w-3.5 h-3.5" />
-                Share
-              </TabsTrigger>
-            </TabsList>
+              <TabsList className="h-9 w-max min-w-full border bg-muted/50 p-1 sm:min-w-0">
+                <TabsTrigger
+                  value="outline"
+                  className="gap-1.5 text-xs h-7 px-3"
+                >
+                  <LayoutList className="w-3.5 h-3.5" />
+                  Outline
+                </TabsTrigger>
+                <TabsTrigger
+                  value="resources"
+                  className="gap-1.5 text-xs h-7 px-3"
+                >
+                  <Paperclip className="w-3.5 h-3.5" />
+                  Resources
+                </TabsTrigger>
+                <TabsTrigger
+                  value="settings"
+                  className="gap-1.5 text-xs h-7 px-3"
+                >
+                  <Settings2 className="w-3.5 h-3.5" />
+                  Settings
+                </TabsTrigger>
+                <TabsTrigger value="share" className="gap-1.5 text-xs h-7 px-3">
+                  <Share2 className="w-3.5 h-3.5" />
+                  Share
+                </TabsTrigger>
+              </TabsList>
             </div>
 
             <div className="max-w-full self-start overflow-x-auto sm:flex-shrink-0">

@@ -151,7 +151,7 @@ export function AiCourseGenerator({ disabled, onGeneratingChange }: {
           !session?.user ? <Button asChild variant="outline"><Link href="/sign-in">Sign in to generate</Link></Button> :
           createdCourseId ? <Button asChild><Link href={`/dashboard/${encodeURIComponent(createdCourseId)}/edit`}>Open generated course</Link></Button> :
           <form onSubmit={handleGenerate} className="space-y-4" aria-busy={generating}>
-            <fieldset disabled={disabled || generating || !allowance?.enabled} className="space-y-4 disabled:opacity-70">
+            <fieldset disabled={disabled || generating} className="space-y-4 disabled:opacity-70">
               <div className="space-y-1.5">
                 <Label htmlFor="ai-topic">What will you teach?</Label>
                 <Textarea id="ai-topic" placeholder="JavaScript for beginners" required minLength={3} maxLength={500}
@@ -178,7 +178,7 @@ export function AiCourseGenerator({ disabled, onGeneratingChange }: {
               {allowance && !isFree && <p className="text-xs text-muted-foreground">Your course has no module or lesson cap. For reliable output, one AI attempt can create up to {MAX_AI_OUTLINE_ITEMS} total modules and lessons; add as many as you want manually afterward.</p>}
               <p className="text-sm">1 course · {moduleCount || 0} modules · {(Number(moduleCount) || 0) * (Number(lessonsPerModule) || 0)} lessons total</p>
               <p className="text-xs text-muted-foreground">Your topic and audience are sent to DeepSeek. Review the generated outline before publishing.</p>
-              <Button type="submit" disabled={!allowance || (!canRetry && allowance.remaining === 0)} className="gap-2">
+              <Button type="submit" disabled={!allowance?.enabled || !allowance || (!canRetry && allowance.remaining === 0)} className="gap-2">
                 {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
                 {generating ? "Creating your course…" : canRetry ? "Retry / check course" : "Generate & create private course"}
               </Button>

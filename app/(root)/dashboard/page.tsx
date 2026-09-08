@@ -102,7 +102,7 @@ const Dashboard = async () => {
   return (
     <div className="min-h-screen my-20 bg-background text-foreground">
       <PostPurchaseHandler />
-      <main className="mx-auto container space-y-8 px-5 py-8 md:px-8">
+      <main className="mx-auto w-full max-w-7xl space-y-8 px-4 py-8 sm:px-6 lg:px-8">
         <section className="relative overflow-hidden px-6 py-8 md:px-10">
           <div className="flex flex-col items-center justify-center gap-4 text-center relative z-10">
             <div>

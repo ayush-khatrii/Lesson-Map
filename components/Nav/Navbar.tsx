@@ -218,7 +218,7 @@ export default function Navbar({ className }: { className?: string }) {
         className,
       )}
     >
-      <nav className="container mx-auto flex h-16 max-w-screen-2xl items-center px-4 py-2">
+      <nav className="mx-auto flex h-16 w-full max-w-7xl items-center px-4 py-2 sm:px-6 lg:px-8">
         <div className="mr-4 flex">
           <Link href="/" className="flex items-center">
             <span className="font-bold text-xl">LessonMap</span>

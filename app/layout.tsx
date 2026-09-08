@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 // @ts-ignore
 import "@/app/globals.css";
+import { Alan_Sans } from "next/font/google";
 import { Providers } from "@/components/Providers";
 
+const alanSans = Alan_Sans({ subsets: ["latin"] });
 export const metadata: Metadata = {
   metadataBase: new URL("https://lessonmap.vercel.app"),
 
@@ -73,7 +75,7 @@ export default function MainRootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body>
+      <body className={alanSans.className}>
         <Providers>
           <main>{children}</main>
         </Providers>
