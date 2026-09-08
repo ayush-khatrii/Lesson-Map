@@ -12,6 +12,8 @@ import { db } from "@/lib/prisma";
 import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import z from "zod";
+import { lockCourseOwner } from "@/lib/course-access";
+import { effectiveAiPlan } from "@/lib/ai/schema";
 
 async function createCourseAction(data: unknown) {
   const session = await auth.api.getSession({
@@ -23,25 +25,6 @@ async function createCourseAction(data: unknown) {
 
   const userId = session.session.userId;
 
-  // Fetch user plan and current course count
-  const user = await db.user.findUnique({
-    where: { id: userId },
-    select: { plan: true },
-  });
-
-  const courseCount = await db.course.count({
-    where: { userId },
-  });
-
-  // Limit check
-  if (user?.plan === "FREE" && courseCount >= 3) {
-    return {
-      success: false,
-      limitReached: true,
-      message: "You've reached the limit of 3 courses on the Free plan. Please upgrade to create more!",
-    };
-  }
-
   const result = createCourseSchema.safeParse(data);
   if (!result.success) {
     const errors: Record<string, string> = {};
@@ -52,13 +35,21 @@ async function createCourseAction(data: unknown) {
     return { success: false, errors };
   }
 
-  const course = await db.course.create({
-    data: {
-      courseName: result.data.courseName,
-      description: result.data.description,
-      userId: userId,
-    },
+  const course = await db.$transaction(async (tx) => {
+    const user = await lockCourseOwner(tx, userId);
+    if (!user) throw new Error("Unauthorized");
+    const count = await tx.course.count({ where: { userId } });
+    if (effectiveAiPlan(user) === "FREE" && count >= 3) return null;
+    return tx.course.create({ data: { ...result.data, userId } });
   });
+
+  if (!course) {
+    return {
+      success: false,
+      limitReached: true,
+      message: "You've reached the limit of 3 courses on the Free plan. Please upgrade to create more!",
+    };
+  }
 
   revalidatePath("/dashboard/create/new");
 

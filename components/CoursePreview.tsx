@@ -97,6 +97,7 @@ export interface Course {
   id?: string;
   title: string;
   description: string;
+  audience?: string | null;
   creator: Creator;
   stats: CourseStats;
   modules: Module[];
@@ -976,7 +977,7 @@ export default function LessonMapPublicPage({
   slug?: string;
 }) {
   const course = useMemo(
-    () => enrichCourseWithMockResources(rawCourse),
+    () => rawCourse === SAMPLE_COURSE ? enrichCourseWithMockResources(rawCourse) : rawCourse,
     [rawCourse],
   );
   const courseId = slug ?? course.id ?? "default-course";
@@ -1076,6 +1077,7 @@ export default function LessonMapPublicPage({
             <p className="mt-2 max-w-3xl text-sm leading-relaxed text-zinc-400">
               {course.description}
             </p>
+            {course.audience && <p className="mt-2 text-sm text-zinc-400">For: {course.audience}</p>}
           </div>
 
           {/* Stat cards row */}

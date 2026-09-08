@@ -1,3 +1,5 @@
+import { AI_LIMITS } from "@/lib/ai/schema";
+
 export const exampleCourses = [
   {
     id: "1",
@@ -39,7 +41,7 @@ export const plans = [
     accent: "Starter",
     features: [
       "3 public course maps",
-      "Basic AI outline generation",
+      `${AI_LIMITS.FREE.monthlyAttempts} AI attempts/month: 1 module and 1 lesson per course`,
       "Accordion-style course builder",
       "Shareable public link with LessonMap branding",
       "Basic customization and editing",
@@ -57,7 +59,8 @@ export const plans = [
     accent: "Most Popular",
     features: [
       "Unlimited course maps",
-      "Unlimited AI generations",
+      `${AI_LIMITS.CREATOR.monthlyAttempts} AI attempts/month: full course outlines`,
+      `Up to ${AI_LIMITS.CREATOR.modules} modules with ${AI_LIMITS.CREATOR.lessonsPerModule} lessons each`,
       "Accordion view + Flow / node-like view",
       "Shareable links without LessonMap branding",
       "Creator-native branding and social-ready presentation",
@@ -74,8 +77,8 @@ export const comparisonRows = [
   },
   {
     label: "AI outline generation",
-    free: "Basic",
-    creator: "Unlimited + smarter drafts",
+    free: `${AI_LIMITS.FREE.monthlyAttempts} attempts/month · 1 module, 1 lesson`,
+    creator: `${AI_LIMITS.CREATOR.monthlyAttempts} attempts/month · full outlines`,
   },
   {
     label: "Builder style",

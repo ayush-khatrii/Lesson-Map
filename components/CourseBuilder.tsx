@@ -76,6 +76,7 @@ import {
 import { toast } from "sonner";
 import { useSession } from "@/lib/auth-client";
 import FileUpload, { type UploadedResource } from "@/components/forms/FileUpload";
+import { AiCourseGenerator } from "@/components/forms/AiCourseGenerator";
 import {
   createCourseAction,
   createModulesAction,
@@ -135,6 +136,7 @@ export interface Lesson {
 export interface Module {
   id: string;
   name: string;
+  description?: string;
   lessons: Lesson[];
 }
 
@@ -142,6 +144,7 @@ export interface CourseInitialData {
   courseId: string;
   title: string;
   description: string;
+  audience?: string | null;
   modules: Module[];
   isPublic?: boolean;
   shareSlug?: string | null;
@@ -841,7 +844,7 @@ function OutlineTab({
         const created = result.data[0];
         setModules((prev) => [
           ...prev,
-          { id: created.id, name: created.moduleName, lessons: [] },
+          { id: created.id, name: created.moduleName, description: created.description, lessons: [] },
         ]);
         toast.success("Module added!");
       } else {
@@ -1025,6 +1028,7 @@ function OutlineTab({
                   </AccordionTrigger>
 
                   <AccordionContent className="px-4 pb-4">
+                    {module.description && <p className="mb-3 text-sm text-muted-foreground">{module.description}</p>}
                     <div className="space-y-2.5 mt-1">
                       <DndContext
                         collisionDetection={closestCenter}
@@ -1809,6 +1813,7 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
   const [modules, setModules] = useState<Module[]>(initialData?.modules ?? []);
   const [resources, setResources] = useState<Resource[]>(initialResources);
   const [isSaving, setIsSaving] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
   const [saved, setSaved] = useState(false);
   const [outlineView, setOutlineView] = useState("accordion");
 
@@ -1828,6 +1833,7 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
   const totalLessons = modules.reduce((a, m) => a + m.lessons.length, 0);
 
   const handleSave = async () => {
+    if (isGenerating) return;
     if (!session) {
       toast.error("Please log in to save your course.");
       return;
@@ -2001,7 +2007,7 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
                 <Button
                   size="sm"
                   onClick={handleSave}
-                  disabled={isSaving}
+                  disabled={isSaving || isGenerating}
                   className="gap-1.5"
                 >
                   {isSaving ? (
@@ -2015,7 +2021,7 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
                 <Button
                   size="sm"
                   onClick={handleSave}
-                  disabled={isSaving}
+                  disabled={isSaving || isGenerating}
                   variant={saved ? "outline" : "default"}
                   className="gap-1.5"
                 >
@@ -2045,6 +2051,8 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
           )}
         </div>
 
+        {!courseId && <AiCourseGenerator disabled={isSaving} onGeneratingChange={setIsGenerating} />}
+
         {/* ── Course Info Card ──────────────────────────────────────── */}
         {courseId ? (
           <Card className="mb-6 border shadow-none">
@@ -2060,6 +2068,7 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
                       {description}
                     </p>
                   )}
+                  {initialData?.audience && <p className="mt-2 text-sm text-muted-foreground">For: {initialData.audience}</p>}
                 </div>
                 <div className="flex items-center gap-1 flex-shrink-0 mt-0.5">
                   <Button
@@ -2088,7 +2097,7 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
           <Card className="mb-6 border shadow-none">
             <CardHeader className="pb-3 pt-5 px-5">
               <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-                Course Details
+                Or create a course manually
               </p>
             </CardHeader>
             <CardContent className="px-5 pb-5 space-y-4">
@@ -2098,6 +2107,7 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
                 </Label>
                 <Input
                   id="course-title"
+                  disabled={isGenerating}
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="e.g. Mastering Modern Web Development"
@@ -2110,6 +2120,7 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
                 </Label>
                 <Textarea
                   id="course-desc"
+                  disabled={isGenerating}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="A brief overview of what learners will take away…"

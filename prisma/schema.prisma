@@ -17,6 +17,7 @@ model User {
   Course        Course[]
   accounts      Account[]
   sessions      Session[]
+  aiGenerations AiGeneration[]
 
   plan                          Plan      @default(FREE)
   subscriptionId                String?   @unique
@@ -61,6 +62,7 @@ model Course {
   id          String   @id @default(cuid())
   courseName  String
   description String
+  audience    String?
   isPublic    Boolean  @default(false)
   isPublished Boolean  @default(false)
   shareSlug   String?  @unique
@@ -69,6 +71,29 @@ model Course {
   Module      Module[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @default(now()) @updatedAt
+}
+
+// No prompt or generated text is stored here. Attempts include provider failures.
+model AiGeneration {
+  id               String   @id @default(cuid())
+  userId           String
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  requestId        String
+  inputHash        String
+  status           AiGenerationStatus @default(PENDING)
+  courseId         String?
+  promptTokens     Int      @default(0)
+  completionTokens Int      @default(0)
+  createdAt        DateTime @default(now())
+
+  @@unique([userId, requestId])
+  @@index([userId, createdAt])
+}
+
+enum AiGenerationStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
 }
 
 model Module {

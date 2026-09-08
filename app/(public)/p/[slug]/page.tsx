@@ -56,6 +56,7 @@ export default async function CoursePreviewPage({
     id: course.shareSlug ?? course.id,
     title: course.courseName,
     description: course.description,
+    audience: course.audience,
     creator: {
       name: course.user.name,
       avatar: course.user.image,

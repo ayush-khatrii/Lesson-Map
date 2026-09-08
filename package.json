@@ -6,6 +6,8 @@
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
+    "test:ai": "node --import tsx --test tests/ai*.test.ts",
+    "typecheck": "tsc --noEmit --incremental false",
     "postinstall": "prisma generate"
   },
   "dependencies": {

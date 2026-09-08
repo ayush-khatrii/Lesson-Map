@@ -322,7 +322,7 @@ function CourseAccordionItem({
             className="h-8 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
             asChild
           >
-            <Link href={`/dashboard/${course.id}/edit`}>
+            <Link href="/dashboard/create/new#ai-course">
               <Sparkles className="w-3.5 h-3.5 text-primary" /> AI Assist
             </Link>
           </Button>
