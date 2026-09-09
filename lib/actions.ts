@@ -64,6 +64,88 @@ async function createCourseAction(data: unknown) {
   return { success: true, data: creation.course };
 }
 
+const courseOutlineSchema = createCourseSchema.extend({
+  modules: z.array(
+    z.object({
+      moduleName: z.string().min(1),
+      description: z.string().min(1),
+      lessons: z.array(z.object({ lessonName: z.string().min(1) })),
+    }),
+  ),
+});
+
+async function createCourseWithOutlineAction(data: unknown) {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() });
+    const userId = session?.session.userId;
+    if (!userId) throw new Error("Unauthorized");
+
+    const result = courseOutlineSchema.safeParse(data);
+    if (!result.success) {
+      return { success: false, error: "Invalid course template." };
+    }
+
+    const { courseName, description, modules } = result.data;
+    const creation = await db.$transaction(async (tx) => {
+      const user = await lockCourseOwner(tx, userId);
+      if (!user) throw new Error("Unauthorized");
+
+      const courseLimit = COURSE_LIMITS[effectiveAiPlan(user)];
+      const count = await tx.course.count({ where: { userId } });
+      if (count >= courseLimit) return { course: null, courseLimit };
+
+      const course = await tx.course.create({
+        data: {
+          courseName,
+          description,
+          userId,
+          Module: modules.length
+            ? {
+                create: modules.map((module, moduleIndex) => ({
+                  moduleName: module.moduleName,
+                  description: module.description,
+                  order: moduleIndex + 1,
+                  Lesson: {
+                    create: module.lessons.map((lesson, lessonIndex) => ({
+                      lessonName: lesson.lessonName,
+                      order: lessonIndex + 1,
+                    })),
+                  },
+                })),
+              }
+            : undefined,
+        },
+        include: {
+          Module: {
+            orderBy: { order: "asc" },
+            include: { Lesson: { orderBy: { order: "asc" } } },
+          },
+        },
+      });
+
+      return { course, courseLimit };
+    });
+
+    if (!creation.course) {
+      return {
+        success: false,
+        limitReached: true,
+        message: `You've reached your plan limit of ${creation.courseLimit} courses.`,
+      };
+    }
+
+    updateTag(userCoursesTag(userId));
+    revalidatePath("/dashboard");
+    revalidatePath("/dashboard/create/new");
+    return { success: true, data: creation.course };
+  } catch (error) {
+    return {
+      success: false,
+      error: (error as Error).message || "Failed to create course template.",
+    };
+  }
+}
+
 // createModulesAction
 async function createModulesAction(data: unknown) {
   try {
@@ -525,6 +607,7 @@ async function deleteLessonAction(lessonId: string) {
 
 export {
   createCourseAction,
+  createCourseWithOutlineAction,
   createModulesAction,
   createLessonsAction,
   reorderModulesAction,

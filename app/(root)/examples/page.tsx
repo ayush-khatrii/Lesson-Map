@@ -1,416 +1,325 @@
 "use client";
 
-import React, { useState } from "react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import { Input } from "@/components/ui/input";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogClose,
-} from "@/components/ui/dialog";
+import { useMemo, useState } from "react";
+import Link from "next/link";
 import {
   BookOpen,
+  ChevronRight,
   Eye,
+  GraduationCap,
+  Layers,
   Plus,
   Search,
   Sparkles,
-  ChevronRight,
-  Layers,
-  ArrowLeft,
-  GraduationCap,
-  X,
 } from "lucide-react";
-import Link from "next/link";
-import { exampleCourses } from "@/constants";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
+import {
+  exampleCourses,
+  type ExampleCourseTemplate,
+} from "@/constants";
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
-function courseHue(id: string | number): number {
-  const str = String(id);
-  let h = 0;
-  for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) & 0xffffff;
-  return h % 360;
+function templateUrl(id: string) {
+  return `/dashboard/create/new?template=${encodeURIComponent(id)}`;
 }
 
-// ── Types ─────────────────────────────────────────────────────────────────────
-interface ExampleCourse {
-  id: string | number;
-  title: string;
-  description: string;
-  outline?: string[];
-  category?: string;
-  level?: string;
+function lessonCount(course: ExampleCourseTemplate) {
+  return course.modules.reduce(
+    (total, module) => total + module.lessons.length,
+    0,
+  );
 }
 
-// ── Preview Dialog ─────────────────────────────────────────────────────────
 function PreviewDialog({
   course,
-  open,
   onClose,
 }: {
-  course: ExampleCourse | null;
-  open: boolean;
+  course: ExampleCourseTemplate | null;
   onClose: () => void;
 }) {
-  if (!course) return null;
-  const hue = courseHue(course.id);
-
   return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent
-        showCloseButton={false}
-        className="flex max-h-[calc(100dvh-1rem)] max-w-lg flex-col overflow-hidden rounded-2xl p-0"
-      >
-        {/* Colored header band */}
-        <div
-          className="px-6 pt-6 pb-5"
-          style={{ background: `hsl(${hue} 48% 50% / 0.12)` }}
-        >
-          <div className="flex items-start justify-between gap-3">
-            <div
-              className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
-              style={{ background: `hsl(${hue} 52% 52%)` }}
-            >
-              {course.title.charAt(0)}
-            </div>
-            <DialogClose asChild>
-              <Button variant="ghost" size="icon" className="w-7 h-7 flex-shrink-0 -mt-0.5 -mr-1">
-                <X className="w-3.5 h-3.5" />
-              </Button>
-            </DialogClose>
-          </div>
-          <DialogHeader className="mt-3 space-y-1 text-left">
-            <DialogTitle className="text-lg font-bold leading-snug">
-              {course.title}
-            </DialogTitle>
-            <DialogDescription className="text-sm leading-relaxed">
-              {course.description}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex gap-2 mt-3">
-            {course.category && (
-              <Badge variant="secondary" className="text-xs">{course.category}</Badge>
-            )}
-            {course.level && (
-              <Badge variant="outline" className="text-xs">{course.level}</Badge>
-            )}
-            <Badge variant="outline" className="text-xs gap-1">
-              <Layers className="w-2.5 h-2.5" />
-              {course.outline?.length ?? 0} topics
-            </Badge>
-          </div>
-        </div>
-
-        {/* Outline list */}
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-5">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3">
-            Course Outline
-          </p>
-          <div className="space-y-2 pr-1">
-            {course.outline?.map((topic, i) => (
-              <div
-                key={i}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-xl border border-border bg-muted/20 hover:bg-muted/40 transition-colors"
-              >
-                <div
-                  className="flex-shrink-0 w-5 h-5 rounded-md flex items-center justify-center text-[9px] font-bold text-white"
-                  style={{ background: `hsl(${hue} 52% 52%)` }}
-                >
-                  {i + 1}
-                </div>
-                <p className="text-sm leading-snug">{topic}</p>
+    <Dialog open={Boolean(course)} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="flex max-h-[85dvh] w-[calc(100%-1rem)] max-w-2xl flex-col gap-0 overflow-hidden p-0">
+        {course && (
+          <>
+            <DialogHeader className="shrink-0 space-y-2 border-b border-border px-4 py-4 text-left sm:px-6">
+              <div className="flex items-center gap-2 pr-8">
+                <Badge variant="secondary">{course.category}</Badge>
+                <Badge variant="outline">{course.level}</Badge>
               </div>
-            ))}
-          </div>
-        </div>
+              <DialogTitle className="break-words text-xl">
+                {course.title}
+              </DialogTitle>
+              <DialogDescription className="leading-relaxed">
+                {course.description}
+              </DialogDescription>
+            </DialogHeader>
 
-        <Separator />
-        <div className="flex flex-col-reverse gap-2 px-4 py-4 sm:flex-row sm:justify-end sm:px-6">
-          <DialogClose asChild>
-            <Button variant="outline" size="sm">Close</Button>
-          </DialogClose>
-          <Button size="sm" className="gap-1.5">
-            <Sparkles className="w-3.5 h-3.5" /> Use This Template
-          </Button>
-        </div>
+            <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4 sm:p-6">
+              {course.modules.map((module, moduleIndex) => (
+                <div
+                  key={module.title}
+                  className="rounded-xl border border-border bg-card p-3 sm:p-4"
+                >
+                  <div className="flex min-w-0 items-start gap-3">
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-xs font-bold text-primary">
+                      {moduleIndex + 1}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="break-words text-sm font-semibold">
+                        {module.title}
+                      </h3>
+                      <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
+                        {module.description}
+                      </p>
+                      <div className="mt-3 space-y-1.5">
+                        {module.lessons.map((lesson, lessonIndex) => (
+                          <div
+                            key={lesson}
+                            className="flex items-start gap-2 text-xs text-muted-foreground"
+                          >
+                            <BookOpen className="mt-0.5 h-3 w-3 shrink-0" />
+                            <span className="break-words">
+                              {lessonIndex + 1}. {lesson}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <DialogFooter className="shrink-0 border-t border-border p-4 sm:px-6">
+              <Button asChild className="w-full gap-2 sm:w-auto">
+                <Link href={templateUrl(course.id)}>
+                  <Sparkles className="h-4 w-4" /> Use Template
+                </Link>
+              </Button>
+            </DialogFooter>
+          </>
+        )}
       </DialogContent>
     </Dialog>
   );
 }
 
-// ── Course Card ──────────────────────────────────────────────────────────────
-function CourseCard({
+function TemplateRow({
   course,
-  index,
   onPreview,
 }: {
-  course: ExampleCourse;
-  index: number;
-  onPreview: (course: ExampleCourse) => void;
+  course: ExampleCourseTemplate;
+  onPreview: (course: ExampleCourseTemplate) => void;
 }) {
-  const hue = courseHue(course.id);
+  const lessons = lessonCount(course);
 
   return (
-    <div
-      className="group rounded-2xl border border-border bg-card overflow-hidden hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300"
-      style={{ animationDelay: `${index * 50}ms` }}
+    <AccordionItem
+      value={course.id}
+      className="group overflow-hidden rounded-2xl border border-border bg-card transition-colors data-[state=open]:border-primary/30"
     >
-      {/* Top color band */}
-      <div
-        className="h-1.5 w-full"
-        style={{ background: `hsl(${hue} 52% 55%)` }}
-      />
-
-      <div className="px-5 pt-5 pb-4">
-        {/* Header */}
-        <div className="flex items-start gap-3 mb-4">
-          <div
-            className="flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-sm"
-            style={{ background: `hsl(${hue} 52% 52%)` }}
-          >
-            {course.title.charAt(0).toUpperCase()}
+      <AccordionTrigger className="px-3 py-3 text-left hover:bg-accent/50 hover:no-underline sm:px-6 sm:py-5 [&>svg]:hidden">
+        <div className="flex w-full min-w-0 items-start gap-3 sm:items-center">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border bg-muted text-sm font-bold text-muted-foreground">
+            {course.title.charAt(0)}
           </div>
-          <div className="flex-1 min-w-0">
-            <h2 className="font-bold text-base leading-snug line-clamp-1">
-              {course.title}
-            </h2>
-            <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">
+
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="break-words text-sm font-semibold leading-snug sm:text-base">
+                {course.title}
+              </h2>
+              <Badge variant="secondary" className="text-[10px]">
+                {course.category}
+              </Badge>
+              <Badge variant="outline" className="text-[10px]">
+                {course.level}
+              </Badge>
+            </div>
+            <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
               {course.description}
             </p>
           </div>
-        </div>
 
-        {/* Badges */}
-        <div className="flex flex-wrap gap-1.5 mb-4">
-          {course.category && (
-            <Badge variant="secondary" className="text-[10px] h-5">
-              {course.category}
-            </Badge>
-          )}
-          {course.level && (
-            <Badge variant="outline" className="text-[10px] h-5">
-              {course.level}
-            </Badge>
-          )}
-          <Badge variant="outline" className="text-[10px] h-5 gap-1">
-            <BookOpen className="w-2.5 h-2.5" />
-            {course.outline?.length ?? 0} topics
-          </Badge>
-        </div>
-
-        {/* Outline preview */}
-        {course.outline && course.outline.length > 0 && (
-          <div className="space-y-1.5 mb-1">
-            {course.outline.slice(0, 3).map((topic, i) => (
-              <div key={i} className="flex items-center gap-2">
-                <div
-                  className="flex-shrink-0 w-1.5 h-1.5 rounded-full"
-                  style={{ background: `hsl(${hue} 52% 60%)` }}
-                />
-                <p className="text-xs text-muted-foreground leading-snug line-clamp-1">
-                  {topic}
-                </p>
-              </div>
-            ))}
-            {course.outline.length > 3 && (
-              <p className="text-[10px] text-muted-foreground/60 pl-3.5 italic">
-                +{course.outline.length - 3} more topics
-              </p>
-            )}
+          <div className="mr-2 hidden shrink-0 items-center gap-3 sm:flex">
+            <span className="flex items-center gap-1 text-xs text-muted-foreground">
+              <Layers className="h-3.5 w-3.5" /> {course.modules.length} modules
+            </span>
+            <span className="text-border">·</span>
+            <span className="flex items-center gap-1 text-xs text-muted-foreground">
+              <BookOpen className="h-3.5 w-3.5" /> {lessons} lessons
+            </span>
           </div>
-        )}
-      </div>
 
-      <Separator />
+          <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-data-[state=open]:rotate-90" />
+        </div>
+      </AccordionTrigger>
 
-      {/* Footer actions */}
-      <div className="px-5 py-3.5 flex items-center justify-between bg-muted/20">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="gap-1.5 text-xs text-muted-foreground hover:text-foreground h-8"
-          onClick={() => onPreview(course)}
-        >
-          <Eye className="w-3.5 h-3.5" /> Preview
-        </Button>
-        <Button
-          size="sm"
-          className="gap-1.5 text-xs h-8"
-          asChild
-        >
-          <Link href="/dashboard/create/new">
-            Use Template <ChevronRight className="w-3 h-3" />
-          </Link>
-        </Button>
-      </div>
-    </div>
+      <AccordionContent className="px-3 pb-4 sm:px-6 sm:pb-6">
+        <Separator className="mb-4" />
+
+        <div className="mb-4 grid gap-3 md:grid-cols-2">
+          {course.modules.map((module, moduleIndex) => (
+            <div
+              key={module.title}
+              className="rounded-xl border border-border bg-muted/20 p-3"
+            >
+              <div className="flex items-start gap-3">
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-border bg-background text-xs font-semibold">
+                  {moduleIndex + 1}
+                </span>
+                <div className="min-w-0">
+                  <p className="break-words text-sm font-semibold">
+                    {module.title}
+                  </p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    {module.lessons.length} lessons
+                  </p>
+                  <div className="mt-2 space-y-1">
+                    {module.lessons.map((lesson) => (
+                      <p
+                        key={lesson}
+                        className="break-words text-xs text-muted-foreground"
+                      >
+                        • {lesson}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2"
+            onClick={() => onPreview(course)}
+          >
+            <Eye className="h-4 w-4" /> Preview
+          </Button>
+          <Button size="sm" className="gap-2" asChild>
+            <Link href={templateUrl(course.id)}>
+              <Sparkles className="h-4 w-4" /> Use Template
+            </Link>
+          </Button>
+        </div>
+      </AccordionContent>
+    </AccordionItem>
   );
 }
 
-// ── Page ──────────────────────────────────────────────────────────────────────
-const ExamplePage = () => {
+export default function ExamplePage() {
   const [search, setSearch] = useState("");
-  const [preview, setPreview] = useState<ExampleCourse | null>(null);
-  const [previewOpen, setPreviewOpen] = useState(false);
+  const [preview, setPreview] = useState<ExampleCourseTemplate | null>(null);
 
-  const filtered = (exampleCourses as ExampleCourse[]).filter(
-    (c) =>
-      c.title.toLowerCase().includes(search.toLowerCase()) ||
-      c.description?.toLowerCase().includes(search.toLowerCase()) ||
-      c.category?.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    if (!query) return exampleCourses;
 
-  const handlePreview = (course: ExampleCourse) => {
-    setPreview(course);
-    setPreviewOpen(true);
-  };
+    return exampleCourses.filter((course) =>
+      [course.title, course.description, course.category, course.level].some(
+        (value) => value.toLowerCase().includes(query),
+      ),
+    );
+  }, [search]);
 
   return (
-    <div className="min-h-screen mt-10 bg-background text-foreground">
-      <main className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 lg:px-8 space-y-8">
-        {/* ── Hero ────────────────────────────────────────────────────── */}
-        <section className="relative rounded-2xl border border-border bg-card overflow-hidden px-6 md:px-12 py-10 text-center">
-          {/* Grid bg */}
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-0 opacity-[0.04]"
-            style={{
-              backgroundImage:
-                "linear-gradient(to right,hsl(var(--foreground)) 1px,transparent 1px)," +
-                "linear-gradient(to bottom,hsl(var(--foreground)) 1px,transparent 1px)",
-              backgroundSize: "24px 24px",
-            }}
-          />
-          {/* Radial glow */}
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-0"
-            style={{
-              background:
-                "radial-gradient(ellipse 60% 50% at 50% 0%, hsl(var(--primary)/0.10) 0%, transparent 70%)",
-            }}
-          />
-
-          <div className="relative z-10">
-            <Badge variant="secondary" className="rounded-full px-4 py-1 text-xs gap-1.5 mb-4">
-              <GraduationCap className="w-3 h-3" /> Ready-to-use Templates
-            </Badge>
-            <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-3">
-              Start Faster with a Template
-            </h1>
-            <p className="text-muted-foreground text-sm md:text-base max-w-xl mx-auto mb-6 leading-relaxed">
-              Browse professionally structured course outlines. Pick one that fits your topic, customize it, and start teaching — in minutes.
+    <div className="min-h-screen bg-background text-foreground">
+      <main className="mx-auto w-full max-w-7xl space-y-8 px-4 py-8 pt-24 sm:px-6 lg:px-8">
+        <section className="flex flex-col items-center gap-5 text-center">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10">
+            <GraduationCap className="h-6 w-6 text-primary" />
+          </div>
+          <div>
+            <p className="mb-1 text-xs font-medium uppercase tracking-widest text-muted-foreground">
+              Ready-to-use templates
             </p>
+            <h1 className="text-2xl font-bold tracking-tight sm:text-4xl">
+              Start your course faster
+            </h1>
+            <p className="mx-auto mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground">
+              Choose a complete outline, customize any detail, and save it as
+              your own course.
+            </p>
+          </div>
 
-            {/* Search */}
-            <div className="relative max-w-md mx-auto">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-              <Input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search templates…"
-                className="pl-9 h-10 text-sm rounded-xl bg-background"
-              />
-              {search && (
-                <button
-                  onClick={() => setSearch("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              )}
-            </div>
+          <div className="relative w-full max-w-md">
+            <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Search templates"
+              className="h-10 bg-background pl-10"
+            />
           </div>
         </section>
 
-        {/* ── Count strip ─────────────────────────────────────────────── */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <h2 className="text-base font-semibold">All Templates</h2>
-            <Badge variant="secondary" className="text-xs">
-              {filtered.length}
-            </Badge>
+        <section>
+          <div className="mb-4 flex items-center gap-3">
+            <h2 className="text-lg font-semibold">Course templates</h2>
+            <Badge variant="outline">{filtered.length}</Badge>
           </div>
-          {search && (
-            <p className="text-xs text-muted-foreground">
-              Showing results for <span className="font-medium text-foreground">"{search}"</span>
-            </p>
+
+          {filtered.length ? (
+            <Accordion type="single" collapsible className="space-y-3">
+              {filtered.map((course) => (
+                <TemplateRow
+                  key={course.id}
+                  course={course}
+                  onPreview={setPreview}
+                />
+              ))}
+            </Accordion>
+          ) : (
+            <div className="rounded-2xl border border-dashed border-border py-16 text-center">
+              <Search className="mx-auto mb-3 h-6 w-6 text-muted-foreground" />
+              <p className="font-medium">No templates found</p>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="mt-2"
+                onClick={() => setSearch("")}
+              >
+                Clear search
+              </Button>
+            </div>
           )}
-        </div>
+        </section>
 
-        {/* ── Grid ────────────────────────────────────────────────────── */}
-        {filtered.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {filtered.map((course, i) => (
-              <CourseCard
-                key={course.id}
-                course={course}
-                index={i}
-                onPreview={handlePreview}
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="flex flex-col items-center justify-center py-20 text-center">
-            <div className="w-14 h-14 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-4">
-              <Search className="w-6 h-6 text-muted-foreground opacity-40" />
-            </div>
-            <p className="font-semibold text-base mb-1">No templates found</p>
-            <p className="text-xs text-muted-foreground mb-4">
-              No results for "{search}". Try a different keyword.
-            </p>
-            <Button variant="outline" size="sm" onClick={() => setSearch("")}>
-              Clear Search
-            </Button>
-          </div>
-        )}
-
-        {/* ── Bottom CTA ──────────────────────────────────────────────── */}
-        {filtered.length > 0 && (
-          <div className="rounded-2xl border border-dashed border-border bg-muted/20 px-8 py-8 text-center">
-            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center mx-auto mb-3">
-              <Sparkles className="w-5 h-5 text-primary opacity-70" />
-            </div>
-            <p className="font-semibold mb-1">Don't see what you need?</p>
-            <p className="text-xs text-muted-foreground max-w-xs mx-auto mb-4">
-              Build your own course outline from scratch — or let AI generate a first draft for you.
-            </p>
-            <div className="flex gap-2 justify-center">
-              <Button variant="outline" size="sm" className="gap-1.5 text-xs" asChild>
-                <Link href="/dashboard/create/new">
-                  <Plus className="w-3.5 h-3.5" /> Blank Course
-                </Link>
-              </Button>
-              <Button size="sm" className="gap-1.5 text-xs" asChild>
-                <Link href="/dashboard/create/new">
-                  <Sparkles className="w-3.5 h-3.5" /> AI Generate
-                </Link>
-              </Button>
-            </div>
-          </div>
-        )}
+        <section className="rounded-2xl border border-dashed border-border bg-muted/20 p-6 text-center">
+          <p className="font-semibold">Want to start from scratch?</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Open a blank builder or use AI to generate a custom outline.
+          </p>
+          <Button variant="outline" size="sm" className="mt-4 gap-2" asChild>
+            <Link href="/dashboard/create/new">
+              <Plus className="h-4 w-4" /> Blank course
+            </Link>
+          </Button>
+        </section>
       </main>
 
-      {/* ── Preview dialog ───────────────────────────────────────────── */}
-      <PreviewDialog
-        course={preview}
-        open={previewOpen}
-        onClose={() => setPreviewOpen(false)}
-      />
+      <PreviewDialog course={preview} onClose={() => setPreview(null)} />
     </div>
   );
-};
-
-export default ExamplePage;
+}

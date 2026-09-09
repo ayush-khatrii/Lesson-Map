@@ -1095,14 +1095,8 @@ export default function LessonMapPublicPage({
               <Badge className="border-primary/25 bg-primary/10 text-xs font-bold uppercase tracking-wide text-primary">
                 Public Course
               </Badge>
-              <Badge
-                variant="outline"
-                className="border-border text-xs text-muted-foreground"
-              >
-                Shared by {course.creator.name}
-              </Badge>
             </div>
-            <h1 className="break-words text-lg font-extrabold leading-tight tracking-tight text-foreground [overflow-wrap:anywhere] sm:text-2xl md:text-3xl">
+            <h1 className="break-words text-lg font-bold leading-tight tracking-tight text-foreground [overflow-wrap:anywhere] sm:text-2xl md:text-3xl">
               {course.title}
             </h1>
             <p className="mt-2 max-w-3xl text-sm leading-relaxed text-muted-foreground">

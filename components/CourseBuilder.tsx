@@ -81,7 +81,7 @@ import FileUpload, {
 } from "@/components/forms/FileUpload";
 import { AiCourseGenerator } from "@/components/forms/AiCourseGenerator";
 import {
-  createCourseAction,
+  createCourseWithOutlineAction,
   createModulesAction,
   createLessonsAction,
   reorderModulesAction,
@@ -148,7 +148,7 @@ export interface Module {
 }
 
 export interface CourseInitialData {
-  courseId: string;
+  courseId: string | null;
   title: string;
   description: string;
   audience?: string | null;
@@ -1008,7 +1008,16 @@ function OutlineTab({
 
   const handleAddModule = async (name: string, description: string) => {
     if (!courseId) {
-      toast.error("Save the course first before adding modules.");
+      setModules((previous) => [
+        ...previous,
+        {
+          id: `draft-module-${crypto.randomUUID()}`,
+          name,
+          description: description || "No description provided.",
+          lessons: [],
+        },
+      ]);
+      toast.success("Module added to your draft.");
       return;
     }
     setIsAddingModule(true);
@@ -1059,7 +1068,25 @@ function OutlineTab({
     description: string,
   ) => {
     if (!courseId) {
-      toast.error("Save the course first before adding lessons.");
+      setModules((previous) =>
+        previous.map((module) =>
+          module.id === moduleId
+            ? {
+                ...module,
+                lessons: [
+                  ...module.lessons,
+                  {
+                    id: `draft-lesson-${crypto.randomUUID()}`,
+                    name,
+                    description,
+                    resources: [],
+                  },
+                ],
+              }
+            : module,
+        ),
+      );
+      toast.success("Lesson added to your draft.");
       return;
     }
     setAddingLessonFor(moduleId);
@@ -1105,6 +1132,12 @@ function OutlineTab({
   };
 
   const handleEditModule = async (moduleId: string, name: string, description: string) => {
+    if (!courseId) {
+      setModules((previous) => previous.map((module) => module.id === moduleId
+        ? { ...module, name, description: description || "No description provided." }
+        : module));
+      return true;
+    }
     const moduleIndex = modules.findIndex((module) => module.id === moduleId);
     const result = await updateModuleAction(moduleId, {
       moduleName: name,
@@ -1124,6 +1157,12 @@ function OutlineTab({
 
   const handleDeleteModule = async (moduleId: string) => {
     const module = modules.find((item) => item.id === moduleId);
+    if (!courseId) {
+      const lessonIds = new Set(module?.lessons.map((lesson) => lesson.id));
+      setModules((previous) => previous.filter((item) => item.id !== moduleId));
+      setResources((previous) => previous.filter((resource) => !lessonIds.has(resource.lessonId)));
+      return true;
+    }
     const result = await deleteModuleAction(moduleId);
     if (!result.success) {
       toast.error(result.error || "Failed to delete module.");
@@ -1137,6 +1176,13 @@ function OutlineTab({
   };
 
   const handleEditLesson = async (lessonId: string, name: string) => {
+    if (!courseId) {
+      setModules((previous) => previous.map((module) => ({
+        ...module,
+        lessons: module.lessons.map((lesson) => lesson.id === lessonId ? { ...lesson, name } : lesson),
+      })));
+      return true;
+    }
     const result = await updateLessonAction(lessonId, { lessonName: name });
     if (!result.success) {
       toast.error(result.error || Object.values(result.errors ?? {}).join(", ") || "Failed to update lesson.");
@@ -1151,6 +1197,13 @@ function OutlineTab({
   };
 
   const handleDeleteLesson = async (moduleId: string, lessonId: string) => {
+    if (!courseId) {
+      setModules((previous) => previous.map((module) => module.id === moduleId
+        ? { ...module, lessons: module.lessons.filter((lesson) => lesson.id !== lessonId) }
+        : module));
+      setResources((previous) => previous.filter((resource) => resource.lessonId !== lessonId));
+      return true;
+    }
     const result = await deleteLessonAction(lessonId);
     if (!result.success) {
       toast.error(result.error || "Failed to delete lesson.");
@@ -2133,17 +2186,42 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
           );
         }
       } else {
-        const result = await createCourseAction({
+        const result = await createCourseWithOutlineAction({
           courseName: title.trim(),
           description: description.trim(),
+          modules: modules.map((module) => ({
+            moduleName: module.name.trim(),
+            description:
+              module.description?.trim() || "No description provided.",
+            lessons: module.lessons.map((lesson) => ({
+              lessonName: lesson.name.trim(),
+            })),
+          })),
         });
         if (result.success && result.data) {
           setCourseId(result.data.id);
           setTitle(result.data.courseName);
           setDescription(result.data.description);
+          setModules(
+            result.data.Module.map((module) => ({
+              id: module.id,
+              name: module.moduleName,
+              description: module.description,
+              lessons: module.Lesson.map((lesson) => ({
+                id: lesson.id,
+                name: lesson.lessonName,
+                description: "",
+                resources: [],
+              })),
+            })),
+          );
           setSaved(true);
           setTimeout(() => setSaved(false), 1800);
-          toast.success("Course created! Now add modules and lessons.");
+          toast.success(
+            modules.length
+              ? "Course template created successfully!"
+              : "Course created! Now add modules and lessons.",
+          );
         } else if ((result as Record<string, unknown>).limitReached) {
           toast.error((result as Record<string, unknown>).message as string);
         } else {
@@ -2258,7 +2336,7 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
                   <span>Dashboard</span>
                   <span>/</span>
                   <span className="text-foreground font-medium">
-                    {initialData ? "Edit Course" : "Course Builder"}
+                    {initialData?.courseId ? "Edit Course" : "Course Builder"}
                   </span>
                 </div>
                 <h1 className="break-words text-base font-bold leading-tight [overflow-wrap:anywhere] sm:text-xl">

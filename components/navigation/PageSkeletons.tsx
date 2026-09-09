@@ -112,21 +112,19 @@ export function ExamplesSkeleton() {
       <div className={cn(container, "space-y-8 py-10")}>
         <section className="rounded-2xl border border-border bg-card px-6 py-10 text-center md:px-12">
           <span className="mb-4 inline-flex rounded-full bg-secondary px-4 py-1 text-xs">Ready-to-use Templates</span>
-          <h1 className="mb-3 text-3xl font-extrabold tracking-tight md:text-4xl">Start Faster with a Template</h1>
+          <h1 className="mb-3 text-3xl font-bold tracking-tight md:text-4xl">Start Faster with a Template</h1>
           <p className="mx-auto mb-6 max-w-xl text-sm leading-relaxed text-muted-foreground md:text-base">Browse professionally structured course outlines. Pick one that fits your topic, customize it, and start teaching — in minutes.</p>
           <Skeleton className="mx-auto h-10 w-full max-w-md rounded-xl" />
         </section>
         <div className="flex items-center gap-2"><h2 className="text-base font-semibold">All Templates</h2><Skeleton className="h-5 w-7" /></div>
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="space-y-3">
           {exampleCourses.map(course => (
-            <div key={course.id} className="overflow-hidden rounded-2xl border border-border bg-card">
-              <Skeleton className="h-1.5 w-full rounded-none" />
-              <div className="px-5 pb-4 pt-5">
-                <div className="mb-4 flex items-start gap-3"><Skeleton className="size-10 shrink-0 rounded-xl" /><div className="min-w-0 flex-1 space-y-2"><Skeleton className="h-5 w-full" /><Skeleton className="h-3 w-3/4" /></div></div>
-                <Skeleton className="mb-4 h-5 w-20" />
-                <div className="mb-1 space-y-1.5">{course.outline.slice(0, 3).map(topic => <Skeleton key={topic} className="h-4 w-3/4" />)}<Skeleton className="h-4 w-24" /></div>
+            <div key={course.id} className="rounded-2xl border border-border bg-card px-4 py-4 sm:px-6">
+              <div className="flex items-center gap-3">
+                <Skeleton className="size-10 shrink-0 rounded-xl" />
+                <div className="min-w-0 flex-1 space-y-2"><Skeleton className="h-5 w-2/3" /><Skeleton className="h-3 w-full" /></div>
+                <Skeleton className="hidden h-5 w-28 sm:block" />
               </div>
-              <div className="flex justify-between border-t border-border bg-muted/20 px-5 py-3.5"><Skeleton className="h-8 w-20" /><Skeleton className="h-8 w-28" /></div>
             </div>
           ))}
         </div>
