@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useCallback } from "react";
+import Link from "next/link";
 import {
   Accordion,
   AccordionContent,
@@ -56,8 +57,6 @@ import {
   StickyNote,
   Image as ImageIcon,
   Trash2,
-  ExternalLink,
-  SlidersHorizontal,
   LayoutList,
   Workflow,
   Globe,
@@ -73,6 +72,7 @@ import {
   Settings2,
   Share2,
   FileImage,
+  Download,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useSession } from "@/lib/auth-client";
@@ -824,28 +824,6 @@ function ResourceRow({
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <Button
-        variant="ghost"
-        size="icon"
-        className="h-8 w-8 flex-shrink-0"
-        title="Settings"
-        onClick={() =>
-          alert(`Editing "${resource.name}" (settings not wired up)`)
-        }
-      >
-        <SlidersHorizontal className="w-3.5 h-3.5" />
-      </Button>
-      <Button
-        variant="ghost"
-        size="icon"
-        className="h-8 w-8 flex-shrink-0"
-        title="Open"
-        onClick={() =>
-          alert(`Opening "${resource.name}" (preview not wired up)`)
-        }
-      >
-        <ExternalLink className="w-3.5 h-3.5" />
-      </Button>
       <Button
         variant="ghost"
         size="icon"
@@ -1777,20 +1755,22 @@ function SettingsRow({
 }
 
 function SettingsTab({
+  courseId,
   isPublic,
   shareSlug,
   onTogglePublic,
   isToggling,
+  onExportMarkdown,
+  isExporting,
 }: {
+  courseId: string | null;
   isPublic: boolean;
   shareSlug?: string | null;
   onTogglePublic: (checked: boolean) => void;
   isToggling: boolean;
+  onExportMarkdown: () => void;
+  isExporting: boolean;
 }) {
-  const [aiRegen, setAiRegen] = useState(true);
-  const [comments, setComments] = useState(false);
-  const [deleteOpen, setDeleteOpen] = useState(false);
-
   return (
     <div className="space-y-3">
       <SettingsRow
@@ -1810,83 +1790,18 @@ function SettingsTab({
         }
       />
       <SettingsRow
-        icon={FileText}
-        title="Export Options"
-        description="Download as Markdown, PDF, or push to Notion"
+        icon={Download}
+        title="Export Markdown"
+        description="Download your course as a Markdown file"
         control={
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button size="sm">Export</Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => alert("Exporting as Markdown…")}>
-                Export as Markdown
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => alert("Exporting as PDF…")}>
-                Export as PDF
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => alert("Pushing to Notion…")}>
-                Push to Notion
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        }
-      />
-      <SettingsRow
-        icon={Check}
-        title="AI Regeneration"
-        description="Allow AI to refine modules based on feedback"
-        control={<Switch checked={aiRegen} onCheckedChange={setAiRegen} />}
-      />
-      <SettingsRow
-        icon={StickyNote}
-        title="Learner Comments"
-        description="Allow learners to leave inline comments on lessons"
-        control={<Switch checked={comments} onCheckedChange={setComments} />}
-      />
-      <SettingsRow
-        icon={Trash2}
-        title="Delete Course"
-        description="Permanently remove this draft and all its resources"
-        destructive
-        control={
-          <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-            <DialogTrigger asChild>
-              <Button variant="destructive" size="sm">
-                Delete
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
-              <DialogHeader>
-                <div className="flex items-center gap-3 mb-1">
-                  <div className="w-9 h-9 rounded-lg bg-destructive/10 flex items-center justify-center">
-                    <AlertTriangle className="w-4 h-4 text-destructive" />
-                  </div>
-                  <DialogTitle>Delete this course?</DialogTitle>
-                </div>
-                <DialogDescription>
-                  This permanently removes the draft, every module, lesson, and
-                  all attached resources. This action cannot be undone.
-                </DialogDescription>
-              </DialogHeader>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setDeleteOpen(false)}>
-                  Cancel
-                </Button>
-                <Button
-                  variant="destructive"
-                  onClick={() => {
-                    setDeleteOpen(false);
-                    alert(
-                      "Course deleted (demo only — nothing was actually removed).",
-                    );
-                  }}
-                >
-                  Delete course
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={onExportMarkdown}
+            disabled={!courseId || isExporting}
+          >
+            {isExporting ? "Exporting…" : "Download .md"}
+          </Button>
         }
       />
     </div>
@@ -2085,9 +2000,11 @@ function UpgradeDialog({ children }: { children: React.ReactNode }) {
           <Button variant="outline" onClick={() => setOpen(false)}>
             Maybe later
           </Button>
-          <Button className="gap-1.5" onClick={() => setOpen(false)}>
-            <Sparkles className="w-3.5 h-3.5" />
-            Upgrade to Creator
+          <Button asChild className="gap-1.5">
+            <Link href="/pricing">
+              <Sparkles className="w-3.5 h-3.5" />
+              Upgrade to Creator
+            </Link>
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -2155,6 +2072,7 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
     initialData?.shareSlug ?? null,
   );
   const [isTogglingPublic, setIsTogglingPublic] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   const totalLessons = modules.reduce((a, m) => a + m.lessons.length, 0);
 
@@ -2318,6 +2236,34 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
       toast.error((error as Error).message || "Failed to update visibility.");
     } finally {
       setIsTogglingPublic(false);
+    }
+  };
+
+  const handleExportMarkdown = async () => {
+    if (!courseId) return;
+    setIsExporting(true);
+    try {
+      const response = await fetch(`/api/course/${courseId}/export/markdown`);
+      if (!response.ok) {
+        const error = await response.json().catch(() => null);
+        toast.error(error?.error || "Export failed.");
+        return;
+      }
+
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${title || "course"}.md`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      toast.success("Markdown export downloaded.");
+    } catch {
+      toast.error("Export failed. Please try again.");
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -2577,10 +2523,13 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
 
           <TabsContent value="settings">
             <SettingsTab
+              courseId={courseId}
               isPublic={isPublic}
               shareSlug={shareSlug}
               onTogglePublic={handleTogglePublic}
               isToggling={isTogglingPublic}
+              onExportMarkdown={handleExportMarkdown}
+              isExporting={isExporting}
             />
           </TabsContent>
 

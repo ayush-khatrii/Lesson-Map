@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useCallback, useEffect } from "react";
+import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
 import {
   CheckCircle2,
@@ -351,8 +352,13 @@ function UpgradeDialog({
           >
             Maybe Later
           </Button>
-          <Button className="flex-1 gap-2 bg-primary font-bold text-primary-foreground hover:bg-primary/90">
-            Upgrade Now <ArrowRight className="h-3.5 w-3.5" />
+          <Button
+            asChild
+            className="flex-1 gap-2 bg-primary font-bold text-primary-foreground hover:bg-primary/90"
+          >
+            <Link href="/pricing">
+              Upgrade Now <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
           </Button>
         </div>
       </DialogContent>
@@ -364,6 +370,21 @@ function UpgradeDialog({
 
 function CourseNavbar({ creator }: { creator: Creator }) {
   const [menuOpen, setMenuOpen] = useState(false);
+
+  const handleShare = async () => {
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: "LessonMap Course",
+          url: window.location.href,
+        });
+      } else {
+        await navigator.clipboard?.writeText(window.location.href);
+      }
+    } catch {
+      // Closing the native share sheet is not an error.
+    }
+  };
 
   return (
     <nav
@@ -404,16 +425,7 @@ function CourseNavbar({ creator }: { creator: Creator }) {
           <Button
             size="sm"
             className="gap-1.5 bg-primary font-semibold text-primary-foreground hover:bg-primary/90"
-            onClick={() => {
-              if (typeof navigator !== "undefined" && navigator.share) {
-                navigator.share({
-                  title: "LessonMap Course",
-                  url: window.location.href,
-                });
-              } else {
-                navigator.clipboard?.writeText(window.location.href);
-              }
-            }}
+            onClick={handleShare}
           >
             <Share2 className="h-3.5 w-3.5" /> Share
           </Button>
@@ -443,7 +455,10 @@ function CourseNavbar({ creator }: { creator: Creator }) {
                 )}
               </div>
             </div>
-            <Button className="w-full gap-2 bg-primary font-semibold text-primary-foreground hover:bg-primary/90">
+            <Button
+              className="w-full gap-2 bg-primary font-semibold text-primary-foreground hover:bg-primary/90"
+              onClick={handleShare}
+            >
               <Share2 className="h-4 w-4" /> Share Course
             </Button>
           </div>
