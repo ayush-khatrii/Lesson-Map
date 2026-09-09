@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import type { LucideIcon } from "lucide-react";
 import {
   CheckCircle2,
@@ -24,6 +24,7 @@ import {
   Newspaper,
   ExternalLink,
   MapPin,
+  ChevronDown,
 } from "lucide-react";
 
 import {
@@ -55,6 +56,7 @@ export interface Resource {
   id: string;
   title: string;
   type: ResourceType;
+  meta?: string | null;
   url?: string;
   content?: string | null;
 }
@@ -474,18 +476,20 @@ function StatCard({
 
 // ─── Resource Row ─────────────────────────────────────────────────────────────
 
-function ResourceRow({ resource }: { resource: Resource }) {
+function ResourceRow({
+  resource,
+  onPreview,
+}: {
+  resource: Resource;
+  onPreview: (resource: Resource) => void;
+}) {
   const meta = RESOURCE_META[resource.type];
   const Icon = meta.icon;
-  const href = resource.url || "#";
-  const isExternal = resource.url && resource.url.startsWith("http");
-
   return (
-    <a
-      href={href}
-      target={isExternal ? "_blank" : undefined}
-      rel={isExternal ? "noopener noreferrer" : undefined}
-      className="group flex select-text items-center gap-3 rounded-xl border border-zinc-800 bg-zinc-900/40 px-4 py-3 transition-colors hover:border-amber-500/25 hover:bg-amber-500/[0.04]"
+    <button
+      type="button"
+      onClick={() => onPreview(resource)}
+      className="group flex min-w-0 w-full select-text items-center gap-3 rounded-xl border border-zinc-800 bg-zinc-900/40 px-3 py-3 text-left transition-colors hover:border-amber-500/25 hover:bg-amber-500/[0.04] sm:px-4"
     >
       <div
         className={cn(
@@ -499,14 +503,89 @@ function ResourceRow({ resource }: { resource: Resource }) {
         <p className="truncate text-xs font-medium text-zinc-200 group-hover:text-white">
           {resource.title}
         </p>
-        <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-600">
-          {meta.label}
+        <p className="truncate text-[10px] font-semibold uppercase tracking-wider text-zinc-600">
+          {resource.meta || meta.label}
         </p>
       </div>
-      {resource.url && (
-        <ExternalLink className="h-3.5 w-3.5 shrink-0 text-zinc-600 transition-colors group-hover:text-amber-400" />
-      )}
-    </a>
+      <span className="flex shrink-0 items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-zinc-600 transition-colors group-hover:text-amber-400">
+        View
+        {resource.url && <ExternalLink className="h-3.5 w-3.5" />}
+      </span>
+    </button>
+  );
+}
+
+function ResourcePreviewDialog({
+  resource,
+  onClose,
+}: {
+  resource: Resource | null;
+  onClose: () => void;
+}) {
+  if (!resource) return null;
+
+  const isImage = resource.type === "Image";
+  const isPdf = resource.type === "PDF";
+  const hasText = Boolean(resource.content?.trim());
+
+  return (
+    <Dialog open={Boolean(resource)} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="flex max-h-[85vh] w-[calc(100%-1.5rem)] max-w-3xl flex-col overflow-hidden border-zinc-800 bg-zinc-950 p-0 text-white">
+        <DialogHeader className="border-b border-zinc-800 px-4 py-4 text-left sm:px-6">
+          <DialogTitle className="break-words pr-6 text-base sm:text-lg">
+            {resource.title}
+          </DialogTitle>
+          <DialogDescription className="text-xs text-zinc-500">
+            {resource.type} resource
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6">
+          {isImage && resource.url ? (
+            <div className="flex justify-center rounded-xl bg-zinc-900 p-2">
+              <img
+                src={resource.url}
+                alt={resource.title}
+                className="max-h-[60vh] max-w-full rounded-lg object-contain"
+              />
+            </div>
+          ) : isPdf && resource.url ? (
+            <iframe
+              src={resource.url}
+              title={resource.title}
+              className="h-[60vh] min-h-[360px] w-full rounded-xl border border-zinc-800 bg-white"
+            />
+          ) : hasText ? (
+            <pre className="whitespace-pre-wrap break-words rounded-xl border border-zinc-800 bg-zinc-900/70 p-4 font-mono text-xs leading-relaxed text-zinc-200 sm:text-sm">
+              {resource.content}
+            </pre>
+          ) : resource.url ? (
+            <div className="space-y-4">
+              <iframe
+                src={resource.url}
+                title={resource.title}
+                className="h-[55vh] min-h-[320px] w-full rounded-xl border border-zinc-800 bg-white"
+              />
+            </div>
+          ) : (
+            <p className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 text-sm text-zinc-400">
+              This resource does not have a preview available.
+            </p>
+          )}
+
+          {resource.url && (
+            <a
+              href={resource.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-4 inline-flex items-center gap-2 text-xs font-semibold text-amber-400 hover:text-amber-300"
+            >
+              Open original resource <ExternalLink className="h-3.5 w-3.5" />
+            </a>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -687,6 +766,14 @@ function LessonContentPanel({
   completedCount: number;
   totalLessons: number;
 }) {
+  const [previewResource, setPreviewResource] = useState<Resource | null>(null);
+  const [resourcesOpen, setResourcesOpen] = useState(false);
+
+  useEffect(() => {
+    setResourcesOpen(false);
+    setPreviewResource(null);
+  }, [lesson?.id]);
+
   if (!module || !lesson) {
     return (
       <div className="flex h-full min-h-[420px] flex-col p-8 text-center">
@@ -718,7 +805,8 @@ function LessonContentPanel({
   const { completed, total, pct } = moduleProgress(module, isDone);
 
   return (
-    <div className="flex min-h-[420px] flex-col rounded-2xl border border-zinc-800 bg-zinc-900/30">
+    <>
+      <div className="flex min-h-[420px] flex-col rounded-2xl border border-zinc-800 bg-zinc-900/30">
       <div className="border-b border-zinc-800 px-6 py-5">
         <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-amber-500">
           {module.label}
@@ -746,15 +834,34 @@ function LessonContentPanel({
         </div>
 
         {lesson.resources && lesson.resources.length > 0 && (
-          <div className="mb-5">
-            <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-zinc-600">
-              Attached resources
-            </p>
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-              {lesson.resources.map((r) => (
-                <ResourceRow key={r.id} resource={r} />
-              ))}
-            </div>
+          <div className="mb-5 overflow-hidden rounded-xl border border-amber-500/20 bg-amber-500/[0.03]">
+            <button
+              type="button"
+              onClick={() => setResourcesOpen((open) => !open)}
+              className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left text-xs font-semibold uppercase tracking-widest text-amber-400 transition-colors hover:bg-amber-500/[0.05]"
+              aria-expanded={resourcesOpen}
+            >
+              <span>Attached resources ({lesson.resources.length})</span>
+              <ChevronDown
+                className={cn(
+                  "h-4 w-4 shrink-0 transition-transform",
+                  resourcesOpen && "rotate-180",
+                )}
+              />
+            </button>
+            {resourcesOpen && (
+              <div className="border-t border-amber-500/10 p-3 sm:p-4">
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  {lesson.resources.map((r) => (
+                    <ResourceRow
+                      key={r.id}
+                      resource={r}
+                      onPreview={setPreviewResource}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -779,7 +886,12 @@ function LessonContentPanel({
           )}
         </Button>
       </div>
-    </div>
+      </div>
+      <ResourcePreviewDialog
+        resource={previewResource}
+        onClose={() => setPreviewResource(null)}
+      />
+    </>
   );
 }
 
@@ -1135,10 +1247,10 @@ export default function LessonMapPublicPage({
             <span>by</span>
             <span className="font-semibold text-zinc-400">LessonMap</span>
             <span>·</span>
-            <span>Syntaxio Technologies</span>
+            <span>Stacex Technologies</span>
           </div>
           <p className="text-xs text-zinc-700">
-            © {new Date().getFullYear()} Syntaxio Technologies. All rights
+            © {new Date().getFullYear()} Stacex Technologies. All rights
             reserved.
           </p>
         </div>

@@ -78,6 +78,7 @@ export default async function CoursePreviewPage({
           id: r.id,
           title: r.name,
           type: r.type,
+          meta: r.meta,
           url: r.url ?? undefined,
           content: r.content,
         })),
