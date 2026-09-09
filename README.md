@@ -54,7 +54,7 @@ Learners can move through modules, open lessons and their attached resources, an
 
 </details>
 
-Screenshots show the deployed public interface captured in September 2026. Available content may change as course owners edit their courses.
+Screenshots of the LessonMap is shown. Available content may change as UI changes.
 
 ## Plans and usage
 
@@ -75,9 +75,6 @@ Each AI request allows up to **100 combined modules and lessons** to keep genera
 
 Markdown export includes the saved course title and description, module descriptions, and ordered lesson titles. It does not bundle resource files. The server checks the signed-in user's paid access and course ownership before returning the download.
 
-## Current scope
-
-LessonMap focuses on course planning and public lesson browsing. Progress is browser-local and does not sync between devices. Flow Map is currently a locked placeholder; PDF/Notion export, learner comments, and AI regeneration controls are not available features.
 
 ## Built with
 
@@ -122,14 +119,6 @@ npm run dev
 ```
 
 Open [localhost:3000](http://localhost:3000), sign in, and create a course or try a template.
-
-```text
-https://your-domain/api/webhooks/dodopayments
-```
-
-Use that endpoint's signing secret, subscribe to the subscription lifecycle events handled by [the webhook route](app/api/webhooks/dodopayments/route.ts), and keep the API key, product IDs, and webhook configuration in the same test or live environment. Local webhook delivery requires a public tunnel.
-
-For uploads, configure the R2 bucket's CORS rules for your app's origin. [cors.json](cors.json) contains the repository's current configuration; adapt its allowed origins to your environment.
 
 ### Useful commands
 
