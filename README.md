@@ -1,148 +1,161 @@
-# 🗺️ LessonMap — Map Every Lesson with Clarity
+# LessonMap
 
-![LessonMap Logo](https://raw.githubusercontent.com/ayush-khatrii/Lesson-Map/refs/heads/main/public/image.png)
-**LessonMap** helps educators, creators, and learning teams design and organize structured, engaging learning experiences — faster and smarter.
+### Turn your knowledge into a course people can follow.
 
-No clutter. No chaos. Just clear, modular course creation that scales with your ideas.
+Create a course outline, organize modules and lessons, attach learning resources, and share a public learning page—all in one workspace.
 
----
+[Try LessonMap](https://lessonmap.vercel.app) · [Explore templates](https://lessonmap.vercel.app/examples) · [View plans](https://lessonmap.vercel.app/pricing) · [Report an issue](https://github.com/ayush-khatrii/Lesson-Map/issues)
 
-## 💡 What Is LessonMap?
+![LessonMap home page](docs/screenshots/home.png)
 
-LessonMap is an intelligent workspace built to simplify the way courses are designed.  
-It transforms scattered notes, outlines, and ideas into structured learning journeys — effortlessly.
+Built for independent educators, bootcamp instructors, and creators who want a clear structure for their next course.
 
-Whether you're planning a full curriculum or a short bootcamp, LessonMap gives you clarity, control, and creativity in one place.
+## From idea to shared course
 
----
+1. **Start your outline.** Create a course manually, choose a ready-made template, or generate a draft with AI.
+2. **Make it yours.** Edit course details, add modules and lessons, and drag them into the right order.
+3. **Add useful material.** Attach code, notes, links, PDFs, or images to individual lessons.
+4. **Share and learn.** Enable public sharing and send the link to learners. They can browse lessons and track completion in their browser.
 
-## 🚀 Core Features
+## Features
 
-### 🧱 Visual Course Builder  
-Create, edit, and organize lessons through a modern, drag-and-drop interface.
+| Feature | What you can do |
+| --- | --- |
+| **Course dashboard** | See your courses, module and lesson counts, and sharing status in one place. |
+| **Course builder** | Create, edit, delete, and reorder modules and lessons in an accordion layout. |
+| **AI course outlines** | Describe a topic and audience, choose an outline size, and generate an editable draft with DeepSeek. |
+| **Starter templates** | Preview DSA and Web Development courses. **Use Template** pre-fills a new course with its modules and lessons. |
+| **Lesson resources** | Attach code, notes, links, PDFs, and images. Browse resources with their lesson context and preview supported content. |
+| **Code previews** | Read code resources with syntax highlighting in a scrollable preview. |
+| **Public course pages** | Publish a stable share link with the original creator's name, course details, and curriculum. Turn sharing off when needed. |
+| **Learner progress** | Mark lessons complete and follow the overall progress bar. Progress is saved locally in the current browser. |
+| **Markdown export** | Paid subscribers can download their own saved course outline as a `.md` file from the builder's Settings tab. |
+| **Responsive themes** | Browse courses on desktop or mobile with shared light and dark theme colors. |
+| **GitHub sign-in** | Sign in to manage your own courses through Better Auth. |
+| **Subscription billing** | Upgrade through Dodo Payments; verified subscription webhooks update paid access. |
 
-### ✨ AI-Assisted Outlining  
-Let AI generate a structured module plan — instantly — to kickstart your course design.
+### Start with a template
 
-### 🧩 Modular Learning Design  
-Build courses in modules and lessons that are easy to edit, reorder, and grow over time.
+Explore the course structure before using it. Templates are defined in code; a course is stored in your account when you save it.
 
-### 📋 Context-Rich Descriptions  
-Add purpose and details to each module to make your teaching flow intuitive and consistent.
+![Examples page with starter course templates](docs/screenshots/examples.png)
 
-### 💬 Guided Feedback  
-Instant visual feedback for actions like saving, editing, and validation, so you always know what’s happening.
+### Give learners a focused course page
 
-### 🔒 Private & Secure  
-Access control ensures your learning content stays yours — always.
+Learners can move through modules, open lessons and their attached resources, and mark lessons complete. Public courses can be viewed without signing in.
 
----
+![Public course page with curriculum and learner progress](docs/screenshots/public-course.png)
 
-## 🧭 How It Works
+<details>
+<summary>See the mobile course page</summary>
 
-1. **Select a Course** — Choose a course or create a new one.  
-2. **Add Modules** — Define topics or chapters with short descriptions.  
-3. **Reorder Easily** — Drag and drop modules to structure your course flow.  
-4. **AI Assist (Optional)** — Auto-generate a first draft of your module plan.  
-5. **Save & Review** — Finalize your course design and get ready to publish.
+<br />
+<img src="docs/screenshots/public-course-mobile.png" alt="LessonMap public course page on a mobile viewport" width="320" />
 
----
+</details>
 
-## 🎯 Who LessonMap Is For
+Screenshots show the deployed public interface captured in September 2026. Available content may change as course owners edit their courses.
 
-- 🧑‍🏫 **Educators** who want structure and simplicity in their curriculum design.  
-- 💼 **Corporate L&D Teams** building scalable training programs.  
-- 🚀 **Bootcamps & EdTech Creators** launching structured course offerings.  
-- ✍️ **Independent Instructors & Coaches** looking to organize lessons effortlessly.  
+## Plans and usage
 
----
+These limits reflect the current server configuration in [lib/plans.ts](lib/plans.ts) and [lib/ai/schema.ts](lib/ai/schema.ts). See the [pricing page](https://lessonmap.vercel.app/pricing) for subscription pricing.
 
-## 🌟 Why People Love LessonMap
+| Allowance | Free | Creator |
+| --- | --- | --- |
+| Saved courses | 3 | 5 |
+| Manually added modules and lessons | No plan-level cap | No plan-level cap |
+| AI attempts per month | 5 | 200 |
+| AI outline size | 1 module with 1 lesson | Configurable, within the request safety limit |
+| Public course sharing | Yes | Yes |
+| Markdown export | No | Yes |
 
-- 🧭 Brings structure to creativity  
-- ⚡ Makes course planning intuitive and visual  
-- 🧠 Uses AI as a helper, not a replacement  
-- 💬 Feels responsive and lightweight — no LMS bloat  
-- 🎯 Keeps you focused on teaching, not tooling  
+An AI attempt is recorded when the server accepts and reserves a new generation request. Provider failures also count; rejected requests before reservation do not. Replaying the same request does not consume another attempt. The allowance resets at the start of each calendar month in UTC.
 
----
+Each AI request allows up to **100 combined modules and lessons** to keep generation manageable. This does not limit how many items you can add manually afterward.
 
-## 🌈 Our Vision
+Markdown export includes the saved course title and description, module descriptions, and ordered lesson titles. It does not bundle resource files. The server checks the signed-in user's paid access and course ownership before returning the download.
 
-LessonMap’s goal is simple:
+## Current scope
 
-> To make course design as seamless as storytelling — with tools that feel natural, intelligent, and inspiring.
+LessonMap focuses on course planning and public lesson browsing. Progress is browser-local and does not sync between devices. Flow Map is currently a locked placeholder; PDF/Notion export, learner comments, and AI regeneration controls are not available features.
 
-We believe educators deserve better creative tools, not complex management systems.  
-LessonMap helps you **map your lessons**, **visualize learning journeys**, and **share knowledge with clarity.**
+## Built with
 
----
+| Area | Technology |
+| --- | --- |
+| Application | Next.js 16 App Router, React 19, TypeScript |
+| Interface | Tailwind CSS 4, shadcn/ui, Radix UI, Lucide icons |
+| Data | PostgreSQL, Prisma 7 |
+| Authentication | Better Auth with GitHub OAuth |
+| AI | DeepSeek with Zod-validated outline responses |
+| Payments | Dodo Payments and signed webhooks |
+| File storage | Cloudflare R2 through the AWS S3 SDK |
+| Interaction | dnd-kit for reordering, Shiki for syntax highlighting |
+| Caching | Next.js Cache Components with user-specific course tags |
 
-## 🪄 Example Use Case
+## Run locally
 
-### Course: *Next.js 15 Masterclass*
-**AI Suggestion:**
-1. Introduction to Next.js 15  
-2. Server Components & Actions  
-3. Building a Fullstack App  
-4. Deployment & Optimization  
-5. Capstone Project  
+Use Node.js 22 LTS, npm, and a PostgreSQL development database. GitHub OAuth is required for sign-in. AI, uploads, and payments need their corresponding service credentials.
 
-Structured. Logical. Editable. In minutes.
+### 1. Clone and configure
 
----
+```bash
+git clone https://github.com/ayush-khatrii/Lesson-Map.git
+cd Lesson-Map
+cp .env.example .env
+```
 
-## 🧭 Product Overview
+The current `.env.example` contains payment settings but is not a complete environment template. Add the following variables to your local `.env` with your own values:
 
-| Area                  | Description                          |
-| --------------------- | ------------------------------------ |
-| 🏠 **Dashboard**       | Manage all your courses in one place |
-| 🧩 **Module Builder**  | Add and organize learning modules    |
-| 🤖 **AI Assist**       | Generate complete outlines instantly |
-| 📋 **Course Overview** | Review and refine your course flow   |
+### 2. Install and prepare the database
 
----
+```bash
+npm ci
+npx prisma db push
+npx prisma generate
+```
 
-## ❤️ Our Mission
+### 3. Start the app
 
-Empower every educator, trainer, and creator to **share knowledge beautifully** — with the clarity of a map and the ease of a canvas.
+```bash
+npm run dev
+```
 
-LessonMap isn’t just another course builder —  
-it’s a **thinking tool for learning design.**
+Open [localhost:3000](http://localhost:3000), sign in, and create a course or try a template.
 
+```text
+https://your-domain/api/webhooks/dodopayments
+```
 
-## ⚙️ Technology Stack (for Developers)
+Use that endpoint's signing secret, subscribe to the subscription lifecycle events handled by [the webhook route](app/api/webhooks/dodopayments/route.ts), and keep the API key, product IDs, and webhook configuration in the same test or live environment. Local webhook delivery requires a public tunnel.
 
-For DeepSeek configuration, AI plan limits, and the full-course generation flow,
-see [AI generation setup](docs/ai-generation.md).
+For uploads, configure the R2 bucket's CORS rules for your app's origin. [cors.json](cors.json) contains the repository's current configuration; adapt its allowed origins to your environment.
 
-While LessonMap focuses on simplicity for educators, it’s built with modern, scalable technologies to ensure a seamless experience:
+### Useful commands
 
-| Category               | Tech                         |
-| ---------------------- | ---------------------------- |
-| **Frontend Framework** | Next.js 15                   |
-| **UI Framework**       | Tailwind CSS + shadcn/ui     |
-| **Database & ORM**     | PostgreSQL + Prisma          |
-| **Auth**               | BetterAuth                   |
-| **Validation**         | Zod                          |
-| **Notifications**      | Sonner                       |
-| **State & Logic**      | React Hooks + Server Actions |
+```bash
+npm run typecheck  # Check TypeScript
+npm run build     # Create a production build
+npm start         # Serve the production build
+```
 
----
+## Project structure
 
-## 👥 Contributors
+```text
+app/              Pages, layouts, and API routes
+components/       Course builder, previews, dashboard, and shared UI
+constants/        Static course templates and shared content
+lib/              Auth, course actions, AI, caching, and storage helpers
+prisma/           Database schema and migrations
+public/           Static assets
+docs/screenshots/ README product screenshots
+tests/            Existing automated checks
+```
 
-Thanks to all the amazing people who contributed to **LessonMap** 💡
+## Feedback and contributions
 
-| Name   | Role      | GitHub                                             |
-| ------ | --------- | -------------------------------------------------- |
-| Ayush  | Developer | [@ayush-khatrii](https://github.com/ayush-khatrii) |
-| Vrut07 | Developer | [@vrut07](http://github.com/vrut07/)               |
+Found a problem or have an idea? [Open an issue](https://github.com/ayush-khatrii/Lesson-Map/issues) with the steps to reproduce it, expected behavior, and a screenshot when useful. For contributions, keep changes focused and run the relevant checks before opening a pull request.
 
-## 📜 License
+Created by [Ayush Khatri](https://github.com/ayush-khatrii), with contributions from [Vrut07](https://github.com/vrut07).
 
-MIT © 2025 — LessonMap
-
----
-
-**LessonMap — Because every great course starts with a clear map.**
+Licensed under the [MIT License](LICENSE).
