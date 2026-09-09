@@ -23,10 +23,7 @@ import {
   Link2,
   Newspaper,
   ExternalLink,
-  FolderOpen,
-  Users,
   MapPin,
-  ChevronDown,
 } from "lucide-react";
 
 import {
@@ -82,15 +79,15 @@ export interface Module {
 export interface Creator {
   name: string;
   avatar: string | null;
-  role: string;
-  bio: string;
+  role?: string;
+  bio?: string;
 }
 
 export interface CourseStats {
   modules: number;
   lessons: number;
-  hours: string;
-  students: string;
+  hours?: string;
+  students?: string;
 }
 
 export interface Course {
@@ -432,7 +429,9 @@ function CourseNavbar({ creator }: { creator: Creator }) {
               </div>
               <div>
                 <p className="text-sm font-medium text-white">{creator.name}</p>
-                <p className="text-xs text-zinc-500">{creator.role}</p>
+                {creator.role && (
+                  <p className="text-xs text-zinc-500">{creator.role}</p>
+                )}
               </div>
             </div>
             <Button className="w-full gap-2 bg-amber-500 font-semibold text-black hover:bg-amber-400">
@@ -511,60 +510,6 @@ function ResourceRow({ resource }: { resource: Resource }) {
   );
 }
 
-// ─── Resources Panel (full-width accordion) ───────────────────────────────────
-
-function ResourcesPanel({
-  resources,
-  isOpen,
-  onToggle,
-}: {
-  resources: Resource[];
-  isOpen: boolean;
-  onToggle: () => void;
-}) {
-  if (!resources.length) return null;
-
-  return (
-    <div className="w-full overflow-hidden rounded-xl border border-amber-500/20 bg-amber-500/[0.03]">
-      <div
-        role="button"
-        tabIndex={0}
-        onClick={clickUnlessSelecting(onToggle)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            onToggle();
-          }
-        }}
-        className="flex w-full cursor-pointer items-center justify-between gap-2 px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-widest text-amber-400 transition-colors hover:bg-amber-500/[0.05] select-text"
-        aria-expanded={isOpen}
-      >
-        <span className="flex min-w-0 items-center gap-2">
-          <FolderOpen className="h-3.5 w-3.5 shrink-0" />
-          <span className="truncate">
-            Lesson Resources ({resources.length})
-          </span>
-        </span>
-        <ChevronDown
-          className={cn(
-            "h-4 w-4 shrink-0 text-amber-400/70 transition-transform duration-200",
-            isOpen && "rotate-180",
-          )}
-        />
-      </div>
-      {isOpen && (
-        <div className="border-t border-amber-500/10 px-3 pb-3 pt-2">
-          <div className="grid w-full grid-cols-1 gap-2">
-            {resources.map((r) => (
-              <ResourceRow key={r.id} resource={r} />
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
 // ─── Module Sidebar Accordion ─────────────────────────────────────────────────
 
 function ModuleSidebar({
@@ -575,8 +520,6 @@ function ModuleSidebar({
   onSelectLesson,
   openModuleId,
   onOpenModule,
-  openResourcesId,
-  onToggleResources,
 }: {
   modules: Module[];
   isDone: (id: string) => boolean;
@@ -585,8 +528,6 @@ function ModuleSidebar({
   onSelectLesson: (moduleId: string, lessonId: string) => void;
   openModuleId: string;
   onOpenModule: (id: string) => void;
-  openResourcesId: string | null;
-  onToggleResources: (lessonId: string) => void;
 }) {
   return (
     <Accordion
@@ -655,8 +596,6 @@ function ModuleSidebar({
                 {mod.lessons.map((lesson, li) => {
                   const done = isDone(lesson.id);
                   const selected = selectedLessonId === lesson.id;
-                  const hasResources = (lesson.resources?.length ?? 0) > 0;
-                  const resourcesOpen = openResourcesId === lesson.id;
 
                   return (
                     <div key={lesson.id} className="space-y-1">
@@ -715,13 +654,6 @@ function ModuleSidebar({
 
                       </div>
 
-                      {selected && hasResources && lesson.resources && (
-                        <ResourcesPanel
-                          resources={lesson.resources}
-                          isOpen={resourcesOpen}
-                          onToggle={() => onToggleResources(lesson.id)}
-                        />
-                      )}
                     </div>
                   );
                 })}
@@ -737,7 +669,7 @@ function ModuleSidebar({
 // ─── Main Content Panel ───────────────────────────────────────────────────────
 
 function LessonContentPanel({
-  course,
+  courseTitle,
   module,
   lesson,
   isDone,
@@ -746,7 +678,7 @@ function LessonContentPanel({
   completedCount,
   totalLessons,
 }: {
-  course: Course;
+  courseTitle: string;
   module: Module | null;
   lesson: Lesson | null;
   isDone: (id: string) => boolean;
@@ -762,7 +694,7 @@ function LessonContentPanel({
           <BookOpen className="h-7 w-7 text-amber-400" />
         </div>
         <h2 className="mb-2 break-words text-lg font-bold leading-snug text-white [overflow-wrap:anywhere] sm:text-xl">
-          Welcome to {course.title}
+          Welcome to {courseTitle}
         </h2>
         <p className="mx-auto mb-6 max-w-md text-sm leading-relaxed text-zinc-500">
           Select a lesson from the sidebar to begin. Your progress is saved
@@ -796,19 +728,10 @@ function LessonContentPanel({
       </div>
 
       <div className="flex-1 px-6 py-6">
-        <div className="mb-6 rounded-xl border border-zinc-800 bg-zinc-950/60 px-5 py-5">
-          <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-zinc-600">
-            Lesson outline
-          </p>
-          <h3 className="break-words text-base font-semibold leading-snug text-white [overflow-wrap:anywhere] sm:text-lg">{lesson.title}</h3>
-          <p className="mt-3 text-sm leading-relaxed text-zinc-400">
-            {module.description}
-          </p>
-          <p className="mt-4 text-xs text-zinc-600">
-            Part of {module.title} · Shared by {course.creator.name} on
-            LessonMap
-          </p>
-        </div>
+        <p className="mb-6 text-sm leading-relaxed text-zinc-400">
+          Part of {module.title}. Continue through the lesson list to track
+          your progress.
+        </p>
 
         <div className="mb-5 flex items-center justify-between rounded-xl border border-zinc-800 bg-zinc-900/50 px-4 py-3">
           <div>
@@ -862,21 +785,24 @@ function LessonContentPanel({
 
 // ─── Flow View (Locked) ───────────────────────────────────────────────────────
 
-function FlowView({ onLockClick }: { onLockClick: () => void }) {
-  const nodes = [
-    { id: "m1", x: 300, y: 30, title: "Intro to Next.js 15", done: true, label: "01" },
-    { id: "m2", x: 80, y: 150, title: "Routing & Layouts", done: true, label: "02" },
-    { id: "m3", x: 520, y: 150, title: "Server Components", done: false, label: "03" },
-    { id: "m4", x: 80, y: 270, title: "Server Actions", done: false, label: "04" },
-    { id: "m5", x: 520, y: 270, title: "Database", done: false, label: "05" },
-    { id: "m6", x: 300, y: 370, title: "Authentication", done: false, label: "06" },
-    { id: "m7", x: 100, y: 480, title: "Performance", done: false, label: "07" },
-    { id: "m8", x: 500, y: 480, title: "Deployment", done: false, label: "08" },
-  ];
-  const edges: [string, string][] = [
-    ["m1", "m2"], ["m1", "m3"], ["m2", "m4"], ["m3", "m5"],
-    ["m4", "m6"], ["m5", "m6"], ["m6", "m7"], ["m6", "m8"],
-  ];
+function FlowView({
+  modules,
+  onLockClick,
+}: {
+  modules: Module[];
+  onLockClick: () => void;
+}) {
+  const nodes = modules.map((module, index) => ({
+    id: module.id,
+    x: index % 2 === 0 ? 80 : 520,
+    y: 30 + Math.floor(index / 2) * 110,
+    title: module.title,
+    done: false,
+    label: String(index + 1).padStart(2, "0"),
+  }));
+  const edges: [string, string][] = nodes
+    .slice(1)
+    .map((node, index) => [nodes[index].id, node.id]);
   const nm = Object.fromEntries(nodes.map((n) => [n.id, n]));
 
   return (
@@ -992,7 +918,6 @@ export default function LessonMapPublicPage({
   const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [openModuleId, setOpenModuleId] = useState(course.modules[0]?.id ?? "");
   const [selectedLessonId, setSelectedLessonId] = useState<string | null>(null);
-  const [openResourcesId, setOpenResourcesId] = useState<string | null>(null);
 
   const totalLessons = course.modules.reduce(
     (s, m) => s + m.lessons.length,
@@ -1021,21 +946,9 @@ export default function LessonMapPublicPage({
     (moduleId: string, lessonId: string) => {
       setOpenModuleId(moduleId);
       setSelectedLessonId(lessonId);
-      // Auto-open resources panel if the lesson has resources
-      const module = course.modules.find((m) => m.id === moduleId);
-      const lesson = module?.lessons.find((l) => l.id === lessonId);
-      if (lesson && (lesson.resources?.length ?? 0) > 0) {
-        setOpenResourcesId(lessonId);
-      } else {
-        setOpenResourcesId(null);
-      }
     },
-    [course.modules],
+    [],
   );
-
-  const handleToggleResources = useCallback((lessonId: string) => {
-    setOpenResourcesId((prev) => (prev === lessonId ? null : lessonId));
-  }, []);
 
   if (!hydrated) {
     return (
@@ -1057,7 +970,7 @@ export default function LessonMapPublicPage({
 
       <main className="mx-auto w-full max-w-7xl px-4 py-4 sm:px-6 sm:py-8 lg:px-8">
         {/* ── Dashboard shell (wireframe container) ── */}
-        <div className="overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-950 shadow-2xl shadow-black/40">
+      <div>
           {/* Header strip */}
           <div className="border-b border-zinc-800 px-4 py-4 sm:px-6 sm:py-6 md:px-8">
             <div className="mb-3 flex flex-wrap items-center gap-2">
@@ -1081,23 +994,20 @@ export default function LessonMapPublicPage({
           </div>
 
           {/* Stat cards row */}
-          <div className="grid grid-cols-2 gap-3 border-b border-zinc-800 px-6 py-5 md:grid-cols-4 md:px-8">
+          <div className="grid grid-cols-2 gap-3 border-b border-zinc-800 py-5 md:grid-cols-3">
             <StatCard icon={Layers} value={course.stats.modules} label="Modules" />
             <StatCard
               icon={BookOpen}
               value={course.stats.lessons}
               label="Lessons"
             />
-            <StatCard
-              icon={Clock}
-              value={`${course.stats.hours}h`}
-              label="Content"
-            />
-            <StatCard
-              icon={Users}
-              value={course.stats.students}
-              label="Students"
-            />
+            {course.stats.hours && (
+              <StatCard
+                icon={Clock}
+                value={`${course.stats.hours}h`}
+                label="Content"
+              />
+            )}
           </div>
 
           {/* Progress bar */}
@@ -1114,7 +1024,7 @@ export default function LessonMapPublicPage({
           </div>
 
           {/* View toggle + two-column body */}
-          <div className="px-6 py-6 md:px-8">
+          <div className="py-6">
             <div className="mb-5 flex items-center justify-between">
               <h2 className="text-base font-bold text-white">
                 Course curriculum
@@ -1165,14 +1075,12 @@ export default function LessonMapPublicPage({
                     onSelectLesson={handleSelectLesson}
                     openModuleId={openModuleId}
                     onOpenModule={setOpenModuleId}
-                    openResourcesId={openResourcesId}
-                    onToggleResources={handleToggleResources}
                   />
                 </div>
 
                 {/* Right: lesson content panel */}
                 <LessonContentPanel
-                  course={course}
+                  courseTitle={course.title}
                   module={selectedModule}
                   lesson={selectedLesson}
                   isDone={isDone}
@@ -1183,7 +1091,10 @@ export default function LessonMapPublicPage({
                 />
               </div>
             ) : (
-              <FlowView onLockClick={() => setUpgradeOpen(true)} />
+              <FlowView
+                modules={course.modules}
+                onLockClick={() => setUpgradeOpen(true)}
+              />
             )}
           </div>
 
@@ -1200,12 +1111,16 @@ export default function LessonMapPublicPage({
                 <h3 className="text-base font-bold text-white">
                   {course.creator.name}
                 </h3>
-                <p className="text-sm font-medium text-amber-400">
-                  {course.creator.role}
-                </p>
-                <p className="mt-1 text-sm leading-relaxed text-zinc-500">
-                  {course.creator.bio}
-                </p>
+                {course.creator.role && (
+                  <p className="text-sm font-medium text-amber-400">
+                    {course.creator.role}
+                  </p>
+                )}
+                {course.creator.bio && (
+                  <p className="mt-1 text-sm leading-relaxed text-zinc-500">
+                    {course.creator.bio}
+                  </p>
+                )}
               </div>
             </div>
           </div>

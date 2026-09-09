@@ -130,13 +130,37 @@ export async function POST(req: NextRequest) {
         "subscription.expired",
       ]);
 
+      const needsUser =
+        grantEvents.has(eventType) ||
+        eventType === "subscription.updated" ||
+        eventType === "subscription.cancelled" ||
+        revokeEvents.has(eventType);
+
+      // Every subscription event that can change access must resolve to one
+      // existing user. Otherwise we would acknowledge the event while
+      // leaving a user paid by mistake.
+      if (needsUser && !userWhere) {
+        throw new Error(`Cannot find a user for ${eventType}`);
+      }
+
+      const matchedUser = userWhere
+        ? await tx.user.findFirst({
+            where: userWhere,
+            select: { id: true },
+          })
+        : null;
+
+      if (needsUser && !matchedUser) {
+        throw new Error(`No matching user for ${eventType}`);
+      }
+
       if (grantEvents.has(eventType)) {
         if (!userWhere || !subscriptionId || !customerId || !plan) {
           throw new Error(`Cannot safely grant access for ${eventType}`);
         }
 
-        const result = await tx.user.updateMany({
-          where: userWhere,
+        await tx.user.update({
+          where: { id: matchedUser!.id },
           data: {
             plan,
             subscriptionId,
@@ -148,71 +172,65 @@ export async function POST(req: NextRequest) {
               data.cancel_at_next_billing_date ?? false,
           },
         });
-        if (result.count !== 1) {
-          throw new Error(`No matching user for ${eventType}`);
-        }
       } else if (eventType === "subscription.updated") {
-        if (userWhere) {
-          const activePlan = data.status === "active" ? plan : null;
-          const accessContinues =
-            data.status === "cancelled" &&
-            data.cancel_at_next_billing_date === true &&
-            periodEnd !== null &&
-            periodEnd.getTime() > Date.now();
-          const shouldRevoke =
-            data.status === "on_hold" ||
-            data.status === "failed" ||
-            data.status === "expired" ||
-            (data.status === "cancelled" && !accessContinues);
-
-          await tx.user.updateMany({
-            where: userWhere,
-            data: {
-              ...(activePlan ? { plan: activePlan } : {}),
-              ...(shouldRevoke ? { plan: "FREE" as const } : {}),
-              ...(subscriptionId ? { subscriptionId } : {}),
-              ...(customerId ? { customerId } : {}),
-              ...(data.product_id
-                ? { subscriptionProductId: data.product_id }
-                : {}),
-              ...(data.status ? { subscriptionStatus: data.status } : {}),
-              subscriptionCurrentPeriodEnd: periodEnd,
-              subscriptionCancelAtPeriodEnd:
-                data.status === "cancelled"
-                  ? accessContinues
-                  : (data.cancel_at_next_billing_date ?? false),
-            },
-          });
+        if (
+          data.status === "active" &&
+          (!plan || !subscriptionId || !customerId)
+        ) {
+          throw new Error("Cannot safely keep access from an incomplete event");
         }
+
+        const accessContinues =
+          data.status === "cancelled" &&
+          data.cancel_at_next_billing_date === true &&
+          periodEnd !== null &&
+          periodEnd.getTime() > Date.now();
+        const shouldRevoke =
+          data.status !== "active" && !accessContinues;
+
+        await tx.user.update({
+          where: { id: matchedUser!.id },
+          data: {
+            ...(data.status === "active" && plan ? { plan } : {}),
+            ...(shouldRevoke ? { plan: "FREE" as const } : {}),
+            ...(subscriptionId ? { subscriptionId } : {}),
+            ...(customerId ? { customerId } : {}),
+            ...(data.product_id
+              ? { subscriptionProductId: data.product_id }
+              : {}),
+            ...(data.status ? { subscriptionStatus: data.status } : {}),
+            subscriptionCurrentPeriodEnd: periodEnd,
+            subscriptionCancelAtPeriodEnd:
+              data.status === "cancelled"
+                ? accessContinues
+                : (data.cancel_at_next_billing_date ?? false),
+          },
+        });
       } else if (eventType === "subscription.cancelled") {
-        if (userWhere) {
-          const accessContinues =
-            data.cancel_at_next_billing_date === true &&
-            periodEnd !== null &&
-            periodEnd.getTime() > Date.now();
+        const accessContinues =
+          data.cancel_at_next_billing_date === true &&
+          periodEnd !== null &&
+          periodEnd.getTime() > Date.now();
 
-          await tx.user.updateMany({
-            where: userWhere,
-            data: {
-              ...(accessContinues ? {} : { plan: "FREE" }),
-              subscriptionStatus: "cancelled",
-              subscriptionCurrentPeriodEnd: periodEnd,
-              subscriptionCancelAtPeriodEnd: accessContinues,
-            },
-          });
-        }
+        await tx.user.update({
+          where: { id: matchedUser!.id },
+          data: {
+            ...(accessContinues ? {} : { plan: "FREE" }),
+            subscriptionStatus: "cancelled",
+            subscriptionCurrentPeriodEnd: periodEnd,
+            subscriptionCancelAtPeriodEnd: accessContinues,
+          },
+        });
       } else if (revokeEvents.has(eventType)) {
-        if (userWhere) {
-          await tx.user.updateMany({
-            where: userWhere,
-            data: {
-              plan: "FREE",
-              subscriptionStatus: data.status ?? eventType.split(".")[1],
-              subscriptionCurrentPeriodEnd: periodEnd,
-              subscriptionCancelAtPeriodEnd: false,
-            },
-          });
-        }
+        await tx.user.update({
+          where: { id: matchedUser!.id },
+          data: {
+            plan: "FREE",
+            subscriptionStatus: data.status ?? eventType.split(".")[1],
+            subscriptionCurrentPeriodEnd: periodEnd,
+            subscriptionCancelAtPeriodEnd: false,
+          },
+        });
       }
 
       await tx.webhookEvent.create({

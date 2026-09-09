@@ -60,14 +60,10 @@ export default async function CoursePreviewPage({
     creator: {
       name: course.user.name,
       avatar: course.user.image,
-      role: "Course Creator",
-      bio: "Shared on Lesson Map",
     },
     stats: {
       modules: course.Module.length,
       lessons: totalLessons,
-      hours: String(Math.max(1, Math.round(totalLessons * 0.5))),
-      students: "—",
     },
     modules: course.Module.map((mod, idx) => ({
       id: mod.id,
