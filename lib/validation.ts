@@ -16,13 +16,13 @@ export const moduleSchema = z.object({
   moduleName: z.string().min(1, "Module name is required"),
   description: z.string().min(1, "Description is required"),
   order: z.number().int().min(1, "Order is required"),
-  courseId: z.string().uuid("Valid course ID is required"),
+  courseId: z.string().min(1, "Valid course ID is required"),
 });
 
 export const lessonSchema = z.object({
   lessonName: z.string().min(1, "Lesson name is required"),
   order: z.number().int().min(1, "Order is required"),
-  moduleId: z.string().uuid("Valid module ID is required"),
+  moduleId: z.string().min(1, "Valid module ID is required"),
 });
 
 // Bulk create modules schema (for creating multiple modules at once)
@@ -56,7 +56,12 @@ export const createLessonsBulkSchema = z.object({
 export const updateModuleSchema = z.object({
   moduleName: z.string().min(1, "Module name is required"),
   description: z.string().min(1, "Description is required"),
-  order: z.number().int().min(1, "Order must be at least 1"),
+  order: z.number().int().min(1, "Order must be at least 1").optional(),
+});
+
+export const updateLessonSchema = z.object({
+  lessonName: z.string().min(1, "Lesson name is required"),
+  order: z.number().int().min(1, "Order must be at least 1").optional(),
 });
 
 // Schema for updating the user's profile

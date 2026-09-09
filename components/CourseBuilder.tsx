@@ -22,6 +22,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
@@ -87,6 +88,10 @@ import {
   reorderLessonsAction,
   updateCourseAction,
   deleteCourseAction,
+  updateModuleAction,
+  deleteModuleAction,
+  updateLessonAction,
+  deleteLessonAction,
 } from "@/lib/actions";
 import {
   DndContext,
@@ -307,6 +312,165 @@ function AddModuleDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function EditModuleDialog({
+  module,
+  onSave,
+}: {
+  module: Module;
+  onSave: (name: string, description: string) => Promise<boolean>;
+}) {
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState(module.name);
+  const [description, setDescription] = useState(module.description ?? "");
+  const [saving, setSaving] = useState(false);
+
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (nextOpen) {
+      setName(module.name);
+      setDescription(module.description ?? "");
+    }
+    setOpen(nextOpen);
+  };
+
+  const handleSubmit = async () => {
+    if (!name.trim()) return;
+    setSaving(true);
+    try {
+      if (await onSave(name.trim(), description.trim())) setOpen(false);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogTrigger asChild>
+        <Button type="button" variant="ghost" size="icon" className="h-8 w-8" title="Edit module">
+          <PenLine className="h-3.5 w-3.5" />
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Edit module</DialogTitle>
+          <DialogDescription>Update this module and its description.</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4 py-2">
+          <div className="space-y-1.5">
+            <Label htmlFor={`edit-module-${module.id}`}>Module name</Label>
+            <Input id={`edit-module-${module.id}`} value={name} onChange={(event) => setName(event.target.value)} />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor={`edit-module-description-${module.id}`}>Description</Label>
+            <Textarea id={`edit-module-description-${module.id}`} value={description} onChange={(event) => setDescription(event.target.value)} className="min-h-20" />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={saving}>Cancel</Button>
+          <Button type="button" onClick={handleSubmit} disabled={!name.trim() || saving}>
+            {saving && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
+            Save changes
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function EditLessonDialog({
+  lesson,
+  onSave,
+}: {
+  lesson: Lesson;
+  onSave: (name: string) => Promise<boolean>;
+}) {
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState(lesson.name);
+  const [saving, setSaving] = useState(false);
+
+  const handleSubmit = async () => {
+    if (!name.trim()) return;
+    setSaving(true);
+    try {
+      if (await onSave(name.trim())) setOpen(false);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button type="button" variant="ghost" size="icon" className="h-8 w-8" title="Edit lesson">
+          <PenLine className="h-3.5 w-3.5" />
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Edit lesson</DialogTitle>
+          <DialogDescription>Update this lesson title.</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-1.5 py-2">
+          <Label htmlFor={`edit-lesson-${lesson.id}`}>Lesson name</Label>
+          <Input id={`edit-lesson-${lesson.id}`} value={name} onChange={(event) => setName(event.target.value)} />
+        </div>
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={saving}>Cancel</Button>
+          <Button type="button" onClick={handleSubmit} disabled={!name.trim() || saving}>
+            {saving && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
+            Save changes
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function DeleteItemButton({
+  itemType,
+  onDelete,
+}: {
+  itemType: "module" | "lesson";
+  onDelete: () => Promise<boolean>;
+}) {
+  const [open, setOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDelete = async (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    setDeleting(true);
+    try {
+      if (await onDelete()) setOpen(false);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  return (
+    <AlertDialog open={open} onOpenChange={setOpen}>
+      <AlertDialogTrigger asChild>
+        <Button type="button" variant="ghost" size="icon" className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive" title={`Delete ${itemType}`}>
+          <Trash2 className="h-3.5 w-3.5" />
+        </Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Delete this {itemType}?</AlertDialogTitle>
+          <AlertDialogDescription>
+            This permanently deletes the {itemType} and its nested content. This action cannot be undone.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+          <AlertDialogAction onClick={handleDelete} disabled={deleting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            {deleting && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
+            Delete
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }
 
@@ -828,10 +992,15 @@ function OutlineTab({
       const reordered = arrayMove(modules, oldIndex, newIndex);
       setModules(reordered);
       if (courseId) {
-        reorderModulesAction(
+        void reorderModulesAction(
           courseId,
           reordered.map((m) => m.id),
-        ).catch(() => toast.error("Failed to persist module order."));
+        ).then((result) => {
+          if (!result.success) {
+            setModules(modules);
+            toast.error(result.error || "Failed to persist module order.");
+          }
+        });
       }
     },
     [modules, setModules, courseId],
@@ -935,6 +1104,66 @@ function OutlineTab({
     }
   };
 
+  const handleEditModule = async (moduleId: string, name: string, description: string) => {
+    const moduleIndex = modules.findIndex((module) => module.id === moduleId);
+    const result = await updateModuleAction(moduleId, {
+      moduleName: name,
+      description: description || "No description provided.",
+      order: moduleIndex + 1,
+    });
+    if (!result.success) {
+      toast.error(result.error || Object.values(result.errors ?? {}).join(", ") || "Failed to update module.");
+      return false;
+    }
+    setModules((previous) => previous.map((module) => module.id === moduleId
+      ? { ...module, name, description: description || "No description provided." }
+      : module));
+    toast.success("Module updated.");
+    return true;
+  };
+
+  const handleDeleteModule = async (moduleId: string) => {
+    const module = modules.find((item) => item.id === moduleId);
+    const result = await deleteModuleAction(moduleId);
+    if (!result.success) {
+      toast.error(result.error || "Failed to delete module.");
+      return false;
+    }
+    const lessonIds = new Set(module?.lessons.map((lesson) => lesson.id));
+    setModules((previous) => previous.filter((item) => item.id !== moduleId));
+    setResources((previous) => previous.filter((resource) => !lessonIds.has(resource.lessonId)));
+    toast.success("Module deleted.");
+    return true;
+  };
+
+  const handleEditLesson = async (lessonId: string, name: string) => {
+    const result = await updateLessonAction(lessonId, { lessonName: name });
+    if (!result.success) {
+      toast.error(result.error || Object.values(result.errors ?? {}).join(", ") || "Failed to update lesson.");
+      return false;
+    }
+    setModules((previous) => previous.map((module) => ({
+      ...module,
+      lessons: module.lessons.map((lesson) => lesson.id === lessonId ? { ...lesson, name } : lesson),
+    })));
+    toast.success("Lesson updated.");
+    return true;
+  };
+
+  const handleDeleteLesson = async (moduleId: string, lessonId: string) => {
+    const result = await deleteLessonAction(lessonId);
+    if (!result.success) {
+      toast.error(result.error || "Failed to delete lesson.");
+      return false;
+    }
+    setModules((previous) => previous.map((module) => module.id === moduleId
+      ? { ...module, lessons: module.lessons.filter((lesson) => lesson.id !== lessonId) }
+      : module));
+    setResources((previous) => previous.filter((resource) => resource.lessonId !== lessonId));
+    toast.success("Lesson deleted.");
+    return true;
+  };
+
   const handleLessonDragEnd = useCallback(
     (moduleId: string, event: DragEndEvent) => {
       const { active, over } = event;
@@ -954,11 +1183,19 @@ function OutlineTab({
           oldIndex,
           newIndex,
         );
+        const previousLessons = targetModule.lessons;
         queueMicrotask(() => {
-          reorderLessonsAction(
+          void reorderLessonsAction(
             moduleId,
             reorderedLessons.map((l) => l.id),
-          ).catch(() => toast.error("Failed to persist lesson order."));
+          ).then((result) => {
+            if (!result.success) {
+              setModules((current) => current.map((module) =>
+                module.id === moduleId ? { ...module, lessons: previousLessons } : module,
+              ));
+              toast.error(result.error || "Failed to persist lesson order.");
+            }
+          });
         });
         return prev.map((m) =>
           m.id === moduleId ? { ...m, lessons: reorderedLessons } : m,
@@ -1047,6 +1284,16 @@ function OutlineTab({
                   </AccordionTrigger>
 
                   <AccordionContent className="px-3 pb-3 sm:px-4 sm:pb-4">
+                    <div className="mb-3 flex justify-end gap-1">
+                      <EditModuleDialog
+                        module={module}
+                        onSave={(name, description) => handleEditModule(module.id, name, description)}
+                      />
+                      <DeleteItemButton
+                        itemType="module"
+                        onDelete={() => handleDeleteModule(module.id)}
+                      />
+                    </div>
                     {module.description && (
                       <p className="mb-3 break-words text-sm text-muted-foreground">
                         {module.description}
@@ -1093,6 +1340,14 @@ function OutlineTab({
                                       lessonId={lesson.id}
                                       lessonName={lesson.name}
                                       onAdd={handleAddResource}
+                                    />
+                                    <EditLessonDialog
+                                      lesson={lesson}
+                                      onSave={(name) => handleEditLesson(lesson.id, name)}
+                                    />
+                                    <DeleteItemButton
+                                      itemType="lesson"
+                                      onDelete={() => handleDeleteLesson(module.id, lesson.id)}
                                     />
                                   </div>
 
