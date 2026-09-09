@@ -277,11 +277,11 @@ const RESOURCE_META: Record<
   ResourceType,
   { icon: LucideIcon; label: string; color: string }
 > = {
-  Code: { icon: FileText, label: "Code", color: "text-purple-400" },
-  PDF: { icon: FileText, label: "PDF", color: "text-red-400" },
-  Link: { icon: Link2, label: "Link", color: "text-blue-400" },
-  Note: { icon: Newspaper, label: "Note", color: "text-emerald-400" },
-  Image: { icon: FileText, label: "Image", color: "text-amber-400" },
+  Code: { icon: FileText, label: "Code", color: "text-primary" },
+  PDF: { icon: FileText, label: "PDF", color: "text-destructive" },
+  Link: { icon: Link2, label: "Link", color: "text-chart-2" },
+  Note: { icon: Newspaper, label: "Note", color: "text-primary" },
+  Image: { icon: FileText, label: "Image", color: "text-chart-4" },
 };
 
 function getSeedIds(modules: Module[]): string[] {
@@ -322,23 +322,23 @@ function UpgradeDialog({
 }) {
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-md border-amber-500/20 bg-zinc-950 text-white">
+      <DialogContent className="max-w-md border-primary/20 bg-background text-foreground">
         <DialogHeader>
           <div className="mb-4 flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-amber-500/20 bg-amber-500/10">
-              <Zap className="h-5 w-5 text-amber-400" />
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-primary/20 bg-primary/10">
+              <Zap className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <p className="text-xs font-semibold uppercase tracking-widest text-amber-500">
+              <p className="text-xs font-semibold uppercase tracking-widest text-primary">
                 Premium Feature
               </p>
-              <DialogTitle className="text-xl text-white">
+              <DialogTitle className="text-xl text-foreground">
                 Upgrade to Creator Plan
               </DialogTitle>
             </div>
           </div>
-          <DialogDescription className="leading-relaxed text-zinc-400">
-            <span className="font-semibold text-amber-400">Flow View</span>{" "}
+          <DialogDescription className="leading-relaxed text-muted-foreground">
+            <span className="font-semibold text-primary">Flow View</span>{" "}
             gives you an interactive node graph of your entire learning path —
             visualize connections and unlock milestones as you advance.
           </DialogDescription>
@@ -346,12 +346,12 @@ function UpgradeDialog({
         <div className="mt-2 flex gap-3">
           <Button
             variant="outline"
-            className="flex-1 border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white"
+            className="flex-1 border-border text-foreground hover:bg-secondary hover:text-foreground"
             onClick={onClose}
           >
             Maybe Later
           </Button>
-          <Button className="flex-1 gap-2 bg-amber-500 font-bold text-black hover:bg-amber-400">
+          <Button className="flex-1 gap-2 bg-primary font-bold text-primary-foreground hover:bg-primary/90">
             Upgrade Now <ArrowRight className="h-3.5 w-3.5" />
           </Button>
         </div>
@@ -367,20 +367,20 @@ function CourseNavbar({ creator }: { creator: Creator }) {
 
   return (
     <nav
-      className="border-b border-white/[0.06] bg-zinc-950/80 backdrop-blur-xl"
+      className="border-b border-border bg-background/80 backdrop-blur-xl"
       style={{ position: "relative" }}
     >
-      <div className="mx-auto flex max-w-[90rem] items-center justify-between px-5 py-4 md:px-8">
+      <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 md:px-8">
         <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-500">
-            <Layers className="h-4 w-4 text-black" />
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary">
+            <Layers className="h-4 w-4 text-primary-foreground" />
           </div>
           <div>
-            <span className="text-base font-bold tracking-tight text-white">
+            <span className="text-base font-bold tracking-tight text-foreground">
               LessonMap
             </span>
-            <p className="text-[10px] font-medium uppercase tracking-widest text-zinc-500">
-              Shared by creator
+            <p className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
+              Shared by {creator.name}
             </p>
           </div>
         </div>
@@ -388,22 +388,22 @@ function CourseNavbar({ creator }: { creator: Creator }) {
         <div className="hidden items-center gap-5 md:flex">
           <Badge
             variant="outline"
-            className="gap-1.5 border-zinc-800 text-zinc-400"
+            className="gap-1.5 border-border text-muted-foreground"
           >
             <MapPin className="h-3 w-3" /> Public page
           </Badge>
-          <Separator orientation="vertical" className="h-5 bg-zinc-800" />
-          <div className="flex items-center gap-2 rounded-full border border-zinc-800 bg-zinc-900/60 px-3 py-1.5">
-            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-amber-500 text-xs font-bold text-black">
+          <Separator orientation="vertical" className="h-5 bg-secondary" />
+          <div className="flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5">
+            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
               {creator.name[0]}
             </div>
-            <span className="text-xs font-medium text-zinc-300">
+            <span className="text-xs font-medium text-foreground">
               {creator.name}
             </span>
           </div>
           <Button
             size="sm"
-            className="gap-1.5 bg-amber-500 font-semibold text-black hover:bg-amber-400"
+            className="gap-1.5 bg-primary font-semibold text-primary-foreground hover:bg-primary/90"
             onClick={() => {
               if (typeof navigator !== "undefined" && navigator.share) {
                 navigator.share({
@@ -422,7 +422,7 @@ function CourseNavbar({ creator }: { creator: Creator }) {
         <Button
           variant="ghost"
           size="icon"
-          className="text-zinc-400 hover:text-white md:hidden"
+          className="text-muted-foreground hover:text-foreground md:hidden"
           onClick={() => setMenuOpen(!menuOpen)}
         >
           {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -430,20 +430,20 @@ function CourseNavbar({ creator }: { creator: Creator }) {
       </div>
 
       {menuOpen && (
-        <div className="border-t border-zinc-800/60 bg-zinc-950 px-5 py-5 md:hidden">
+        <div className="border-t border-border bg-background px-5 py-5 md:hidden">
           <div className="flex flex-col gap-4">
-            <div className="flex items-center gap-3 rounded-xl border border-zinc-800 bg-zinc-900 px-3 py-2.5">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-500 text-sm font-bold text-black">
+            <div className="flex items-center gap-3 rounded-xl border border-border bg-muted px-3 py-2.5">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
                 {creator.name[0]}
               </div>
               <div>
-                <p className="text-sm font-medium text-white">{creator.name}</p>
+                <p className="text-sm font-medium text-foreground">{creator.name}</p>
                 {creator.role && (
-                  <p className="text-xs text-zinc-500">{creator.role}</p>
+                  <p className="text-xs text-muted-foreground">{creator.role}</p>
                 )}
               </div>
             </div>
-            <Button className="w-full gap-2 bg-amber-500 font-semibold text-black hover:bg-amber-400">
+            <Button className="w-full gap-2 bg-primary font-semibold text-primary-foreground hover:bg-primary/90">
               <Share2 className="h-4 w-4" /> Share Course
             </Button>
           </div>
@@ -465,14 +465,14 @@ function StatCard({
   label: string;
 }) {
   return (
-    <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-4">
+    <div className="rounded-2xl border border-border bg-card p-4">
       <div className="flex items-center gap-3">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-amber-500/20 bg-amber-500/10">
-          <Icon className="h-4 w-4 text-amber-400" />
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10">
+          <Icon className="h-4 w-4 text-primary" />
         </div>
         <div className="min-w-0">
-          <p className="text-lg font-bold leading-none text-white">{value}</p>
-          <p className="mt-1 truncate text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+          <p className="text-lg font-bold leading-none text-foreground">{value}</p>
+          <p className="mt-1 truncate text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
             {label}
           </p>
         </div>
@@ -496,25 +496,25 @@ function ResourceRow({
     <button
       type="button"
       onClick={() => onPreview(resource)}
-      className="group flex min-w-0 w-full select-text items-center gap-3 rounded-xl border border-zinc-800 bg-zinc-900/40 px-3 py-3 text-left transition-colors hover:border-amber-500/25 hover:bg-amber-500/[0.04] sm:px-4"
+      className="group flex min-w-0 w-full select-text items-center gap-3 rounded-xl border border-border bg-card/60 px-3 py-3 text-left transition-colors hover:border-primary/25 hover:bg-primary/5 sm:px-4"
     >
       <div
         className={cn(
-          "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-zinc-700 bg-zinc-800/80",
+          "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border bg-secondary/80",
           meta.color,
         )}
       >
         <Icon className="h-4 w-4" />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-xs font-medium text-zinc-200 group-hover:text-white">
+        <p className="truncate text-xs font-medium text-foreground group-hover:text-foreground">
           {resource.title}
         </p>
-        <p className="truncate text-[10px] font-semibold uppercase tracking-wider text-zinc-600">
+        <p className="truncate text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
           {resource.meta || meta.label}
         </p>
       </div>
-      <span className="flex shrink-0 items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-zinc-600 transition-colors group-hover:text-amber-400">
+      <span className="flex shrink-0 items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground transition-colors group-hover:text-primary">
         View
         {resource.url && <ExternalLink className="h-3.5 w-3.5" />}
       </span>
@@ -538,19 +538,19 @@ function ResourcePreviewDialog({
 
   return (
     <Dialog open={Boolean(resource)} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="flex max-h-[82vh] w-[calc(100%-1rem)] max-w-4xl flex-col gap-0 overflow-hidden border-zinc-800 bg-zinc-950 p-0 text-white">
-        <DialogHeader className="shrink-0 border-b border-zinc-800 px-4 py-3 text-left sm:px-5">
+      <DialogContent className="flex max-h-[82vh] w-[calc(100%-1rem)] max-w-4xl flex-col gap-0 overflow-hidden border-border bg-background p-0 text-foreground">
+        <DialogHeader className="shrink-0 border-b border-border px-4 py-3 text-left sm:px-5">
           <DialogTitle className="break-words pr-8 text-base sm:text-lg">
             {resource.title}
           </DialogTitle>
-          <DialogDescription className="text-xs text-zinc-500">
+          <DialogDescription className="text-xs text-muted-foreground">
             {resource.type} resource
           </DialogDescription>
         </DialogHeader>
 
         <div className="min-h-0 flex-1 overflow-y-auto p-3 sm:p-4">
           {isImage && resource.url ? (
-            <div className="flex justify-center rounded-xl bg-zinc-900 p-2">
+            <div className="flex justify-center rounded-xl bg-muted p-2">
               <img
                 src={resource.url}
                 alt={resource.title}
@@ -561,10 +561,10 @@ function ResourcePreviewDialog({
             <iframe
               src={resource.url}
               title={resource.title}
-              className="h-[60vh] min-h-[360px] w-full rounded-xl border border-zinc-800 bg-white"
+              className="h-[60vh] min-h-[360px] w-full rounded-xl border border-border bg-background"
             />
           ) : isCode && hasText ? (
-            <div className="max-h-[62vh] overflow-auto rounded-lg border border-zinc-800">
+            <div className="max-h-[62vh] overflow-auto rounded-lg border border-border">
               <CodeBlock
                 value={resource.title}
                 data={[
@@ -575,8 +575,8 @@ function ResourcePreviewDialog({
                   },
                 ]}
               >
-                <CodeBlockHeader className="border-b border-zinc-800 bg-zinc-900/80 px-3 py-2">
-                  <span className="truncate text-xs font-medium text-zinc-400">
+                <CodeBlockHeader className="border-b border-border bg-muted/80 px-3 py-2">
+                  <span className="truncate text-xs font-medium text-muted-foreground">
                     {resource.title}
                   </span>
                 </CodeBlockHeader>
@@ -592,7 +592,7 @@ function ResourcePreviewDialog({
               </CodeBlock>
             </div>
           ) : hasText ? (
-            <pre className="whitespace-pre-wrap break-words rounded-xl border border-zinc-800 bg-zinc-900/70 p-4 font-mono text-xs leading-relaxed text-zinc-200 sm:text-sm">
+            <pre className="whitespace-pre-wrap break-words rounded-xl border border-border bg-muted/70 p-4 font-mono text-xs leading-relaxed text-foreground sm:text-sm">
               {resource.content}
             </pre>
           ) : resource.url ? (
@@ -600,11 +600,11 @@ function ResourcePreviewDialog({
               <iframe
                 src={resource.url}
                 title={resource.title}
-                className="h-[55vh] min-h-[320px] w-full rounded-xl border border-zinc-800 bg-white"
+                className="h-[55vh] min-h-[320px] w-full rounded-xl border border-border bg-background"
               />
             </div>
           ) : (
-            <p className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 text-sm text-zinc-400">
+            <p className="rounded-xl border border-border bg-card p-4 text-sm text-muted-foreground">
               This resource does not have a preview available.
             </p>
           )}
@@ -614,7 +614,7 @@ function ResourcePreviewDialog({
               href={resource.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-4 inline-flex items-center gap-2 text-xs font-semibold text-amber-400 hover:text-amber-300"
+              className="mt-4 inline-flex items-center gap-2 text-xs font-semibold text-primary hover:text-primary"
             >
               Open original resource <ExternalLink className="h-3.5 w-3.5" />
             </a>
@@ -653,7 +653,7 @@ function ModuleSidebar({
       className="space-y-2"
     >
       {modules.map((mod, mi) => {
-        const { completed, total, pct } = moduleProgress(mod, isDone);
+        const { pct } = moduleProgress(mod, isDone);
         const isComplete = pct === 100;
         const isStarted = pct > 0 && pct < 100;
 
@@ -661,16 +661,16 @@ function ModuleSidebar({
           <AccordionItem
             key={mod.id}
             value={mod.id}
-            className="overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/40 data-[state=open]:border-amber-500/30"
+            className="overflow-hidden rounded-2xl border border-border bg-card/60 data-[state=open]:border-primary/30"
           >
-            <AccordionTrigger className="select-text px-3 py-3 hover:no-underline hover:bg-white/[0.02] sm:px-4 sm:py-4 [&[data-state=open]]:bg-amber-500/[0.03]">
+            <AccordionTrigger className="select-text px-3 py-3 hover:no-underline hover:bg-accent/30 sm:px-4 sm:py-4 [&[data-state=open]]:bg-primary/5">
               <div className="flex w-full min-w-0 items-start gap-2 pr-1 sm:items-center sm:gap-3">
                 <div
                   className={cn(
                     "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold",
                     isComplete
-                      ? "border border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
-                      : "border border-zinc-700 bg-zinc-800 text-zinc-500",
+                      ? "border border-primary/30 bg-primary/10 text-primary"
+                      : "border border-border bg-secondary text-muted-foreground",
                   )}
                 >
                   {isComplete ? (
@@ -684,29 +684,23 @@ function ModuleSidebar({
                     className={cn(
                       "text-[10px] font-bold uppercase tracking-widest",
                       isComplete
-                        ? "text-emerald-400"
+                        ? "text-primary"
                         : isStarted
-                          ? "text-amber-400"
-                          : "text-zinc-600",
+                          ? "text-primary"
+                          : "text-muted-foreground",
                     )}
                   >
                     {mod.label}
                   </p>
-                  <p className="break-words text-xs font-semibold leading-snug text-white [overflow-wrap:anywhere] sm:text-sm">
+                  <p className="break-words text-xs font-semibold leading-snug text-foreground [overflow-wrap:anywhere] sm:text-sm">
                     {mod.title}
                   </p>
                 </div>
-                <Badge
-                  variant="outline"
-                  className="shrink-0 border-zinc-700 text-[10px] tabular-nums text-zinc-500"
-                >
-                  {completed}/{total}
-                </Badge>
               </div>
             </AccordionTrigger>
 
             <AccordionContent className="px-3 pb-3 pt-0">
-              <Separator className="mb-2 bg-white/[0.05]" />
+              <Separator className="mb-2 bg-accent/20" />
               <div className="space-y-1">
                 {mod.lessons.map((lesson, li) => {
                   const done = isDone(lesson.id);
@@ -718,8 +712,8 @@ function ModuleSidebar({
                         className={cn(
                           "flex items-center gap-2 rounded-xl px-3 py-2.5 transition-all",
                           selected
-                            ? "border border-amber-500/30 bg-amber-500/[0.08]"
-                            : "border border-transparent hover:bg-white/[0.03]",
+                            ? "border border-primary/30 bg-primary/10"
+                            : "border border-transparent hover:bg-accent/40",
                         )}
                       >
                         <button
@@ -734,9 +728,9 @@ function ModuleSidebar({
                           }
                         >
                           {done ? (
-                            <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                            <CheckCircle2 className="h-4 w-4 text-primary" />
                           ) : (
-                            <Circle className="h-4 w-4 text-zinc-600 hover:text-zinc-400" />
+                            <Circle className="h-4 w-4 text-muted-foreground hover:text-muted-foreground" />
                           )}
                         </button>
 
@@ -757,10 +751,10 @@ function ModuleSidebar({
                           <span
                             className={cn(
                               "block break-words text-xs font-medium leading-snug [overflow-wrap:anywhere] sm:text-sm",
-                              done ? "text-zinc-500 line-through" : "text-zinc-200",
+                              done ? "text-muted-foreground line-through" : "text-foreground",
                             )}
                           >
-                            <span className="mr-1.5 text-xs text-zinc-600">
+                            <span className="mr-1.5 text-xs text-muted-foreground">
                               {li + 1}.
                             </span>
                             {lesson.title}
@@ -789,18 +783,12 @@ function LessonContentPanel({
   lesson,
   isDone,
   onToggleLesson,
-  overallPct,
-  completedCount,
-  totalLessons,
 }: {
   courseTitle: string;
   module: Module | null;
   lesson: Lesson | null;
   isDone: (id: string) => boolean;
   onToggleLesson: (id: string) => void;
-  overallPct: number;
-  completedCount: number;
-  totalLessons: number;
 }) {
   const [previewResource, setPreviewResource] = useState<Resource | null>(null);
   const [resourcesOpen, setResourcesOpen] = useState(false);
@@ -813,115 +801,91 @@ function LessonContentPanel({
   if (!module || !lesson) {
     return (
       <div className="flex h-full min-h-[420px] flex-col p-8 text-center">
-        <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl border border-amber-500/20 bg-amber-500/10">
-          <BookOpen className="h-7 w-7 text-amber-400" />
+        <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10">
+          <BookOpen className="h-7 w-7 text-primary" />
         </div>
-        <h2 className="mb-2 break-words text-lg font-bold leading-snug text-white [overflow-wrap:anywhere] sm:text-xl">
+        <h2 className="mb-2 break-words text-lg font-bold leading-snug text-foreground [overflow-wrap:anywhere] sm:text-xl">
           Welcome to {courseTitle}
         </h2>
-        <p className="mx-auto mb-6 max-w-md text-sm leading-relaxed text-zinc-500">
+        <p className="mx-auto mb-6 max-w-md text-sm leading-relaxed text-muted-foreground">
           Select a lesson from the sidebar to begin. Your progress is saved
           locally in your browser — pick up where you left off anytime.
         </p>
-        <div className="mx-auto w-full max-w-sm">
-          <div className="mb-2 flex items-center justify-between text-xs">
-            <span className="font-medium text-zinc-400">Your progress</span>
-            <span className="font-bold text-amber-400">{overallPct}%</span>
-          </div>
-          <Progress value={overallPct} className="h-2 bg-zinc-800" />
-          <p className="mt-2 text-xs text-zinc-600">
-            {completedCount} of {totalLessons} lessons complete
-          </p>
-        </div>
       </div>
     );
   }
 
   const done = isDone(lesson.id);
-  const { completed, total, pct } = moduleProgress(module, isDone);
-
   return (
     <>
-      <div className="flex min-h-[420px] flex-col rounded-2xl border border-zinc-800 bg-zinc-900/30">
-      <div className="border-b border-zinc-800 px-6 py-5">
-        <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-amber-500">
-          {module.label}
-        </p>
-        <h2 className="break-words text-lg font-bold leading-snug text-white [overflow-wrap:anywhere] sm:text-xl">{lesson.title}</h2>
-        <p className="mt-1 text-sm text-zinc-500">{module.description}</p>
-      </div>
-
-      <div className="flex-1 px-6 py-6">
-        <p className="mb-6 text-sm leading-relaxed text-zinc-400">
-          Part of {module.title}. Continue through the lesson list to track
-          your progress.
-        </p>
-
-        <div className="mb-5 flex items-center justify-between rounded-xl border border-zinc-800 bg-zinc-900/50 px-4 py-3">
-          <div>
-            <p className="text-xs font-medium text-zinc-500">Module progress</p>
-            <p className="text-sm font-semibold text-white">
-              {completed} / {total} lessons
-            </p>
-          </div>
-          <div className="w-32">
-            <Progress value={pct} className="h-1.5 bg-zinc-800" />
-          </div>
+      <div className="flex min-h-[420px] flex-col rounded-2xl border border-border bg-card/50">
+        <div className="border-b border-border px-6 py-5">
+          <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-primary">
+            {module.label}
+          </p>
+          <h2 className="break-words text-lg font-bold leading-snug text-foreground [overflow-wrap:anywhere] sm:text-xl">{lesson.title}</h2>
+          <p className="mt-1 text-sm text-muted-foreground">{module.description}</p>
         </div>
 
-        {lesson.resources && lesson.resources.length > 0 && (
-          <div className="mb-5 overflow-hidden rounded-xl border border-amber-500/20 bg-amber-500/[0.03]">
-            <button
-              type="button"
-              onClick={() => setResourcesOpen((open) => !open)}
-              className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left text-xs font-semibold uppercase tracking-widest text-amber-400 transition-colors hover:bg-amber-500/[0.05]"
-              aria-expanded={resourcesOpen}
-            >
-              <span>Attached resources ({lesson.resources.length})</span>
-              <ChevronDown
-                className={cn(
-                  "h-4 w-4 shrink-0 transition-transform",
-                  resourcesOpen && "rotate-180",
-                )}
-              />
-            </button>
-            {resourcesOpen && (
-              <div className="border-t border-amber-500/10 p-3 sm:p-4">
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                  {lesson.resources.map((r) => (
-                    <ResourceRow
-                      key={r.id}
-                      resource={r}
-                      onPreview={setPreviewResource}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+        <div className="flex-1 px-6 py-6">
+          <p className="mb-6 text-sm leading-relaxed text-muted-foreground">
+            Part of {module.title}. Continue through the lesson list to track
+            your progress.
+          </p>
 
-        <Button
-          className={cn(
-            "w-full gap-2 font-semibold",
-            done
-              ? "border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/15"
-              : "bg-amber-500 text-black hover:bg-amber-400",
+          {lesson.resources && lesson.resources.length > 0 && (
+            <div className="mb-5 overflow-hidden rounded-xl border border-primary/20 bg-primary/5">
+              <button
+                type="button"
+                onClick={() => setResourcesOpen((open) => !open)}
+                className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left text-xs font-semibold uppercase tracking-widest text-primary transition-colors hover:bg-primary/10"
+                aria-expanded={resourcesOpen}
+              >
+                <span>Attached resources ({lesson.resources.length})</span>
+                <ChevronDown
+                  className={cn(
+                    "h-4 w-4 shrink-0 transition-transform",
+                    resourcesOpen && "rotate-180",
+                  )}
+                />
+              </button>
+              {resourcesOpen && (
+                <div className="border-t border-primary/10 p-3 sm:p-4">
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                    {lesson.resources.map((r) => (
+                      <ResourceRow
+                        key={r.id}
+                        resource={r}
+                        onPreview={setPreviewResource}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           )}
-          variant={done ? "outline" : "default"}
-          onClick={() => onToggleLesson(lesson.id)}
-        >
-          {done ? (
-            <>
-              <CheckCircle2 className="h-4 w-4" /> Mark as incomplete
-            </>
-          ) : (
-            <>
-              <CheckCircle2 className="h-4 w-4" /> Mark lesson complete
-            </>
-          )}
-        </Button>
-      </div>
+
+          <Button
+            className={cn(
+              "w-full gap-2 font-semibold",
+              done
+                ? "border border-primary/30 bg-primary/10 text-primary hover:bg-primary/15"
+                : "bg-primary text-primary-foreground hover:bg-primary/90",
+            )}
+            variant={done ? "outline" : "default"}
+            onClick={() => onToggleLesson(lesson.id)}
+          >
+            {done ? (
+              <>
+                <CheckCircle2 className="h-4 w-4" /> Mark as incomplete
+              </>
+            ) : (
+              <>
+                <CheckCircle2 className="h-4 w-4" /> Mark lesson complete
+              </>
+            )}
+          </Button>
+        </div>
       </div>
       <ResourcePreviewDialog
         resource={previewResource}
@@ -955,32 +919,36 @@ function FlowView({
 
   return (
     <div
-      className="relative overflow-hidden rounded-2xl border border-zinc-800"
+      className="relative overflow-hidden rounded-2xl border border-border"
       style={{
         minHeight: 500,
         background:
-          "radial-gradient(ellipse at 50% 30%, rgba(251,191,36,0.04) 0%, #09090b 60%)",
+          "radial-gradient(ellipse at 50% 30%, color-mix(in oklch, var(--primary) 8%, transparent) 0%, var(--background) 60%)",
       }}
     >
       <div
         className="absolute inset-0 z-10 flex items-center justify-center"
-        style={{ backdropFilter: "blur(10px)", background: "rgba(0,0,0,0.6)" }}
+        style={{
+          backdropFilter: "blur(10px)",
+          background:
+            "color-mix(in oklch, var(--background) 80%, transparent)",
+        }}
       >
-        <Card className="max-w-sm border-amber-500/20 bg-zinc-950/95 text-center shadow-2xl">
+        <Card className="max-w-sm border-primary/20 bg-popover/95 text-center shadow-2xl">
           <CardContent className="p-8">
-            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl border border-amber-500/20 bg-amber-500/10">
-              <Lock className="h-5 w-5 text-amber-400" />
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10">
+              <Lock className="h-5 w-5 text-primary" />
             </div>
-            <h3 className="mb-2 text-base font-bold text-white">
+            <h3 className="mb-2 text-base font-bold text-foreground">
               Flow View Locked
             </h3>
-            <p className="mb-5 text-sm leading-relaxed text-zinc-500">
+            <p className="mb-5 text-sm leading-relaxed text-muted-foreground">
               See your full learning path as an interactive node graph on the
               Creator Plan.
             </p>
             <Button
               onClick={onLockClick}
-              className="w-full gap-2 bg-amber-500 font-bold text-black hover:bg-amber-400"
+              className="w-full gap-2 bg-primary font-bold text-primary-foreground hover:bg-primary/90"
             >
               <Zap className="h-3.5 w-3.5" /> Unlock Flow View
             </Button>
@@ -1003,7 +971,7 @@ function FlowView({
               y1={na.y + 30}
               x2={nb.x + 80}
               y2={nb.y + 30}
-              stroke="#fbbf24"
+              stroke="var(--primary)"
               strokeWidth="1"
               strokeDasharray="5 5"
               opacity="0.4"
@@ -1016,17 +984,23 @@ function FlowView({
               width="160"
               height="58"
               rx="14"
-              fill={n.done ? "#1a1208" : "#18181b"}
-              stroke={n.done ? "#fbbf24" : "#3f3f46"}
+              fill={n.done ? "var(--accent)" : "var(--card)"}
+              stroke={n.done ? "var(--primary)" : "var(--border)"}
               strokeWidth="1.5"
             />
-            <text x="12" y="22" fill="#fbbf24" fontSize="9" fontWeight="700">
+            <text
+              x="12"
+              y="22"
+              fill="var(--primary)"
+              fontSize="9"
+              fontWeight="700"
+            >
               {n.label}
             </text>
             <text
               x="12"
               y="42"
-              fill={n.done ? "#e4e4e7" : "#71717a"}
+              fill={n.done ? "var(--foreground)" : "var(--muted-foreground)"}
               fontSize="11"
               fontWeight="500"
             >
@@ -1100,49 +1074,45 @@ export default function LessonMapPublicPage({
 
   if (!hydrated) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-zinc-950">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-amber-500 border-t-transparent" />
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
       </div>
     );
   }
 
   return (
-    <div
-      className={cn("min-h-screen bg-zinc-950 text-zinc-100", SELECTABLE_TEXT)}
-      style={{ fontFamily: "'Sora', 'DM Sans', system-ui, sans-serif" }}
-    >
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&display=swap');`}</style>
+    <div className={cn("min-h-screen bg-background text-foreground", SELECTABLE_TEXT)}>
 
       <CourseNavbar creator={course.creator} />
       <UpgradeDialog open={upgradeOpen} onClose={() => setUpgradeOpen(false)} />
 
       <main className="mx-auto w-full max-w-7xl px-4 py-4 sm:px-6 sm:py-8 lg:px-8">
         {/* ── Dashboard shell (wireframe container) ── */}
-      <div>
+        <div>
           {/* Header strip */}
-          <div className="border-b border-zinc-800 px-4 py-4 sm:px-6 sm:py-6 md:px-8">
+          <div className="border-b border-border px-4 py-4 sm:px-6 sm:py-6 md:px-8">
             <div className="mb-3 flex flex-wrap items-center gap-2">
-              <Badge className="border-amber-500/25 bg-amber-500/10 text-xs font-bold uppercase tracking-wide text-amber-400">
+              <Badge className="border-primary/25 bg-primary/10 text-xs font-bold uppercase tracking-wide text-primary">
                 Public Course
               </Badge>
               <Badge
                 variant="outline"
-                className="border-zinc-800 text-xs text-zinc-500"
+                className="border-border text-xs text-muted-foreground"
               >
                 Shared by {course.creator.name}
               </Badge>
             </div>
-            <h1 className="break-words text-lg font-extrabold leading-tight tracking-tight text-white [overflow-wrap:anywhere] sm:text-2xl md:text-3xl">
+            <h1 className="break-words text-lg font-extrabold leading-tight tracking-tight text-foreground [overflow-wrap:anywhere] sm:text-2xl md:text-3xl">
               {course.title}
             </h1>
-            <p className="mt-2 max-w-3xl text-sm leading-relaxed text-zinc-400">
+            <p className="mt-2 max-w-3xl text-sm leading-relaxed text-muted-foreground">
               {course.description}
             </p>
-            {course.audience && <p className="mt-2 text-sm text-zinc-400">For: {course.audience}</p>}
+            {course.audience && <p className="mt-2 text-sm text-muted-foreground">For: {course.audience}</p>}
           </div>
 
           {/* Stat cards row */}
-          <div className="grid grid-cols-2 gap-3 border-b border-zinc-800 py-5 md:grid-cols-3">
+          <div className="grid grid-cols-2 gap-3 border-b border-border py-5">
             <StatCard icon={Layers} value={course.stats.modules} label="Modules" />
             <StatCard
               icon={BookOpen}
@@ -1159,13 +1129,13 @@ export default function LessonMapPublicPage({
           </div>
 
           {/* Progress bar */}
-          <div className="border-b border-zinc-800 px-6 py-4 md:px-8">
+          <div className="border-b border-border px-6 py-4 md:px-8">
             <div className="flex items-center justify-between text-sm">
-              <span className="font-semibold text-white">Your progress</span>
-              <span className="font-bold text-amber-400">{overallPct}%</span>
+              <span className="font-semibold text-foreground">Your progress</span>
+              <span className="font-bold text-primary">{overallPct}%</span>
             </div>
-            <Progress value={overallPct} className="mt-2 h-2 bg-zinc-800" />
-            <p className="mt-1.5 text-xs text-zinc-600">
+            <Progress value={overallPct} className="mt-2 h-2 bg-secondary" />
+            <p className="mt-1.5 text-xs text-muted-foreground">
               {completedCount} of {totalLessons} lessons · saved locally in your
               browser
             </p>
@@ -1174,10 +1144,10 @@ export default function LessonMapPublicPage({
           {/* View toggle + two-column body */}
           <div className="py-6">
             <div className="mb-5 flex items-center justify-between">
-              <h2 className="text-base font-bold text-white">
+              <h2 className="text-base font-bold text-foreground">
                 Course curriculum
               </h2>
-              <div className="flex items-center gap-1 rounded-xl border border-zinc-800 bg-zinc-900/50 p-1">
+              <div className="flex items-center gap-1 rounded-xl border border-border bg-muted/50 p-1">
                 <Button
                   size="sm"
                   variant="ghost"
@@ -1185,8 +1155,8 @@ export default function LessonMapPublicPage({
                   className={cn(
                     "gap-1.5 rounded-lg text-xs font-semibold transition-all",
                     view === "accordion"
-                      ? "bg-amber-500 text-black hover:bg-amber-400"
-                      : "text-zinc-500 hover:text-white",
+                      ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                      : "text-muted-foreground hover:text-foreground",
                   )}
                 >
                   <List className="h-3.5 w-3.5" /> List
@@ -1201,8 +1171,8 @@ export default function LessonMapPublicPage({
                   className={cn(
                     "gap-1.5 rounded-lg text-xs font-semibold transition-all",
                     view === "flow"
-                      ? "bg-amber-500 text-black hover:bg-amber-400"
-                      : "text-zinc-500 hover:text-white",
+                      ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                      : "text-muted-foreground hover:text-foreground",
                   )}
                 >
                   <Lock className="h-3 w-3" />
@@ -1233,9 +1203,6 @@ export default function LessonMapPublicPage({
                   lesson={selectedLesson}
                   isDone={isDone}
                   onToggleLesson={toggle}
-                  overallPct={overallPct}
-                  completedCount={completedCount}
-                  totalLessons={totalLessons}
                 />
               </div>
             ) : (
@@ -1247,25 +1214,25 @@ export default function LessonMapPublicPage({
           </div>
 
           {/* Instructor footer inside shell */}
-          <div className="border-t border-zinc-800 px-6 py-5 md:px-8">
+          <div className="border-t border-border px-6 py-5 md:px-8">
             <div className="flex items-start gap-4">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-amber-500 text-lg font-black text-black">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary text-lg font-black text-primary-foreground">
                 {course.creator.name[0]}
               </div>
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-600">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                   Course creator
                 </p>
-                <h3 className="text-base font-bold text-white">
+                <h3 className="text-base font-bold text-foreground">
                   {course.creator.name}
                 </h3>
                 {course.creator.role && (
-                  <p className="text-sm font-medium text-amber-400">
+                  <p className="text-sm font-medium text-primary">
                     {course.creator.role}
                   </p>
                 )}
                 {course.creator.bio && (
-                  <p className="mt-1 text-sm leading-relaxed text-zinc-500">
+                  <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
                     {course.creator.bio}
                   </p>
                 )}
@@ -1275,17 +1242,17 @@ export default function LessonMapPublicPage({
         </div>
       </main>
 
-      <footer className="border-t border-zinc-800/50 py-8 text-center">
+      <footer className="border-t border-border py-8 text-center">
         <div className="flex flex-col items-center gap-1.5">
-          <div className="flex items-center gap-1.5 text-xs text-zinc-600">
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <span>Made with</span>
-            <Heart className="h-3 w-3 fill-rose-600 text-rose-600" />
+            <Heart className="h-3 w-3 fill-destructive text-destructive" />
             <span>by</span>
-            <span className="font-semibold text-zinc-400">LessonMap</span>
+            <span className="font-semibold text-muted-foreground">LessonMap</span>
             <span>·</span>
             <span>Stacex Technologies</span>
           </div>
-          <p className="text-xs text-zinc-700">
+          <p className="text-xs text-muted-foreground">
             © {new Date().getFullYear()} Stacex Technologies. All rights
             reserved.
           </p>
