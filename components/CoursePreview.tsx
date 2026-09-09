@@ -47,6 +47,13 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { useLessonProgress } from "@/lib/useLessonProgress";
 import { cn } from "@/lib/utils";
+import {
+  CodeBlock,
+  CodeBlockHeader,
+  CodeBlockBody,
+  CodeBlockItem,
+  CodeBlockContent,
+} from "@/components/kibo-ui/code-block";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -526,13 +533,14 @@ function ResourcePreviewDialog({
 
   const isImage = resource.type === "Image";
   const isPdf = resource.type === "PDF";
+  const isCode = resource.type === "Code";
   const hasText = Boolean(resource.content?.trim());
 
   return (
     <Dialog open={Boolean(resource)} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="flex max-h-[85vh] w-[calc(100%-1.5rem)] max-w-3xl flex-col overflow-hidden border-zinc-800 bg-zinc-950 p-0 text-white">
-        <DialogHeader className="border-b border-zinc-800 px-4 py-4 text-left sm:px-6">
-          <DialogTitle className="break-words pr-6 text-base sm:text-lg">
+      <DialogContent className="flex max-h-[82vh] w-[calc(100%-1rem)] max-w-4xl flex-col gap-0 overflow-hidden border-zinc-800 bg-zinc-950 p-0 text-white">
+        <DialogHeader className="shrink-0 border-b border-zinc-800 px-4 py-3 text-left sm:px-5">
+          <DialogTitle className="break-words pr-8 text-base sm:text-lg">
             {resource.title}
           </DialogTitle>
           <DialogDescription className="text-xs text-zinc-500">
@@ -540,7 +548,7 @@ function ResourcePreviewDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6">
+        <div className="min-h-0 flex-1 overflow-y-auto p-3 sm:p-4">
           {isImage && resource.url ? (
             <div className="flex justify-center rounded-xl bg-zinc-900 p-2">
               <img
@@ -555,6 +563,34 @@ function ResourcePreviewDialog({
               title={resource.title}
               className="h-[60vh] min-h-[360px] w-full rounded-xl border border-zinc-800 bg-white"
             />
+          ) : isCode && hasText ? (
+            <div className="max-h-[62vh] overflow-auto rounded-lg border border-zinc-800">
+              <CodeBlock
+                value={resource.title}
+                data={[
+                  {
+                    language: "typescript",
+                    filename: resource.title,
+                    code: resource.content ?? "",
+                  },
+                ]}
+              >
+                <CodeBlockHeader className="border-b border-zinc-800 bg-zinc-900/80 px-3 py-2">
+                  <span className="truncate text-xs font-medium text-zinc-400">
+                    {resource.title}
+                  </span>
+                </CodeBlockHeader>
+                <CodeBlockBody>
+                  {(item) => (
+                    <CodeBlockItem value={item.filename} lineNumbers>
+                      <CodeBlockContent language={"typescript" as any}>
+                        {resource.content ?? ""}
+                      </CodeBlockContent>
+                    </CodeBlockItem>
+                  )}
+                </CodeBlockBody>
+              </CodeBlock>
+            </div>
           ) : hasText ? (
             <pre className="whitespace-pre-wrap break-words rounded-xl border border-zinc-800 bg-zinc-900/70 p-4 font-mono text-xs leading-relaxed text-zinc-200 sm:text-sm">
               {resource.content}
