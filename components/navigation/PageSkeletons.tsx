@@ -76,24 +76,30 @@ export function DashboardSkeleton() {
 
 export function PricingSkeleton() {
   return (
-    <LoadingRegion label="Loading pricing" className="relative overflow-hidden py-24 sm:py-32">
-      <div className={container}>
-        <div className="mx-auto mb-10 max-w-3xl text-center">
-          <span className="mb-4 inline-flex rounded-full bg-secondary px-4 py-1 text-xs font-medium">Pricing</span>
-          <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl lg:text-6xl">Pick the plan that fits your course-building flow</h1>
-          <p className="mt-5 text-base text-muted-foreground sm:text-lg">Start simple with the Free plan, or upgrade to Creator for flow-style course maps, AI generation, and a more polished public presentation.</p>
+    <LoadingRegion label="Loading pricing" className="relative pb-10 pt-24">
+      <div className="mx-auto w-full max-w-5xl px-4 sm:px-6">
+        <div className="mx-auto mb-6 max-w-xl text-center">
+          <h1 className="text-3xl font-semibold tracking-tight text-primary sm:text-4xl">A plan for your next course</h1>
+          <p className="mt-2 text-sm leading-6 text-muted-foreground">Start free. Choose Creator when you need more.</p>
         </div>
-        <div className="grid gap-6 lg:grid-cols-2 lg:gap-8">
+        <div className="grid gap-4 md:grid-cols-2">
           {plans.map(plan => (
-            <div key={plan.name} className={cn("relative flex flex-col gap-6 rounded-3xl border bg-background/60 px-6 pb-6 pt-8", plan.isPopular ? "border-primary lg:-translate-y-1" : "border-border/60")}>
-              <Skeleton className="absolute left-1/2 top-0 h-6 w-28 -translate-x-1/2 -translate-y-1/2 rounded-full" />
-              <div className="space-y-4"><h2 className="text-2xl font-semibold">{plan.name}</h2><p className="text-sm leading-6 text-muted-foreground">{plan.description}</p><Skeleton className="h-12 w-36" /></div>
-              <div className="flex-1 space-y-3">{plan.features.map(feature => <div key={feature} className="flex items-start gap-3"><Skeleton className="mt-0.5 size-5 shrink-0 rounded-full" /><span className="text-sm leading-6 text-muted-foreground">{feature}</span></div>)}</div>
-              <Skeleton className="mt-6 h-12 w-full rounded-xl" />
+            <div key={plan.name} className={cn("flex flex-col gap-4 rounded-2xl border bg-transparent px-5 py-5", plan.isPopular ? "border-primary" : "border-border")}>
+              <div className="space-y-3">
+                <div>
+                  <div className="flex min-h-7 items-center justify-between gap-2"><h2 className="text-xl font-semibold tracking-tight">{plan.name}</h2><Skeleton className="h-5 w-24 rounded-full" /></div>
+                  <p className="mt-2 text-sm leading-5 text-muted-foreground">{plan.description}</p>
+                </div>
+                <Skeleton className="h-10 w-28" />
+              </div>
+              <div className="flex-1 space-y-2 border-t border-border pt-4">
+                {plan.features.map(feature => <div key={feature} className="flex items-start gap-2"><Skeleton className="mt-0.5 size-4 shrink-0" /><span className="text-sm leading-5 text-muted-foreground">{feature}</span></div>)}
+              </div>
+              <Skeleton className="h-10 w-full rounded-lg" />
             </div>
           ))}
         </div>
-        <section className="mt-14 rounded-3xl border border-border bg-card/70 p-6 md:p-8">
+        <section className="mt-8 rounded-2xl border border-border p-5">
           <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">Feature comparison</p>
           <Skeleton className="mb-6 mt-2 h-8 w-80 max-w-full" />
           <div className="overflow-hidden rounded-2xl border border-border">
@@ -216,7 +222,26 @@ export function SignInSkeleton() {
 }
 
 export function LandingSkeleton() {
-  return <LoadingRegion label="Loading LessonMap" className={cn(container, "py-28 md:py-36")}><div className="mx-auto flex max-w-5xl flex-col items-center text-center"><Skeleton className="h-7 w-64 max-w-full rounded-full" /><Skeleton className="mt-6 h-12 w-full md:h-20" /><Skeleton className="mt-3 h-12 w-4/5 md:h-20" /><div className="mt-8 w-full max-w-3xl"><Lines /></div><div className="mt-10 flex gap-4"><Skeleton className="h-10 w-36" /><Skeleton className="h-10 w-32" /></div><Skeleton className="mt-16 h-5 w-3/4" /></div><Skeleton className="mx-auto mt-20 h-80 w-full max-w-6xl rounded-3xl" /></LoadingRegion>;
+  return (
+    <LoadingRegion label="Loading LessonMap" className="mx-auto grid w-full max-w-6xl items-center gap-12 px-6 pb-20 pt-32 sm:pt-40 lg:grid-cols-[1fr_1.05fr] lg:gap-16 lg:px-8 lg:pt-44">
+      <div>
+        <Skeleton className="h-4 w-64 max-w-full" />
+        <div className="mt-7 space-y-3">
+          <Skeleton className="h-14 w-full" />
+          <Skeleton className="h-14 w-4/5" />
+          <Skeleton className="h-14 w-3/5" />
+        </div>
+        <div className="mt-7 max-w-md"><Lines /></div>
+        <div className="mt-8 flex flex-wrap gap-5"><Skeleton className="h-11 w-40" /><Skeleton className="h-11 w-32" /></div>
+      </div>
+      <div className="rounded-xl border border-border p-7">
+        <Skeleton className="h-4 w-32" />
+        <Skeleton className="mt-8 h-7 w-3/4" />
+        <Skeleton className="mt-3 h-4 w-full" />
+        <div className="mt-8 space-y-5">{[0, 1, 2].map(i => <Skeleton key={i} className="h-16 w-full" />)}</div>
+      </div>
+    </LoadingRegion>
+  );
 }
 
 export function AuthErrorSkeleton() {

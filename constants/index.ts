@@ -132,7 +132,7 @@ export const plans = [
     name: "Free",
     type: "FREE",
     description:
-      "For first-time creators who want to test the idea, map a few lessons, and share a simple course outline.",
+      "Create your first courses and share them with learners.",
     price: "$0",
     period: "/month",
     cta: "Start Free",
@@ -149,7 +149,7 @@ export const plans = [
     name: "Creator",
     type: "CREATOR",
     description:
-      "For creators who want a polished, shareable, and more visual course map with AI support and creator-native branding.",
+      "More courses, visual maps, and expanded AI generation.",
     price: "$12",
     period: "/month",
     isPopular: true,

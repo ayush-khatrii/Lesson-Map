@@ -99,21 +99,18 @@ const PricingPage = () => {
     }
   };
   return (
-    <section className="relative overflow-hidden py-24 sm:py-32">
-      <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="mx-auto mb-10 max-w-3xl text-center">
-          <Badge variant="secondary" className="mb-4 rounded-full px-4 py-1 text-xs font-medium">
-            Pricing
-          </Badge>
-          <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl lg:text-6xl">
-            Pick the plan that fits your course-building flow
+    <section className="relative pb-10 pt-24">
+      <div className="mx-auto w-full max-w-5xl px-4 sm:px-6">
+        <div className="mx-auto mb-6 max-w-xl text-center">
+          <h1 className="text-3xl font-semibold tracking-tight text-primary sm:text-4xl">
+            A plan for your next course
           </h1>
-          <p className="mt-5 text-base text-muted-foreground sm:text-lg">
-            Start simple with the Free plan, or upgrade to Creator for flow-style course maps, AI generation, and a more polished public presentation.
+          <p className="mt-2 text-sm leading-6 text-muted-foreground">
+            Start free. Choose Creator when you need more.
           </p>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-2 lg:gap-8">
+        <div className="grid gap-4 md:grid-cols-2">
           {plans.map((plan, index) => {
             const isCurrentPlan = Boolean(
               session?.user && currentPlan === plan.type,
@@ -135,61 +132,51 @@ const PricingPage = () => {
             <Card
               key={index}
               className={cn(
-                "relative flex h-full flex-col rounded-3xl border bg-background/60 backdrop-blur transition-all duration-300",
+                "relative flex h-full flex-col gap-4 rounded-2xl border bg-transparent py-5",
                 plan.isPopular
-                  ? "border-primary shadow-2xl shadow-primary/10 lg:-translate-y-1"
-                  : "border-border/60 hover:border-border",
+                  ? "border-primary"
+                  : "border-border",
               )}
             >
-              {plan.isPopular && (
-                <Badge className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 rounded-full px-4 py-1 text-xs font-medium shadow-sm">
-                  {plan.accent}
-                </Badge>
-              )}
-              {isCurrentPlan && (
-                <Badge
-                  variant="secondary"
-                  className="absolute right-5 top-5 rounded-full"
-                >
-                  Current plan
-                </Badge>
-              )}
-              {!plan.isPopular && (
-                <Badge variant="outline" className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 rounded-full px-4 py-1 text-xs font-medium shadow-sm">
-                  {plan.accent}
-                </Badge>
-              )}
-              <CardHeader className="space-y-4 pb-6 pt-8">
+              <CardHeader className="gap-3 px-5 py-0">
                 <div>
-                  <h2 className="text-2xl font-semibold tracking-tight">{plan.name}</h2>
-                  <p className="mt-2 text-sm leading-6 text-muted-foreground">{plan.description}</p>
+                  <div className="flex min-h-7 flex-wrap items-center justify-between gap-2">
+                    <h2 className="text-xl font-semibold tracking-tight">{plan.name}</h2>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge variant={plan.isPopular ? "default" : "outline"} className="rounded-full px-2.5 py-0.5 text-[11px]">
+                        {plan.accent}
+                      </Badge>
+                      {isCurrentPlan && <Badge variant="secondary" className="rounded-full px-2.5 py-0.5 text-[11px]">Current plan</Badge>}
+                    </div>
+                  </div>
+                  <p className="mt-2 text-sm leading-5 text-muted-foreground">{plan.description}</p>
                 </div>
 
                 <div className="flex items-end gap-1">
-                  <span className="text-5xl font-semibold tracking-tight">{plan.price}</span>
+                  <span className="text-4xl font-semibold tracking-tight">{plan.price}</span>
                   <span className="mb-1 text-sm text-muted-foreground">{plan.period}</span>
                 </div>
               </CardHeader>
 
-              <CardContent className="flex-1">
-                <ul className="space-y-3">
+              <CardContent className="flex-1 px-5">
+                <ul className="space-y-2 border-t border-border pt-4">
                   {plan.features.map((feature, i) => (
-                    <li key={i} className="flex items-start gap-3 text-sm">
-                      <div className="mt-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-primary">
+                    <li key={i} className="flex items-start gap-2 text-sm">
+                      <div className="mt-0.5 flex size-4 shrink-0 items-center justify-center text-primary">
                         <Check className="h-3.5 w-3.5" />
                       </div>
-                      <span className="leading-6 text-muted-foreground">{feature}</span>
+                      <span className="leading-5 text-muted-foreground">{feature}</span>
                     </li>
                   ))}
                 </ul>
               </CardContent>
 
-              <CardFooter className="pt-6">
+              <CardFooter className="px-5 pt-0">
                 <Button
                   onClick={() => handlePurchase(plan.type)}
                   size="lg"
                   className={cn(
-                    "h-12 w-full rounded-xl text-sm font-medium",
+                    "h-10 w-full rounded-lg text-sm font-medium",
                     !plan.isPopular && "bg-secondary text-secondary-foreground hover:bg-secondary/80",
                   )}
                   aria-current={isCurrentPlan ? "true" : undefined}
@@ -212,7 +199,7 @@ const PricingPage = () => {
           })}
         </div>
 
-        <section className="mt-14 rounded-3xl border border-border bg-card/70 p-6 shadow-sm md:p-8">
+        <section className="mt-8 rounded-2xl border border-border bg-transparent p-5">
           <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
             <div>
               <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">Feature comparison</p>

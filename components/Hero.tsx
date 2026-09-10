@@ -23,7 +23,8 @@ const Hero = () => {
             </h1>
             <p className="py-4 text-sm md:text-2xl opacity-80 w-full max-w-xs md:max-w-4xl">
               Easily outline modules, lessons, and steps with a clean, visual
-              dashboard designed to give structure to your entire course journey.
+              dashboard designed to give structure to your entire course
+              journey.
             </p>
           </div>
           <div className="my-4 flex md:flex-row flex-col w-full px-5 justify-center items-center gap-3">

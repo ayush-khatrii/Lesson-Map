@@ -1,6 +1,5 @@
 "use client";
 import React, { useState } from "react";
-import { motion } from "framer-motion";
 import { Menu, LogOut, User, Settings, Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -198,15 +197,17 @@ export default function Navbar({ className }: { className?: string }) {
 
   const publicNavItems = [
     { item: "Home", href: "/" },
+    { item: "About", href: "/about" },
     { item: "Examples", href: "/examples" },
     { item: "Pricing", href: "/pricing" },
   ];
 
   const authenticatedNavItems = [
     { item: "Home", href: "/" },
+    { item: "About", href: "/about" },
     { item: "Examples", href: "/examples" },
-    { item: "Dashboard", href: "/dashboard" },
     { item: "Pricing", href: "/pricing" },
+    { item: "Dashboard", href: "/dashboard" },
   ];
 
   const navItems = session?.user ? authenticatedNavItems : publicNavItems;
