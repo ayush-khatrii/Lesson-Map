@@ -9,6 +9,11 @@ import {
   UPLOAD_SAVE_WINDOW_MS,
 } from "@/lib/r2/upload-policy";
 import { HeadObjectCommand } from "@aws-sdk/client-s3";
+import {
+  getR2,
+  getR2Bucket,
+  R2NotConfiguredError,
+} from "@/lib/r2/r2-client";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 
@@ -56,11 +61,11 @@ export async function POST(request: Request) {
     });
     if (existing) return NextResponse.json(existing);
 
-    const { r2 } = await import("@/lib/r2/r2-client");
+    const r2 = getR2();
     let object;
     try {
       object = await r2.send(new HeadObjectCommand({
-        Bucket: process.env.CF_R2_BUCKET_NAME || "lesson-map",
+        Bucket: getR2Bucket(),
         Key: key,
       }));
     } catch (error) {
@@ -129,6 +134,13 @@ export async function POST(request: Request) {
     revalidateTag(userCoursesTag(userId), { expire: 0 });
     return NextResponse.json(resource, { status: 201 });
   } catch (error) {
+    if (error instanceof R2NotConfiguredError) {
+      console.error("Failed to save uploaded resource: R2 is not configured");
+      return NextResponse.json(
+        { error: "File storage is temporarily unavailable." },
+        { status: 503 },
+      );
+    }
     console.error("Failed to save uploaded resource:", error);
     // The scheduled reconciler removes unreferenced uploads, including DB failures.
     // Never delete here: a concurrent request may have successfully saved the file.

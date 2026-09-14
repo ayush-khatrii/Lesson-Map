@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import Link from "next/link";
 import {
   Accordion,
@@ -376,17 +376,25 @@ function EditLessonDialog({
   onSave,
 }: {
   lesson: Lesson;
-  onSave: (name: string) => Promise<boolean>;
+  onSave: (name: string, description: string) => Promise<boolean>;
 }) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState(lesson.name);
+  const [description, setDescription] = useState(lesson.description ?? "");
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (open) {
+      setName(lesson.name);
+      setDescription(lesson.description ?? "");
+    }
+  }, [open, lesson.name, lesson.description]);
 
   const handleSubmit = async () => {
     if (!name.trim()) return;
     setSaving(true);
     try {
-      if (await onSave(name.trim())) setOpen(false);
+      if (await onSave(name.trim(), description.trim())) setOpen(false);
     } finally {
       setSaving(false);
     }
@@ -402,11 +410,27 @@ function EditLessonDialog({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Edit lesson</DialogTitle>
-          <DialogDescription>Update this lesson title.</DialogDescription>
+          <DialogDescription>
+            Update this lesson title and what learners will read.
+          </DialogDescription>
         </DialogHeader>
-        <div className="space-y-1.5 py-2">
-          <Label htmlFor={`edit-lesson-${lesson.id}`}>Lesson name</Label>
-          <Input id={`edit-lesson-${lesson.id}`} value={name} onChange={(event) => setName(event.target.value)} />
+        <div className="space-y-3 py-2">
+          <div className="space-y-1.5">
+            <Label htmlFor={`edit-lesson-${lesson.id}`}>Lesson name</Label>
+            <Input id={`edit-lesson-${lesson.id}`} value={name} onChange={(event) => setName(event.target.value)} />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor={`edit-lesson-description-${lesson.id}`}>
+              Description
+            </Label>
+            <Textarea
+              id={`edit-lesson-description-${lesson.id}`}
+              value={description}
+              onChange={(event) => setDescription(event.target.value)}
+              placeholder="Optional. Leave blank if the lesson only needs a title."
+              className="min-h-24"
+            />
+          </div>
         </div>
         <DialogFooter>
           <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={saving}>Cancel</Button>
@@ -1097,7 +1121,13 @@ function OutlineTab({
       const lessonCount = mod?.lessons.length ?? 0;
       const result = await createLessonsAction({
         moduleId,
-        lessons: [{ lessonName: name, order: lessonCount + 1 }],
+        lessons: [
+          {
+            lessonName: name,
+            description: description.trim() || undefined,
+            order: lessonCount + 1,
+          },
+        ],
       });
       if (result.success && result.data && result.data.length > 0) {
         const created = result.data[0];
@@ -1108,7 +1138,11 @@ function OutlineTab({
                   ...m,
                   lessons: [
                     ...m.lessons,
-                    { id: created.id, name: created.lessonName, description },
+                    {
+                      id: created.id,
+                      name: created.lessonName,
+                      description: created.description ?? description,
+                    },
                   ],
                 }
               : m,
@@ -1177,22 +1211,37 @@ function OutlineTab({
     return true;
   };
 
-  const handleEditLesson = async (lessonId: string, name: string) => {
+  const handleEditLesson = async (
+    lessonId: string,
+    name: string,
+    description: string,
+  ) => {
+    const nextDescription = description.trim();
     if (!courseId) {
       setModules((previous) => previous.map((module) => ({
         ...module,
-        lessons: module.lessons.map((lesson) => lesson.id === lessonId ? { ...lesson, name } : lesson),
+        lessons: module.lessons.map((lesson) => lesson.id === lessonId
+          ? { ...lesson, name, description: nextDescription }
+          : lesson),
       })));
       return true;
     }
-    const result = await updateLessonAction(lessonId, { lessonName: name });
+    const result = await updateLessonAction(lessonId, {
+      lessonName: name,
+      description: nextDescription,
+    });
     if (!result.success) {
       toast.error(result.error || Object.values(result.errors ?? {}).join(", ") || "Failed to update lesson.");
       return false;
     }
+    const savedDescription =
+      (result.data as { description?: string | null } | undefined)?.description ??
+      nextDescription;
     setModules((previous) => previous.map((module) => ({
       ...module,
-      lessons: module.lessons.map((lesson) => lesson.id === lessonId ? { ...lesson, name } : lesson),
+      lessons: module.lessons.map((lesson) => lesson.id === lessonId
+        ? { ...lesson, name, description: savedDescription ?? "" }
+        : lesson),
     })));
     toast.success("Lesson updated.");
     return true;
@@ -1398,7 +1447,7 @@ function OutlineTab({
                                     />
                                     <EditLessonDialog
                                       lesson={lesson}
-                                      onSave={(name) => handleEditLesson(lesson.id, name)}
+                                      onSave={(name, description) => handleEditLesson(lesson.id, name, description)}
                                     />
                                     <DeleteItemButton
                                       itemType="lesson"
@@ -2042,6 +2091,7 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
               module.description?.trim() || "No description provided.",
             lessons: module.lessons.map((lesson) => ({
               lessonName: lesson.name.trim(),
+              description: lesson.description?.trim() || undefined,
             })),
           })),
         });
@@ -2057,7 +2107,7 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
               lessons: module.Lesson.map((lesson) => ({
                 id: lesson.id,
                 name: lesson.lessonName,
-                description: "",
+                description: lesson.description ?? "",
                 resources: [],
               })),
             })),

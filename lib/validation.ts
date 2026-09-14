@@ -1,5 +1,17 @@
 import * as z from "zod";
 
+// Lesson body text is optional: a lesson may have a title only. Capped so a
+// single lesson cannot store unbounded content, and blank input is normalised
+// to undefined so the UI can tell "no description" apart from an empty string.
+const lessonDescriptionField = z
+  .string()
+  .max(20000, "Lesson description must be 20000 characters or less")
+  .transform((value) => {
+    const trimmed = value.trim();
+    return trimmed.length ? trimmed : undefined;
+  })
+  .optional();
+
 // Schema for creating a course
 export const createCourseSchema = z.object({
   courseName: z.string().min(1, "Course name is required"),
@@ -21,6 +33,7 @@ export const moduleSchema = z.object({
 
 export const lessonSchema = z.object({
   lessonName: z.string().min(1, "Lesson name is required"),
+  description: lessonDescriptionField,
   order: z.number().int().min(1, "Order is required"),
   moduleId: z.string().min(1, "Valid module ID is required"),
 });
@@ -46,6 +59,7 @@ export const createLessonsBulkSchema = z.object({
     .array(
       z.object({
         lessonName: z.string().min(1, "Lesson name is required"),
+        description: lessonDescriptionField,
         order: z.number().int().min(1, "Order must be at least 1"),
       })
     )
@@ -61,6 +75,7 @@ export const updateModuleSchema = z.object({
 
 export const updateLessonSchema = z.object({
   lessonName: z.string().min(1, "Lesson name is required"),
+  description: lessonDescriptionField,
   order: z.number().int().min(1, "Order must be at least 1").optional(),
 });
 

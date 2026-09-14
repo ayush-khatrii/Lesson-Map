@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { generatePresignedUrl } from "@/lib/r2/generatePresignedUrl";
+import { R2NotConfiguredError } from "@/lib/r2/r2-client";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { db } from "@/lib/prisma";
@@ -56,6 +57,13 @@ export async function POST(request: Request) {
 
     return NextResponse.json(result);
   } catch (error) {
+    if (error instanceof R2NotConfiguredError) {
+      console.error("Error creating upload URL: R2 is not configured");
+      return NextResponse.json(
+        { error: "File uploads are temporarily unavailable." },
+        { status: 503 },
+      );
+    }
     console.error("Error creating upload URL:", error);
     return NextResponse.json(
       {

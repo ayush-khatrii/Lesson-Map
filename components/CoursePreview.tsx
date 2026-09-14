@@ -25,7 +25,6 @@ import {
   Newspaper,
   ExternalLink,
   MapPin,
-  ChevronDown,
 } from "lucide-react";
 
 import {
@@ -46,6 +45,12 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
+import {
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContent,
+} from "@/components/ui/tabs";
 import { useLessonProgress } from "@/lib/useLessonProgress";
 import { cn } from "@/lib/utils";
 import {
@@ -72,6 +77,7 @@ export interface Resource {
 export interface Lesson {
   id: string;
   title: string;
+  description?: string | null;
   done?: boolean;
   resources?: Resource[];
 }
@@ -826,10 +832,10 @@ function LessonContentPanel({
   onToggleLesson: (id: string) => void;
 }) {
   const [previewResource, setPreviewResource] = useState<Resource | null>(null);
-  const [resourcesOpen, setResourcesOpen] = useState(false);
+  const [tab, setTab] = useState<"lesson" | "resources">("lesson");
 
   useEffect(() => {
-    setResourcesOpen(false);
+    setTab("lesson");
     setPreviewResource(null);
   }, [lesson?.id]);
 
@@ -851,6 +857,10 @@ function LessonContentPanel({
   }
 
   const done = isDone(lesson.id);
+  const description = lesson.description?.trim();
+  const resources = lesson.resources ?? [];
+  const paragraphs = description ? description.split(/\n{2,}/) : [];
+
   return (
     <>
       <div className="flex min-h-[420px] flex-col rounded-2xl border border-border bg-card/50">
@@ -858,48 +868,80 @@ function LessonContentPanel({
           <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-primary">
             {module.label}
           </p>
-          <h2 className="break-words text-lg font-bold leading-snug text-foreground [overflow-wrap:anywhere] sm:text-xl">{lesson.title}</h2>
-          <p className="mt-1 text-sm text-muted-foreground">{module.description}</p>
+          <h2 className="break-words text-lg font-bold leading-snug text-foreground [overflow-wrap:anywhere] sm:text-xl">
+            {lesson.title}
+          </h2>
         </div>
 
-        <div className="flex-1 px-6 py-6">
-          <p className="mb-6 text-sm leading-relaxed text-muted-foreground">
-            Part of {module.title}. Continue through the lesson list to track
-            your progress.
-          </p>
+        <Tabs
+          value={tab}
+          onValueChange={(value) => setTab(value as "lesson" | "resources")}
+          className="flex flex-1 flex-col gap-0"
+        >
+          <div className="px-6 pt-4">
+            <TabsList>
+              <TabsTrigger value="lesson">Lesson</TabsTrigger>
+              <TabsTrigger value="resources">
+                Resources
+                {resources.length > 0 && (
+                  <span className="ml-1 text-[10px] font-bold tabular-nums opacity-80">
+                    {resources.length}
+                  </span>
+                )}
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
-          {lesson.resources && lesson.resources.length > 0 && (
-            <div className="mb-5 overflow-hidden rounded-xl border border-primary/20 bg-primary/5">
-              <button
-                type="button"
-                onClick={() => setResourcesOpen((open) => !open)}
-                className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left text-xs font-semibold uppercase tracking-widest text-primary transition-colors hover:bg-primary/10"
-                aria-expanded={resourcesOpen}
-              >
-                <span>Attached resources ({lesson.resources.length})</span>
-                <ChevronDown
-                  className={cn(
-                    "h-4 w-4 shrink-0 transition-transform",
-                    resourcesOpen && "rotate-180",
-                  )}
-                />
-              </button>
-              {resourcesOpen && (
-                <div className="border-t border-primary/10 p-3 sm:p-4">
-                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                    {lesson.resources.map((r) => (
-                      <ResourceRow
-                        key={r.id}
-                        resource={r}
-                        onPreview={setPreviewResource}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
+          <TabsContent value="lesson" className="px-6 py-5">
+            {paragraphs.length > 0 ? (
+              <div className="space-y-3">
+                {paragraphs.map((paragraph, index) => (
+                  <p
+                    key={index}
+                    className="whitespace-pre-wrap break-words text-sm leading-relaxed text-foreground/90 [overflow-wrap:anywhere]"
+                  >
+                    {paragraph}
+                  </p>
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-xl border border-dashed border-border bg-card/60 px-4 py-6 text-center">
+                <p className="text-sm font-medium text-foreground">
+                  This lesson has no notes yet.
+                </p>
+                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                  The course author has only added a title. Check the resources
+                  tab for attached material.
+                </p>
+              </div>
+            )}
+          </TabsContent>
 
+          <TabsContent value="resources" className="px-6 py-5">
+            {resources.length > 0 ? (
+              <div className="grid grid-cols-1 gap-2">
+                {resources.map((r) => (
+                  <ResourceRow
+                    key={r.id}
+                    resource={r}
+                    onPreview={setPreviewResource}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-xl border border-dashed border-border bg-card/60 px-4 py-6 text-center">
+                <p className="text-sm font-medium text-foreground">
+                  No resources attached
+                </p>
+                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                  This lesson does not have any files, links, or notes yet.
+                </p>
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
+
+        <div className="border-t border-border px-6 py-4">
           <Button
             className={cn(
               "w-full gap-2 font-semibold",

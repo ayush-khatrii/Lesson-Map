@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { r2 } from "./r2-client";
+import { getR2, getR2Bucket } from "./r2-client";
 
 export async function generatePresignedUrl(
   filename: string,
@@ -25,9 +25,9 @@ export async function generatePresignedUrl(
     "x-amz-meta-size",
   ]);
   const uploadUrl = await getSignedUrl(
-    r2,
+    getR2(),
     new PutObjectCommand({
-      Bucket: process.env.CF_R2_BUCKET_NAME || "lesson-map",
+      Bucket: getR2Bucket(),
       Key: key,
       ContentType: contentType,
       ContentLength: size,

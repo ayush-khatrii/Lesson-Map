@@ -69,7 +69,12 @@ const courseOutlineSchema = createCourseSchema.extend({
     z.object({
       moduleName: z.string().min(1),
       description: z.string().min(1),
-      lessons: z.array(z.object({ lessonName: z.string().min(1) })),
+      lessons: z.array(
+        z.object({
+          lessonName: z.string().min(1),
+          description: z.string().max(20000).optional(),
+        }),
+      ),
     }),
   ),
 });
@@ -108,6 +113,7 @@ async function createCourseWithOutlineAction(data: unknown) {
                   Lesson: {
                     create: module.lessons.map((lesson, lessonIndex) => ({
                       lessonName: lesson.lessonName,
+                      description: lesson.description?.trim() || null,
                       order: lessonIndex + 1,
                     })),
                   },
@@ -254,6 +260,7 @@ async function createLessonsAction(data: unknown) {
       data: lessons.map((l) => ({
         moduleId,
         lessonName: l.lessonName,
+        description: l.description?.trim() || null,
         order: l.order,
       })),
     });

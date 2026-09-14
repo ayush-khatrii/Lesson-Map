@@ -2,6 +2,11 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/prisma";
 import { GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import {
+  getR2,
+  getR2Bucket,
+  R2NotConfiguredError,
+} from "@/lib/r2/r2-client";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 
@@ -29,9 +34,8 @@ export async function GET(
     let url = resource.url;
     if (resource.key) {
       // Resolve older uploads that saved only an object key, and private buckets.
-      const { r2 } = await import("@/lib/r2/r2-client");
-      url = await getSignedUrl(r2, new GetObjectCommand({
-        Bucket: process.env.CF_R2_BUCKET_NAME || "lesson-map",
+      url = await getSignedUrl(getR2(), new GetObjectCommand({
+        Bucket: getR2Bucket(),
         Key: resource.key,
         ResponseContentDisposition: "inline",
       }), { expiresIn: 300 });
@@ -44,6 +48,13 @@ export async function GET(
       headers: { "Cache-Control": "private, no-store" },
     });
   } catch (error) {
+    if (error instanceof R2NotConfiguredError) {
+      console.error("Failed to open resource: R2 is not configured");
+      return NextResponse.json(
+        { error: "File storage is temporarily unavailable." },
+        { status: 503 },
+      );
+    }
     console.error("Failed to open resource:", error);
     return NextResponse.json({ error: "Unable to open this resource. Please try again." }, { status: 500 });
   }

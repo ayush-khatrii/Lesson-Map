@@ -48,7 +48,7 @@ const EditCoursePage = async ({
         (lesson) => ({
           id: lesson.id,
           name: lesson.lessonName,
-          description: "",
+          description: lesson.description ?? "",
           resources: lesson.resources,
         }),
       ),

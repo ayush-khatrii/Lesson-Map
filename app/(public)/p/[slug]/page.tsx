@@ -82,6 +82,7 @@ export default async function CoursePreviewPage({
       lessons: mod.Lesson.map((lesson) => ({
         id: lesson.id,
         title: lesson.lessonName,
+        description: lesson.description,
         done: false,
         resources: lesson.resources.map((r) => ({
           id: r.id,

@@ -1,5 +1,6 @@
 import { DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { db } from "@/lib/prisma";
+import { getR2, getR2Bucket } from "./r2-client";
 
 export async function deleteUnreferencedFile(key: string) {
   // Only manage the application's lesson-resource namespace.
@@ -16,10 +17,9 @@ export async function deleteUnreferencedFile(key: string) {
     },
   });
   if (referenced) return false;
-  const { r2 } = await import("./r2-client");
-  await r2.send(
+  await getR2().send(
     new DeleteObjectCommand({
-      Bucket: process.env.CF_R2_BUCKET_NAME || "lesson-map",
+      Bucket: getR2Bucket(),
       Key: key,
     }),
   );

@@ -1,5 +1,5 @@
 import { PutObjectCommand } from "@aws-sdk/client-s3";
-import { r2 } from "./r2-client";
+import { getR2, getR2Bucket } from "./r2-client";
 
 export async function uploadFile(file: File, folder: string) {
   try {
@@ -7,9 +7,9 @@ export async function uploadFile(file: File, folder: string) {
     const buffer = Buffer.from(bytes);
     const key = `${folder}/${file.name}`;
 
-    await r2.send(
+    await getR2().send(
       new PutObjectCommand({
-        Bucket: "lesson-map",
+        Bucket: getR2Bucket(),
         Key: key,
         Body: buffer,
         ContentType: file.type,
