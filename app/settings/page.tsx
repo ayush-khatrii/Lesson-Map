@@ -3,291 +3,132 @@ import { db } from "@/lib/prisma";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
+import { Card, CardContent } from "@/components/ui/card";
 import {
+  ArrowUpRight,
   BookOpen,
-  Calendar,
-  ExternalLink,
-  Globe,
-  Lock,
+  CalendarDays,
+  CheckCircle2,
+  FileText,
+  Globe2,
+  Layers3,
+  LockKeyhole,
   Mail,
-  MapPin,
+  Settings2,
   Sparkles,
-  User as UserIcon,
 } from "lucide-react";
 import UpdateProfileForm from "@/components/forms/UpdateProfileForm";
 import ToggleCoursePublicButton from "@/components/ToggleCoursePublicButton";
 
-const getInitials = (name?: string) => {
-  if (!name) return "U";
-  return name
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
-};
-
-const formatDate = (date: Date) => {
-  return new Date(date).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "long",
+function formatDate(date: Date) {
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
     day: "numeric",
-  });
-};
+    year: "numeric",
+  }).format(new Date(date));
+}
 
-const SettingsPage = async () => {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
-
-  if (!session) {
-    redirect("/sign-in");
-  }
+export default async function SettingsPage() {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session) redirect("/sign-in");
 
   const user = session.user;
+  const [dbUser, courses] = await Promise.all([
+    db.user.findUnique({ where: { id: user.id }, select: { plan: true } }),
+    db.course.findMany({
+      where: { userId: user.id },
+      orderBy: { createdAt: "desc" },
+      include: { Module: { include: { Lesson: true } } },
+    }),
+  ]);
 
-  // Read the plan straight from the DB so it always reflects the latest
-  // value (e.g. right after a purchase), independent of the session payload.
-  const dbUser = await db.user.findUnique({
-    where: { id: user.id },
-    select: { plan: true },
-  });
-
-  const courses = await db.course.findMany({
-    where: { userId: user.id },
-    orderBy: { createdAt: "desc" },
-    include: {
-      Module: {
-        include: {
-          Lesson: true,
-        },
-      },
-    },
-  });
-
-  const totalModules = courses.reduce(
-    (acc, c) => acc + c.Module.length,
-    0,
-  );
+  const totalModules = courses.reduce((total, course) => total + course.Module.length, 0);
   const totalLessons = courses.reduce(
-    (acc, c) =>
-      acc + c.Module.reduce((mAcc, m) => mAcc + m.Lesson.length, 0),
+    (total, course) => total + course.Module.reduce((count, module) => count + module.Lesson.length, 0),
     0,
   );
-  const publicCourses = courses.filter((c) => c.isPublic).length;
+  const publicCourses = courses.filter((course) => course.isPublic).length;
+  const appUrl = (
+    process.env.NEXT_PUBLIC_BASE_URL ||
+    (process.env.VERCEL_PROJECT_PRODUCTION_URL
+      ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+      : process.env.NODE_ENV === "production"
+        ? "https://lessonmap.vercel.app"
+        : "http://localhost:3000")
+  ).replace(/\/$/, "");
+  const plan = dbUser?.plan ?? "FREE";
 
-  const appUrl =
-    (process.env.NEXT_PUBLIC_BASE_URL ||
-      (process.env.VERCEL_PROJECT_PRODUCTION_URL
-        ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
-        : process.env.NODE_ENV === "production"
-          ? "https://lessonmap.vercel.app"
-          : "http://localhost:3000")).replace(/\/$/, "");
+  const stats = [
+    { label: "Courses", value: courses.length, icon: BookOpen },
+    { label: "Modules", value: totalModules, icon: Layers3 },
+    { label: "Lessons", value: totalLessons, icon: FileText },
+    { label: "Published", value: publicCourses, icon: Globe2 },
+  ];
 
   return (
-    <div className="min-h-screen bg-background text-foreground px-4 md:px-10 py-24">
-      <div className="mx-auto w-full max-w-7xl space-y-6 px-4 sm:px-6 lg:px-8">
-        {/* ─── Header ─────────────────────────────────────────── */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <UserIcon className="h-7 w-7 text-primary" />
-            <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
-              Profile
-            </h1>
+    <main className="min-h-screen bg-background pb-16 pt-24 text-foreground sm:pt-28">
+      <div className="mx-auto w-full max-w-6xl px-5 sm:px-8 lg:px-10">
+        <header className="flex flex-col gap-5 border-b border-border/70 pb-8 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary-foreground dark:text-primary">Account settings</p>
+            <h1 className="mt-3 text-3xl font-semibold tracking-[-0.04em] sm:text-4xl">Your workspace</h1>
+            <p className="mt-2 max-w-xl text-sm leading-6 text-muted-foreground">Manage your profile, see what you have built, and control how your courses are shared.</p>
           </div>
-          <Button variant="outline" size="sm" asChild>
-            <Link href="/dashboard">Back to Dashboard</Link>
-          </Button>
-        </div>
+          <Button variant="outline" asChild className="h-10 rounded-xl border-border bg-background px-4 shadow-sm"><Link href="/dashboard">Back to dashboard <ArrowUpRight className="size-4" /></Link></Button>
+        </header>
 
-        {/* ─── Profile Card ────────────────────────────────────── */}
-        <Card className="rounded-xl border backdrop-blur-sm shadow-sm">
-          <CardContent className="p-6 flex flex-col sm:flex-row items-start sm:items-center gap-5">
-            <Avatar className="h-20 w-20">
-              <AvatarImage
-                src={user.image || undefined}
-                alt={user.name || "Unknown User"}
-              />
-              <AvatarFallback className="text-2xl">
-                {getInitials(user.name)}
-              </AvatarFallback>
-            </Avatar>
-
-            <div className="flex-1 space-y-2">
-              <div className="flex flex-wrap items-center gap-2">
-                <h2 className="text-xl font-semibold">{user.name}</h2>
-                <Badge variant="secondary" className="capitalize">
-                  <Sparkles className="mr-1 h-3 w-3" />
-                  {dbUser?.plan ?? "FREE"}
-                </Badge>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-sm text-muted-foreground">
-                <span className="flex items-center gap-1.5">
-                  <Mail className="h-4 w-4" />
-                  {user.email}
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <Calendar className="h-4 w-4" />
-                  Joined {formatDate(new Date(user.createdAt))}
-                </span>
+        <section className="mt-8 overflow-hidden rounded-2xl border border-border/80 bg-card shadow-sm">
+          <div className="flex flex-col gap-6 p-6 sm:p-8 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex min-w-0 items-start gap-4">
+              <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-primary text-primary-foreground shadow-sm"><Settings2 className="size-5" /></span>
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2"><h2 className="truncate text-xl font-semibold tracking-tight">{user.name}</h2><Badge variant="secondary" className="rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider"><Sparkles className="mr-1 size-3 text-primary-foreground dark:text-primary" />{plan}</Badge></div>
+                <p className="mt-2 flex items-center gap-2 text-sm text-muted-foreground"><Mail className="size-4 shrink-0" />{user.email}</p>
+                <p className="mt-1.5 flex items-center gap-2 text-xs text-muted-foreground"><CalendarDays className="size-3.5 shrink-0" />Member since {formatDate(user.createdAt)}</p>
               </div>
             </div>
-          </CardContent>
-        </Card>
+            <div className="flex items-center gap-2 rounded-xl border border-border bg-muted/30 px-3 py-2 text-xs text-muted-foreground"><CheckCircle2 className="size-4 text-emerald-500" />Account active</div>
+          </div>
+          <div className="grid grid-cols-2 border-t border-border/70 sm:grid-cols-4">
+            {stats.map(({ label, value, icon: Icon }) => <div key={label} className="border-b border-border/70 p-4 last:border-b-0 even:border-l sm:border-b-0 sm:even:border-l sm:[&:not(:first-child)]:border-l"><Icon className="size-4 text-muted-foreground" /><p className="mt-4 text-2xl font-semibold tracking-tight">{value}</p><p className="mt-1 text-xs text-muted-foreground">{label}</p></div>)}
+          </div>
+        </section>
 
-        {/* ─── Edit Profile ────────────────────────────────────── */}
-        <Card className="rounded-xl border backdrop-blur-sm shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-lg">Edit Profile</CardTitle>
-          </CardHeader>
-          <CardContent>
+        <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1.45fr)_minmax(280px,0.55fr)]">
+          <section className="rounded-2xl border border-border/80 bg-card p-6 shadow-sm sm:p-8">
+            <div className="mb-7"><h2 className="text-lg font-semibold tracking-tight">Profile details</h2><p className="mt-1 text-sm text-muted-foreground">Update the name shown on your courses.</p></div>
             <UpdateProfileForm initialName={user.name} />
-          </CardContent>
-        </Card>
-
-        {/* ─── Stats ───────────────────────────────────────────── */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card className="rounded-xl border backdrop-blur-sm shadow-sm">
-            <CardContent className="p-5 text-center">
-              <p className="text-3xl font-bold">{courses.length}</p>
-              <p className="text-xs text-muted-foreground mt-1">Courses</p>
-            </CardContent>
-          </Card>
-          <Card className="rounded-xl border backdrop-blur-sm shadow-sm">
-            <CardContent className="p-5 text-center">
-              <p className="text-3xl font-bold">{totalModules}</p>
-              <p className="text-xs text-muted-foreground mt-1">Modules</p>
-            </CardContent>
-          </Card>
-          <Card className="rounded-xl border backdrop-blur-sm shadow-sm">
-            <CardContent className="p-5 text-center">
-              <p className="text-3xl font-bold">{totalLessons}</p>
-              <p className="text-xs text-muted-foreground mt-1">Lessons</p>
-            </CardContent>
-          </Card>
-          <Card className="rounded-xl border backdrop-blur-sm shadow-sm">
-            <CardContent className="p-5 text-center">
-              <p className="text-3xl font-bold">{publicCourses}</p>
-              <p className="text-xs text-muted-foreground mt-1">Public</p>
-            </CardContent>
-          </Card>
+          </section>
+          <aside className="rounded-2xl border border-border/80 bg-muted/20 p-6 shadow-sm sm:p-8">
+            <span className="grid size-10 place-items-center rounded-xl bg-primary/15 text-primary-foreground dark:text-primary"><Sparkles className="size-4" /></span>
+            <p className="mt-5 text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">Current plan</p>
+            <h2 className="mt-2 text-2xl font-semibold tracking-tight">{plan}</h2>
+            <p className="mt-3 text-sm leading-6 text-muted-foreground">Upgrade when you need branded-free course pages or Markdown exports.</p>
+            <Button variant="outline" className="mt-6 w-full rounded-xl bg-background" asChild><Link href="/pricing">View plans <ArrowUpRight className="size-4" /></Link></Button>
+          </aside>
         </div>
 
-        {/* ─── Courses ─────────────────────────────────────────── */}
-        <Card className="rounded-xl border backdrop-blur-sm shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <BookOpen className="h-5 w-5 text-primary" />
-              Your Courses
-            </CardTitle>
-            <Badge variant="outline">{courses.length} total</Badge>
-          </CardHeader>
-          <CardContent>
+        <section className="mt-6 rounded-2xl border border-border/80 bg-card shadow-sm">
+          <div className="flex flex-col gap-4 border-b border-border/70 p-6 sm:flex-row sm:items-center sm:justify-between sm:px-8">
+            <div><h2 className="text-lg font-semibold tracking-tight">Course sharing</h2><p className="mt-1 text-sm text-muted-foreground">Choose which courses learners can open with a link.</p></div>
+            <Badge variant="secondary" className="w-fit rounded-full px-3 py-1.5">{publicCourses} of {courses.length} published</Badge>
+          </div>
+          <div className="p-4 sm:p-6">
             {courses.length === 0 ? (
-              <div className="text-center py-10 text-muted-foreground">
-                <BookOpen className="h-10 w-10 mx-auto mb-2 opacity-50" />
-                <p className="text-sm">
-                  No courses yet.{" "}
-                  <Link
-                    href="/dashboard/create/new"
-                    className="text-primary hover:underline"
-                  >
-                    Create your first course
-                  </Link>
-                </p>
-              </div>
+              <div className="flex flex-col items-center rounded-xl border border-dashed border-border bg-muted/20 px-5 py-12 text-center"><span className="grid size-11 place-items-center rounded-xl bg-background shadow-sm"><BookOpen className="size-5 text-muted-foreground" /></span><h3 className="mt-4 font-semibold">Your course list is empty</h3><p className="mt-1 max-w-sm text-sm text-muted-foreground">Create your first course, then return here to publish it when it is ready.</p><Button className="mt-6 rounded-xl bg-foreground text-background" asChild><Link href="/dashboard/create/new">Create a course</Link></Button></div>
             ) : (
-              <div className="space-y-3">
-                {courses.map((course) => (
-                  <div
-                    key={course.id}
-                    className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-lg border bg-card p-4 transition-colors hover:border-border"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="min-w-0 break-words text-sm font-semibold leading-snug [overflow-wrap:anywhere] sm:text-base">
-                          {course.courseName}
-                        </h3>
-                        {course.isPublic ? (
-                          <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-500/30">
-                            <Globe className="mr-1 h-3 w-3" /> Public
-                          </Badge>
-                        ) : (
-                          <Badge
-                            variant="secondary"
-                            className="bg-muted text-muted-foreground"
-                          >
-                            <Lock className="mr-1 h-3 w-3" /> Not public
-                          </Badge>
-                        )}
-                      </div>
-                      <p className="text-sm text-muted-foreground line-clamp-1 mt-1">
-                        {course.description}
-                      </p>
-
-                      <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <MapPin className="h-3 w-3" />
-                          {course.Module.length} modules
-                        </span>
-                        <span>
-                          {course.Module.reduce(
-                            (acc, m) => acc + m.Lesson.length,
-                            0,
-                          )}{" "}
-                          lessons
-                        </span>
-                        <span>{formatDate(course.createdAt)}</span>
-                      </div>
-
-                      {/* Public URL or "Not public" label */}
-                      {course.isPublic && course.shareSlug ? (
-                        <Link
-                          href={`/p/${course.shareSlug}`}
-                          className="mt-2 inline-flex items-center gap-1 text-xs text-primary hover:underline break-all"
-                        >
-                          <ExternalLink className="h-3 w-3 flex-shrink-0" />
-                          {appUrl}/p/{course.shareSlug}
-                        </Link>
-                      ) : (
-                        <p className="mt-2 text-xs text-muted-foreground flex items-center gap-1">
-                          <Lock className="h-3 w-3" /> Not public
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      {course.isPublic && course.shareSlug && (
-                        <Button variant="link" size="sm" asChild>
-                          <Link href={`/p/${course.shareSlug}`}>View</Link>
-                        </Button>
-                      )}
-                      <ToggleCoursePublicButton
-                        courseId={course.id}
-                        isPublic={course.isPublic}
-                        shareSlug={course.shareSlug}
-                        canPublish={course.Module.length > 0}
-                      />
-                    </div>
-                  </div>
-                ))}
+              <div className="divide-y divide-border/70">
+                {courses.map((course) => {
+                  const lessonCount = course.Module.reduce((count, module) => count + module.Lesson.length, 0);
+                  return <article key={course.id} className="flex flex-col gap-4 px-2 py-5 first:pt-2 sm:flex-row sm:items-center sm:justify-between sm:px-3"><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><h3 className="break-words font-semibold tracking-tight">{course.courseName}</h3><Badge variant="secondary" className={course.isPublic ? "border border-emerald-500/25 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : ""}>{course.isPublic ? <><Globe2 className="mr-1 size-3" />Public</> : <><LockKeyhole className="mr-1 size-3" />Private</>}</Badge></div><p className="mt-1.5 line-clamp-1 text-sm text-muted-foreground">{course.description || "No description yet."}</p><div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground"><span>{course.Module.length} modules</span><span>{lessonCount} lessons</span><span>Created {formatDate(course.createdAt)}</span></div>{course.isPublic && course.shareSlug && <Link href={`/p/${course.shareSlug}`} className="mt-3 inline-flex max-w-full items-center gap-1 truncate text-xs font-medium text-primary-foreground hover:underline dark:text-primary"><Globe2 className="size-3 shrink-0" />{appUrl}/p/{course.shareSlug}</Link>}</div><div className="flex shrink-0 items-center gap-2">{course.isPublic && course.shareSlug && <Button variant="ghost" size="sm" className="rounded-lg" asChild><Link href={`/p/${course.shareSlug}`}>View</Link></Button>}<ToggleCoursePublicButton courseId={course.id} isPublic={course.isPublic} shareSlug={course.shareSlug} canPublish={course.Module.length > 0} /></div></article>;
+                })}
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </section>
       </div>
-    </div>
+    </main>
   );
-};
-
-export default SettingsPage;
+}

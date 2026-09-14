@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { updateProfileAction } from "@/lib/actions";
 import { updateProfileSchema } from "@/lib/validation";
-import { Loader2, Save } from "lucide-react";
+import { Check, Loader2, Save } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
@@ -46,19 +46,21 @@ export default function UpdateProfileForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="max-w-xl space-y-5">
       <div className="space-y-2">
-        <Label htmlFor="name">Name</Label>
+        <Label htmlFor="name" className="text-sm font-medium">Display name</Label>
+        <p className="text-xs leading-5 text-muted-foreground">This appears as the author name on your shared courses.</p>
         <Input
           id="name"
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Your name"
-          className="max-w-sm"
+          className="h-11 rounded-xl border-border bg-background px-3 shadow-sm focus-visible:ring-primary/30"
         />
       </div>
 
-      <Button type="submit" disabled={loading}>
+      <div className="flex flex-wrap items-center gap-4 border-t border-border/70 pt-5">
+      <Button type="submit" disabled={loading} className="h-10 rounded-xl bg-foreground px-4 text-background hover:bg-foreground/85">
         {loading ? (
           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
         ) : (
@@ -66,6 +68,8 @@ export default function UpdateProfileForm({
         )}
         Save Changes
       </Button>
+        <p className="flex items-center gap-1.5 text-xs text-muted-foreground"><Check className="size-3.5 text-emerald-500" />Changes appear on your profile right away.</p>
+      </div>
     </form>
   );
 }
