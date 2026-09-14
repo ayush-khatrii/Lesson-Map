@@ -4,6 +4,7 @@ import { useState, useMemo, useCallback, useEffect } from "react";
 import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
 import {
+  Check,
   CheckCircle2,
   Circle,
   Lock,
@@ -11,8 +12,6 @@ import {
   LayoutGrid,
   List,
   Share2,
-  Menu,
-  X,
   Layers,
   Clock,
   Heart,
@@ -24,7 +23,12 @@ import {
   Link2,
   Newspaper,
   ExternalLink,
-  MapPin,
+  Github,
+  Globe,
+  Instagram,
+  Linkedin,
+  Twitter,
+  Youtube,
 } from "lucide-react";
 
 import {
@@ -92,11 +96,18 @@ export interface Module {
   lessons: Lesson[];
 }
 
+export interface SocialLink {
+  key: "instagram" | "linkedin" | "youtube" | "github" | "twitter" | "website";
+  label: string;
+  url: string;
+}
+
 export interface Creator {
   name: string;
   avatar: string | null;
   role?: string;
   bio?: string;
+  socials?: SocialLink[];
 }
 
 export interface CourseStats {
@@ -373,111 +384,79 @@ function UpgradeDialog({
   );
 }
 
-// ─── Navbar (non-sticky) ──────────────────────────────────────────────────────
+// ─── Share bar ────────────────────────────────────────────────────────────────
 
-function CourseNavbar({
-  creator,
-  hideBranding = false,
-}: {
-  creator: Creator;
-  hideBranding?: boolean;
-}) {
-  const [menuOpen, setMenuOpen] = useState(false);
+// There is deliberately no header on the public page: the only chrome is a
+// single button that copies this course's public URL.
+function ShareBar() {
+  const [copied, setCopied] = useState(false);
 
-  const handleShare = async () => {
+  const handleCopy = async () => {
     try {
-      if (navigator.share) {
-        await navigator.share({
-          title: hideBranding ? `${creator.name}'s course` : "LessonMap Course",
-          url: window.location.href,
-        });
-      } else {
-        await navigator.clipboard?.writeText(window.location.href);
-      }
+      await navigator.clipboard?.writeText(window.location.href);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
     } catch {
-      // Closing the native share sheet is not an error.
+      // Clipboard access can be blocked in insecure contexts.
     }
   };
 
   return (
-    <nav
-      className="border-b border-border bg-background/80 backdrop-blur-xl"
-      style={{ position: "relative" }}
-    >
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 md:px-8">
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary">
-            <Layers className="h-4 w-4 text-primary-foreground" />
-          </div>
-          <div>
-            <span className="text-base font-bold tracking-tight text-foreground">
-              {hideBranding ? creator.name : "LessonMap"}
-            </span>
-            <p className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
-              Shared by {creator.name}
-            </p>
-          </div>
-        </div>
-
-        <div className="hidden items-center gap-5 md:flex">
-          <Badge
-            variant="outline"
-            className="gap-1.5 border-border text-muted-foreground"
-          >
-            <MapPin className="h-3 w-3" /> Public page
-          </Badge>
-          <Separator orientation="vertical" className="h-5 bg-secondary" />
-          <div className="flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5">
-            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
-              {creator.name[0]}
-            </div>
-            <span className="text-xs font-medium text-foreground">
-              {creator.name}
-            </span>
-          </div>
-          <Button
-            size="sm"
-            className="gap-1.5 bg-primary font-semibold text-primary-foreground hover:bg-primary/90"
-            onClick={handleShare}
-          >
+    <div className="mx-auto flex w-full max-w-7xl justify-end px-4 pt-5 sm:px-6 lg:px-8">
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={handleCopy}
+        className="gap-2 rounded-xl border-border bg-background font-semibold"
+      >
+        {copied ? (
+          <>
+            <Check className="h-3.5 w-3.5 text-emerald-500" /> Link copied
+          </>
+        ) : (
+          <>
             <Share2 className="h-3.5 w-3.5" /> Share
-          </Button>
-        </div>
+          </>
+        )}
+      </Button>
+    </div>
+  );
+}
 
-        <Button
-          variant="ghost"
-          size="icon"
-          className="text-muted-foreground hover:text-foreground md:hidden"
-          onClick={() => setMenuOpen(!menuOpen)}
-        >
-          {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-        </Button>
-      </div>
+// ─── Social links ─────────────────────────────────────────────────────────────
 
-      {menuOpen && (
-        <div className="border-t border-border bg-background px-5 py-5 md:hidden">
-          <div className="flex flex-col gap-4">
-            <div className="flex items-center gap-3 rounded-xl border border-border bg-muted px-3 py-2.5">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
-                {creator.name[0]}
-              </div>
-              <div>
-                <p className="text-sm font-medium text-foreground">{creator.name}</p>
-                {creator.role && (
-                  <p className="text-xs text-muted-foreground">{creator.role}</p>
-                )}
-              </div>
-            </div>
-            <Button
-              className="w-full gap-2 bg-primary font-semibold text-primary-foreground hover:bg-primary/90"
-              onClick={handleShare}
-            >
-              <Share2 className="h-4 w-4" /> Share Course
-            </Button>
-          </div>
-        </div>
-      )}
-    </nav>
+const SOCIAL_ICONS: Record<SocialLink["key"], LucideIcon> = {
+  instagram: Instagram,
+  linkedin: Linkedin,
+  youtube: Youtube,
+  github: Github,
+  twitter: Twitter,
+  website: Globe,
+};
+
+function SocialLinks({ socials }: { socials: SocialLink[] }) {
+  if (socials.length === 0) return null;
+
+  return (
+    <div className="mt-4 flex flex-wrap items-center gap-2">
+      {socials.map((social) => {
+        const Icon = SOCIAL_ICONS[social.key] ?? Globe;
+        return (
+          <a
+            key={social.key}
+            href={social.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            title={social.label}
+            aria-label={social.label}
+            className="group flex items-center gap-2 rounded-full border border-border bg-background px-3 py-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:border-primary/30 hover:bg-primary/5 hover:text-primary"
+          >
+            <Icon className="h-3.5 w-3.5" />
+            <span>{social.label}</span>
+          </a>
+        );
+      })}
+    </div>
   );
 }
 
@@ -1160,10 +1139,7 @@ export default function LessonMapPublicPage({
   return (
     <div className={cn("min-h-screen bg-background text-foreground", SELECTABLE_TEXT)}>
 
-      <CourseNavbar
-        creator={course.creator}
-        hideBranding={course.hideBranding}
-      />
+      <ShareBar />
       <UpgradeDialog open={upgradeOpen} onClose={() => setUpgradeOpen(false)} />
 
       <main className="mx-auto w-full max-w-7xl px-4 py-4 sm:px-6 sm:py-8 lg:px-8">
@@ -1287,13 +1263,13 @@ export default function LessonMapPublicPage({
             )}
           </div>
 
-          {/* Instructor footer inside shell */}
+          {/* Instructor footer inside shell — the only place the creator appears */}
           <div className="border-t border-border px-6 py-5 md:px-8">
             <div className="flex items-start gap-4">
               <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary text-lg font-black text-primary-foreground">
                 {course.creator.name[0]}
               </div>
-              <div>
+              <div className="min-w-0 flex-1">
                 <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                   Course creator
                 </p>
@@ -1310,6 +1286,7 @@ export default function LessonMapPublicPage({
                     {course.creator.bio}
                   </p>
                 )}
+                <SocialLinks socials={course.creator.socials ?? []} />
               </div>
             </div>
           </div>

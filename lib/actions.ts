@@ -8,6 +8,7 @@ import {
   updateLessonSchema,
   updateModuleSchema,
   updateProfileSchema,
+  updateSocialLinksSchema,
 } from "@/lib/validation";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/prisma";
@@ -380,6 +381,98 @@ async function updateProfileAction(data: unknown) {
   }
 }
 
+// updateSocialLinksAction — the creator's public profile links, configured once
+// in global settings and reused on every shared course page.
+async function updateSocialLinksAction(data: unknown) {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() });
+    const userId = session?.session?.userId;
+    if (!userId) {
+      throw new Error("Unauthorized: Please log in to continue.");
+    }
+
+    const result = updateSocialLinksSchema.safeParse(data);
+    if (!result.success) {
+      const errors: Record<string, string> = {};
+      result.error.issues.forEach((issue) => {
+        const field = issue.path.join(".");
+        // Keep the first message per field so the form can show it inline.
+        if (!errors[field]) errors[field] = issue.message;
+      });
+      return { success: false, errors };
+    }
+
+    const updated = await db.user.update({
+      where: { id: userId },
+      data: result.data,
+      select: {
+        socialInstagram: true,
+        socialLinkedin: true,
+        socialYoutube: true,
+        socialGithub: true,
+        socialTwitter: true,
+        socialWebsite: true,
+      },
+    });
+
+    updateTag(userCoursesTag(userId));
+    revalidatePath("/settings");
+    revalidatePath("/dashboard");
+    return { success: true, message: "Social links saved!", data: updated };
+  } catch (error) {
+    return {
+      success: false,
+      error: (error as Error).message || "Failed to save social links.",
+    };
+  }
+}
+
+// updateCourseSocialLinksAction — per-course switch for showing those links.
+async function updateCourseSocialLinksAction(
+  courseId: string,
+  showSocialLinks: boolean,
+) {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() });
+    const userId = session?.session?.userId;
+    if (!userId) {
+      throw new Error("Unauthorized: Please log in to continue.");
+    }
+
+    const course = await db.course.findFirst({
+      where: { id: courseId, userId },
+      select: { id: true, shareSlug: true },
+    });
+    if (!course) {
+      throw new Error("Course not found or not owned by user.");
+    }
+
+    const updated = await db.course.update({
+      where: { id: courseId },
+      data: { showSocialLinks },
+      select: { showSocialLinks: true },
+    });
+
+    updateTag(userCoursesTag(userId));
+    revalidatePath(`/dashboard/${courseId}/edit`);
+    revalidatePath("/dashboard");
+    if (course.shareSlug) revalidatePath(`/p/${course.shareSlug}`);
+
+    return {
+      success: true,
+      message: showSocialLinks
+        ? "Your social links will show on this course."
+        : "Your social links are hidden on this course.",
+      data: updated,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: (error as Error).message || "Failed to update social link visibility.",
+    };
+  }
+}
+
 // updateCourseAction
 async function updateCourseAction(courseId: string, data: unknown) {
   try {
@@ -619,6 +712,8 @@ export {
   createLessonsAction,
   reorderModulesAction,
   updateProfileAction,
+  updateSocialLinksAction,
+  updateCourseSocialLinksAction,
   updateCourseAction,
   deleteCourseAction,
   reorderLessonsAction,

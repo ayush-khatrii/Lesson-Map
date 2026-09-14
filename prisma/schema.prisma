@@ -28,6 +28,15 @@ model User {
   subscriptionCurrentPeriodEnd  DateTime?
   subscriptionCancelAtPeriodEnd Boolean   @default(false)
 
+  // Public profile links, shown at the bottom of every shared course page.
+  // All optional and stored as absolute URLs.
+  socialInstagram String?
+  socialLinkedin  String?
+  socialYoutube   String?
+  socialGithub    String?
+  socialTwitter   String?
+  socialWebsite   String?
+
   @@map("user")
 }
 
@@ -67,6 +76,8 @@ model Course {
   isPublic    Boolean  @default(false)
   isPublished Boolean  @default(false)
   shareSlug   String?  @unique
+  // Per-course control over the creator's social links on the public page.
+  showSocialLinks Boolean @default(true)
   userId      String
   user        User     @relation(fields: [userId], references: [id])
   Module      Module[]

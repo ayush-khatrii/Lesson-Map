@@ -92,6 +92,7 @@ import {
   deleteModuleAction,
   updateLessonAction,
   deleteLessonAction,
+  updateCourseSocialLinksAction,
 } from "@/lib/actions";
 import {
   DndContext,
@@ -147,6 +148,8 @@ export interface CourseInitialData {
   modules: Module[];
   isPublic?: boolean;
   shareSlug?: string | null;
+  showSocialLinks?: boolean;
+  hasSocialLinks?: boolean;
 }
 
 // ── Resource type config ──────────────────────────────────────────────
@@ -1740,6 +1743,10 @@ function SettingsTab({
   isToggling,
   onExportMarkdown,
   isExporting,
+  showSocialLinks,
+  onToggleSocialLinks,
+  isTogglingSocialLinks,
+  hasSocialLinks,
 }: {
   courseId: string | null;
   isPublic: boolean;
@@ -1748,6 +1755,10 @@ function SettingsTab({
   isToggling: boolean;
   onExportMarkdown: () => void;
   isExporting: boolean;
+  showSocialLinks: boolean;
+  onToggleSocialLinks: (checked: boolean) => void;
+  isTogglingSocialLinks: boolean;
+  hasSocialLinks: boolean;
 }) {
   return (
     <div className="space-y-3">
@@ -1767,6 +1778,31 @@ function SettingsTab({
           />
         }
       />
+      <SettingsRow
+        icon={Share2}
+        title="Show my social links"
+        description={
+          showSocialLinks
+            ? "Your Instagram, LinkedIn, YouTube and other links appear under your name at the bottom of this course's public page."
+            : "Your social links are hidden on this course. They stay saved in your settings for your other courses."
+        }
+        control={
+          <Switch
+            checked={showSocialLinks}
+            onCheckedChange={onToggleSocialLinks}
+            disabled={isTogglingSocialLinks || !courseId}
+          />
+        }
+      />
+      {!hasSocialLinks && (
+        <p className="px-1 text-xs text-muted-foreground">
+          You have not added any social links yet. Add them under{" "}
+          <Link href="/settings" className="font-medium text-primary hover:underline">
+            Settings → Social links
+          </Link>{" "}
+          and they will show up here.
+        </p>
+      )}
       <SettingsRow
         icon={Download}
         title="Export Markdown"
@@ -2051,6 +2087,10 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
   );
   const [isTogglingPublic, setIsTogglingPublic] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [showSocialLinks, setShowSocialLinks] = useState(
+    initialData?.showSocialLinks ?? true,
+  );
+  const [isTogglingSocialLinks, setIsTogglingSocialLinks] = useState(false);
 
   const totalLessons = modules.reduce((a, m) => a + m.lessons.length, 0);
 
@@ -2215,6 +2255,29 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
       toast.error((error as Error).message || "Failed to update visibility.");
     } finally {
       setIsTogglingPublic(false);
+    }
+  };
+
+  const handleToggleSocialLinks = async (checked: boolean) => {
+    if (!courseId) return;
+    const previous = showSocialLinks;
+    setIsTogglingSocialLinks(true);
+    setShowSocialLinks(checked);
+    try {
+      const result = await updateCourseSocialLinksAction(courseId, checked);
+      if (!result.success) {
+        setShowSocialLinks(previous);
+        toast.error(result.error || "Failed to update social links.");
+        return;
+      }
+      toast.success(result.message);
+    } catch (error) {
+      setShowSocialLinks(previous);
+      toast.error(
+        (error as Error).message || "Failed to update social links.",
+      );
+    } finally {
+      setIsTogglingSocialLinks(false);
     }
   };
 
@@ -2509,6 +2572,10 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
               isToggling={isTogglingPublic}
               onExportMarkdown={handleExportMarkdown}
               isExporting={isExporting}
+              showSocialLinks={showSocialLinks}
+              onToggleSocialLinks={handleToggleSocialLinks}
+              isTogglingSocialLinks={isTogglingSocialLinks}
+              hasSocialLinks={initialData?.hasSocialLinks ?? false}
             />
           </TabsContent>
 

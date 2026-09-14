@@ -1,4 +1,5 @@
 import { auth } from "@/lib/auth";
+import { db } from "@/lib/prisma";
 import { getUserCourse } from "@/lib/course-cache";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
@@ -33,6 +34,29 @@ const EditCoursePage = async ({
     );
   }
 
+  const creator = await db.user.findUnique({
+    where: { id: session.session.userId },
+    select: {
+      socialInstagram: true,
+      socialLinkedin: true,
+      socialYoutube: true,
+      socialGithub: true,
+      socialTwitter: true,
+      socialWebsite: true,
+    },
+  });
+  const hasSocialLinks = Boolean(
+    creator &&
+      [
+        creator.socialInstagram,
+        creator.socialLinkedin,
+        creator.socialYoutube,
+        creator.socialGithub,
+        creator.socialTwitter,
+        creator.socialWebsite,
+      ].some((link) => Boolean(link)),
+  );
+
   const initialData: CourseInitialData = {
     courseId: selectedCourse.id,
     title: selectedCourse.courseName,
@@ -40,6 +64,8 @@ const EditCoursePage = async ({
     audience: selectedCourse.audience,
     isPublic: selectedCourse.isPublic,
     shareSlug: selectedCourse.shareSlug,
+    showSocialLinks: selectedCourse.showSocialLinks,
+    hasSocialLinks,
     modules: selectedCourse.Module.map((mod) => ({
       id: mod.id,
       name: mod.moduleName,

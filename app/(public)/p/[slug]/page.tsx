@@ -1,6 +1,6 @@
 import { db } from "@/lib/prisma";
 import LessonMapPublicPage from "@/components/CoursePreview";
-import type { Course } from "@/components/CoursePreview";
+import type { Course, SocialLink } from "@/components/CoursePreview";
 import { notFound } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
@@ -37,6 +37,12 @@ export default async function CoursePreviewPage({
           subscriptionStatus: true,
           subscriptionCancelAtPeriodEnd: true,
           subscriptionCurrentPeriodEnd: true,
+          socialInstagram: true,
+          socialLinkedin: true,
+          socialYoutube: true,
+          socialGithub: true,
+          socialTwitter: true,
+          socialWebsite: true,
         },
       },
       Module: {
@@ -60,6 +66,21 @@ export default async function CoursePreviewPage({
     0,
   );
 
+  // The creator configures these once in settings; each course decides whether
+  // to show them. Empty entries are dropped so no blank buttons render.
+  const socials: SocialLink[] = [];
+  if (course.showSocialLinks) {
+    const candidates: SocialLink[] = [
+      { key: "instagram", label: "Instagram", url: course.user.socialInstagram ?? "" },
+      { key: "linkedin", label: "LinkedIn", url: course.user.socialLinkedin ?? "" },
+      { key: "youtube", label: "YouTube", url: course.user.socialYoutube ?? "" },
+      { key: "github", label: "GitHub", url: course.user.socialGithub ?? "" },
+      { key: "twitter", label: "X", url: course.user.socialTwitter ?? "" },
+      { key: "website", label: "Website", url: course.user.socialWebsite ?? "" },
+    ];
+    socials.push(...candidates.filter((candidate) => candidate.url.length > 0));
+  }
+
   const previewCourse: Course = {
     hideBranding: effectiveAiPlan(course.user) !== "FREE",
     id: course.shareSlug ?? course.id,
@@ -69,6 +90,7 @@ export default async function CoursePreviewPage({
     creator: {
       name: course.user.name,
       avatar: course.user.image,
+      socials,
     },
     stats: {
       modules: course.Module.length,

@@ -87,6 +87,55 @@ export const updateProfileSchema = z.object({
     .max(60, "Name must be 60 characters or less"),
 });
 
+// ── Social profile links ──────────────────────────────────────────────────────
+
+// Creators often paste "instagram.com/their-name" without a scheme.
+function withHttps(value: string) {
+  return /^https?:\/\//i.test(value) ? value : `https://${value}`;
+}
+
+// Optional public profile link. Blank clears the field; anything else must
+// resolve to a real-looking host so a typo cannot become a broken button.
+const socialLinkField = z
+  .string()
+  .max(2048, "Link is too long")
+  .optional()
+  .superRefine((value, ctx) => {
+    const trimmed = value?.trim();
+    if (!trimmed) return;
+    let parsed: URL;
+    try {
+      parsed = new URL(withHttps(trimmed));
+    } catch {
+      ctx.addIssue({
+        code: "custom",
+        message: "Enter a valid link, for example https://instagram.com/you",
+      });
+      return;
+    }
+    if (!parsed.hostname.includes(".")) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Enter a valid link, for example https://instagram.com/you",
+      });
+    }
+  })
+  .transform((value) => {
+    const trimmed = value?.trim();
+    return trimmed ? withHttps(trimmed) : null;
+  });
+
+export const updateSocialLinksSchema = z.object({
+  socialInstagram: socialLinkField,
+  socialLinkedin: socialLinkField,
+  socialYoutube: socialLinkField,
+  socialGithub: socialLinkField,
+  socialTwitter: socialLinkField,
+  socialWebsite: socialLinkField,
+});
+
+export type SocialLinkField = keyof z.infer<typeof updateSocialLinksSchema>;
+
 // Resource types — must match the Prisma ResourceType enum
 const resourceTypes = ["Code", "PDF", "Link", "Note", "Image"] as const;
 

@@ -17,9 +17,12 @@ import {
   LockKeyhole,
   Mail,
   Settings2,
+  Share2,
   Sparkles,
 } from "lucide-react";
 import UpdateProfileForm from "@/components/forms/UpdateProfileForm";
+import UpdateSocialLinksForm from "@/components/forms/UpdateSocialLinksForm";
+import SettingsTabs from "@/components/settings/SettingsTabs";
 import ToggleCoursePublicButton from "@/components/ToggleCoursePublicButton";
 
 function formatDate(date: Date) {
@@ -36,7 +39,18 @@ export default async function SettingsPage() {
 
   const user = session.user;
   const [dbUser, courses] = await Promise.all([
-    db.user.findUnique({ where: { id: user.id }, select: { plan: true } }),
+    db.user.findUnique({
+      where: { id: user.id },
+      select: {
+        plan: true,
+        socialInstagram: true,
+        socialLinkedin: true,
+        socialYoutube: true,
+        socialGithub: true,
+        socialTwitter: true,
+        socialWebsite: true,
+      },
+    }),
     db.course.findMany({
       where: { userId: user.id },
       orderBy: { createdAt: "desc" },
@@ -60,6 +74,14 @@ export default async function SettingsPage() {
   ).replace(/\/$/, "");
   const plan = dbUser?.plan ?? "FREE";
 
+  const socialInitialValues = {
+    socialInstagram: dbUser?.socialInstagram ?? "",
+    socialLinkedin: dbUser?.socialLinkedin ?? "",
+    socialYoutube: dbUser?.socialYoutube ?? "",
+    socialGithub: dbUser?.socialGithub ?? "",
+    socialTwitter: dbUser?.socialTwitter ?? "",
+    socialWebsite: dbUser?.socialWebsite ?? "",
+  };
   const stats = [
     { label: "Courses", value: courses.length, icon: BookOpen },
     { label: "Modules", value: totalModules, icon: Layers3 },
@@ -79,7 +101,11 @@ export default async function SettingsPage() {
           <Button variant="outline" asChild className="h-10 rounded-xl border-border bg-background px-4 shadow-sm"><Link href="/dashboard">Back to dashboard <ArrowUpRight className="size-4" /></Link></Button>
         </header>
 
-        <section className="mt-8 overflow-hidden rounded-2xl border border-border/80 bg-card shadow-sm">
+        <div className="mt-8">
+          <SettingsTabs
+            profile={
+              <>
+                <section className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-sm">
           <div className="flex flex-col gap-6 p-6 sm:p-8 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex min-w-0 items-start gap-4">
               <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-primary text-primary-foreground shadow-sm"><Settings2 className="size-5" /></span>
@@ -96,21 +122,30 @@ export default async function SettingsPage() {
           </div>
         </section>
 
-        <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1.45fr)_minmax(280px,0.55fr)]">
-          <section className="rounded-2xl border border-border/80 bg-card p-6 shadow-sm sm:p-8">
-            <div className="mb-7"><h2 className="text-lg font-semibold tracking-tight">Profile details</h2><p className="mt-1 text-sm text-muted-foreground">Update the name shown on your courses.</p></div>
-            <UpdateProfileForm initialName={user.name} />
-          </section>
-          <aside className="rounded-2xl border border-border/80 bg-muted/20 p-6 shadow-sm sm:p-8">
-            <span className="grid size-10 place-items-center rounded-xl bg-primary/15 text-primary-foreground dark:text-primary"><Sparkles className="size-4" /></span>
-            <p className="mt-5 text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">Current plan</p>
-            <h2 className="mt-2 text-2xl font-semibold tracking-tight">{plan}</h2>
-            <p className="mt-3 text-sm leading-6 text-muted-foreground">Upgrade when you need branded-free course pages or Markdown exports.</p>
-            <Button variant="outline" className="mt-6 w-full rounded-xl bg-background" asChild><Link href="/pricing">View plans <ArrowUpRight className="size-4" /></Link></Button>
-          </aside>
-        </div>
-
-        <section className="mt-6 rounded-2xl border border-border/80 bg-card shadow-sm">
+                <section className="rounded-2xl border border-border/80 bg-card p-6 shadow-sm sm:p-8">
+                  <div className="mb-7"><h2 className="text-lg font-semibold tracking-tight">Profile details</h2><p className="mt-1 text-sm text-muted-foreground">Update the name shown on your courses.</p></div>
+                  <UpdateProfileForm initialName={user.name} />
+                </section>
+              </>
+            }
+            settings={
+              <>
+                <section className="rounded-2xl border border-border/80 bg-card p-6 shadow-sm sm:p-8">
+                  <div className="mb-7">
+                    <span className="grid size-10 place-items-center rounded-xl bg-primary/15 text-primary-foreground dark:text-primary"><Share2 className="size-4" /></span>
+                    <h2 className="mt-4 text-lg font-semibold tracking-tight">Social links</h2>
+                    <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">Add your profiles once and they appear at the bottom of your public course pages. Each course has its own switch if you would rather keep them hidden.</p>
+                  </div>
+                  <UpdateSocialLinksForm initialValues={socialInitialValues} />
+                </section>
+                <aside className="rounded-2xl border border-border/80 bg-muted/20 p-6 shadow-sm sm:p-8">
+                  <span className="grid size-10 place-items-center rounded-xl bg-primary/15 text-primary-foreground dark:text-primary"><Sparkles className="size-4" /></span>
+                  <p className="mt-5 text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">Current plan</p>
+                  <h2 className="mt-2 text-2xl font-semibold tracking-tight">{plan}</h2>
+                  <p className="mt-3 text-sm leading-6 text-muted-foreground">Upgrade when you need branded-free course pages or Markdown exports.</p>
+                  <Button variant="outline" className="mt-6 w-full rounded-xl bg-background" asChild><Link href="/pricing">View plans <ArrowUpRight className="size-4" /></Link></Button>
+                </aside>
+                <section className="rounded-2xl border border-border/80 bg-card shadow-sm">
           <div className="flex flex-col gap-4 border-b border-border/70 p-6 sm:flex-row sm:items-center sm:justify-between sm:px-8">
             <div><h2 className="text-lg font-semibold tracking-tight">Course sharing</h2><p className="mt-1 text-sm text-muted-foreground">Choose which courses learners can open with a link.</p></div>
             <Badge variant="secondary" className="w-fit rounded-full px-3 py-1.5">{publicCourses} of {courses.length} published</Badge>
@@ -127,7 +162,11 @@ export default async function SettingsPage() {
               </div>
             )}
           </div>
-        </section>
+                </section>
+              </>
+            }
+          />
+        </div>
       </div>
     </main>
   );
