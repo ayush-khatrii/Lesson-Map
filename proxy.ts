@@ -75,13 +75,9 @@ export default async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // ── 3. Auth pages (sign-in, sign-up) — redirect TO dashboard if already logged in
-  if (isAuthPage(pathname)) {
-    if (isAuthenticated) {
-      return NextResponse.redirect(new URL("/dashboard", request.url));
-    }
-    return NextResponse.next();
-  }
+  // Auth pages validate the session against the database themselves.
+  // Cookie presence alone cannot establish whether a session is still valid.
+  if (isAuthPage(pathname)) return NextResponse.next();
 
   // ── 4. Protected pages (dashboard, outline) — redirect TO sign-in if not logged in
   if (isProtectedPage(pathname)) {

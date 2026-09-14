@@ -22,6 +22,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 import { useSession, signOut } from "@/lib/auth-client";
 import ThemeToggle from "../ThemeToggle";
 
@@ -192,7 +193,16 @@ export default function Navbar({ className }: { className?: string }) {
   const { data: session, isPending } = useSession();
 
   const handleSignOut = async () => {
-    await signOut();
+    try {
+      const result = await signOut();
+      if (result.error) {
+        toast.error("Unable to sign out. Please try again.");
+        return;
+      }
+      window.location.assign("/sign-in");
+    } catch {
+      toast.error("Unable to sign out. Please try again.");
+    }
   };
 
   const publicNavItems = [

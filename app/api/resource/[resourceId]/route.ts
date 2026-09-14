@@ -1,3 +1,4 @@
+import { deleteUnreferencedFile } from "@/lib/r2/cleanup";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/prisma";
 import { userCoursesTag } from "@/lib/course-cache";
@@ -63,7 +64,12 @@ export async function PUT(request: Request, context: Context) {
   }
 
   try {
-    const result = updateResourceSchema.safeParse(await request.json());
+    const body = await request.json();
+    // Storage identity is immutable; replacements must go through verified uploads.
+    if (["key", "filename", "contentType", "size"].some((field) => Object.hasOwn(body, field))) {
+      return NextResponse.json({ error: "Upload a new file to replace this resource." }, { status: 400 });
+    }
+    const result = updateResourceSchema.safeParse(body);
 
     if (!result.success) {
       return NextResponse.json(
@@ -87,13 +93,16 @@ export async function PUT(request: Request, context: Context) {
           },
         },
       },
-      select: { id: true },
+      select: { id: true, key: true },
     });
 
     if (!resource) {
       return NextResponse.json({ error: "Resource not found" }, { status: 404 });
     }
 
+    if (resource.key && Object.hasOwn(body, "url")) {
+      return NextResponse.json({ error: "An uploaded file's URL cannot be changed." }, { status: 400 });
+    }
     const updated = await db.resource.update({
       where: { id: resourceId },
       data: result.data,
@@ -134,7 +143,7 @@ export async function DELETE(_: Request, context: Context) {
           },
         },
       },
-      select: { id: true },
+      select: { id: true, key: true },
     });
 
     if (!resource) {
@@ -143,6 +152,14 @@ export async function DELETE(_: Request, context: Context) {
 
     await db.resource.delete({ where: { id: resourceId } });
 
+    if (resource.key) {
+      try {
+        await deleteUnreferencedFile(resource.key);
+      } catch (error) {
+        // The row is already gone. Reconciliation retries storage cleanup later.
+        console.error("Resource file cleanup deferred:", error);
+      }
+    }
     revalidateTag(userCoursesTag(userId), { expire: 0 });
     return NextResponse.json(
       { message: "Resource deleted successfully" },

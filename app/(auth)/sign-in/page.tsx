@@ -1,12 +1,17 @@
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { LoginForm } from "@/components/auth/LoginForm";
 import { SignInFormSkeleton } from "@/components/navigation/PageSkeletons";
 
-export default function SignInPage() {
+export default async function SignInPage() {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (session) redirect("/dashboard");
   return (
     <div className="bg-background min-h-svh">
       <div className="mx-auto flex min-h-svh w-full max-w-7xl items-center justify-center px-4 py-10 sm:px-6 lg:px-8">
-        <div className="w-full max-w-sm">
+        <div className="w-full max-w-md">
           <Suspense fallback={<SignInFormSkeleton />}>
             <LoginForm />
           </Suspense>

@@ -3,6 +3,7 @@
 import { useRef, useState, type ElementType } from "react";
 import { Button } from "@/components/ui/button";
 import { Loader2, Upload, X } from "lucide-react";
+import { MAX_UPLOAD_BYTES, ALLOWED_UPLOAD_TYPES } from "@/lib/r2/upload-policy";
 import { toast } from "sonner";
 
 export type UploadedResource = {
@@ -60,23 +61,27 @@ const FileUpload = ({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          lessonId,
+          size: file.size,
           filename: file.name,
           contentType: file.type,
         }),
       });
 
       if (!uploadResponse.ok) {
-        throw new Error("Failed to create upload URL");
+        const failure = await uploadResponse.json().catch(() => null);
+        throw new Error(failure?.error || "Failed to create upload URL");
       }
 
-      const { uploadUrl, key } = (await uploadResponse.json()) as {
+      const { uploadUrl, uploadHeaders, key } = (await uploadResponse.json()) as {
         uploadUrl: string;
+        uploadHeaders: Record<string, string>;
         key: string;
       };
 
       const r2Response = await fetch(uploadUrl, {
         method: "PUT",
-        headers: { "Content-Type": file.type },
+        headers: uploadHeaders,
         body: file,
       });
 
@@ -100,7 +105,13 @@ const FileUpload = ({
       });
 
       if (!completeResponse.ok) {
-        throw new Error("Upload completed, but saving the resource failed");
+        const failure = await completeResponse.json().catch(() => null);
+        const validationDetails = Array.isArray(failure?.details)
+          ? failure.details.map((issue: { message: string }) => issue.message).join("; ")
+          : "";
+        throw new Error(
+          `Upload completed, but saving the resource failed (${completeResponse.status}): ${validationDetails || failure?.error || "Please try again."}`,
+        );
       }
 
       const resource = (await completeResponse.json()) as UploadedResource;
@@ -117,6 +128,18 @@ const FileUpload = ({
   };
 
   const handleFile = (file: File) => {
+    if (
+      file.size < 1 ||
+      file.size > MAX_UPLOAD_BYTES ||
+      !ALLOWED_UPLOAD_TYPES.some((allowed) => allowed === file.type) ||
+      (type === "PDF"
+        ? file.type !== "application/pdf"
+        : !file.type.startsWith("image/"))
+    ) {
+      toast.error("Choose a matching image or PDF between 1 byte and 25 MB.");
+      if (inputRef.current) inputRef.current.value = "";
+      return;
+    }
     setSelectedFile(file);
     onSelected?.(file);
     void uploadFile(file);
@@ -205,7 +228,9 @@ const FileUpload = ({
             <p className="text-sm font-medium text-foreground">
               Drop your {label} here
             </p>
-            <p className="text-xs text-muted-foreground mt-0.5">{hint}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {hint} · Maximum 25 MB
+            </p>
           </div>
           <Button
             type="button"

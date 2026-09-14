@@ -2,15 +2,19 @@ import { NextResponse } from "next/server";
 import { generatePresignedUrl } from "@/lib/r2/generatePresignedUrl";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
+import { db } from "@/lib/prisma";
+import { z } from "zod";
+import {
+  ALLOWED_UPLOAD_TYPES,
+  MAX_UPLOAD_BYTES,
+} from "@/lib/r2/upload-policy";
 
-const ALLOWED_CONTENT_TYPES = new Set([
-  "application/pdf",
-  "image/gif",
-  "image/jpeg",
-  "image/png",
-  "image/svg+xml",
-  "image/webp",
-]);
+const uploadSchema = z.object({
+  filename: z.string().trim().min(1).max(255),
+  contentType: z.enum(ALLOWED_UPLOAD_TYPES),
+  lessonId: z.string().min(1),
+  size: z.number().int().positive().max(MAX_UPLOAD_BYTES),
+});
 
 export async function POST(request: Request) {
   try {
@@ -24,25 +28,30 @@ export async function POST(request: Request) {
       );
     }
 
-    const { filename, contentType } = await request.json();
-    if (!filename || !contentType) {
+    const parsed = uploadSchema.safeParse(await request.json());
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: "Invalid request body!" },
+        {
+          error:
+            "Choose a supported image or PDF between 1 byte and 25 MB.",
+        },
         { status: 400 },
       );
     }
-
-    if (!ALLOWED_CONTENT_TYPES.has(contentType)) {
-      return NextResponse.json(
-        { error: "Only PDF and image uploads are supported" },
-        { status: 400 },
-      );
+    const { filename, contentType, lessonId, size } = parsed.data;
+    const lesson = await db.lesson.findFirst({
+      where: { id: lessonId, module: { course: { userId } } },
+      select: { id: true },
+    });
+    if (!lesson) {
+      return NextResponse.json({ error: "Lesson not found" }, { status: 404 });
     }
-
     const result = await generatePresignedUrl(
       filename,
       contentType,
-      `lesson-resources/${userId}`,
+      userId,
+      lessonId,
+      size,
     );
 
     return NextResponse.json(result);

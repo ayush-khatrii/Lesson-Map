@@ -101,6 +101,7 @@ export interface CourseStats {
 }
 
 export interface Course {
+  hideBranding?: boolean;
   id?: string;
   title: string;
   description: string;
@@ -368,14 +369,20 @@ function UpgradeDialog({
 
 // ─── Navbar (non-sticky) ──────────────────────────────────────────────────────
 
-function CourseNavbar({ creator }: { creator: Creator }) {
+function CourseNavbar({
+  creator,
+  hideBranding = false,
+}: {
+  creator: Creator;
+  hideBranding?: boolean;
+}) {
   const [menuOpen, setMenuOpen] = useState(false);
 
   const handleShare = async () => {
     try {
       if (navigator.share) {
         await navigator.share({
-          title: "LessonMap Course",
+          title: hideBranding ? `${creator.name}'s course` : "LessonMap Course",
           url: window.location.href,
         });
       } else {
@@ -398,7 +405,7 @@ function CourseNavbar({ creator }: { creator: Creator }) {
           </div>
           <div>
             <span className="text-base font-bold tracking-tight text-foreground">
-              LessonMap
+              {hideBranding ? creator.name : "LessonMap"}
             </span>
             <p className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
               Shared by {creator.name}
@@ -510,7 +517,20 @@ function ResourceRow({
   return (
     <button
       type="button"
-      onClick={() => onPreview(resource)}
+      onClick={() => {
+        if (["Image", "PDF", "Link"].includes(resource.type) && resource.url) {
+          try {
+            const url = new URL(resource.url, window.location.origin);
+            if (url.protocol === "https:" || url.protocol === "http:") {
+              window.open(url.href, "_blank", "noopener,noreferrer");
+            }
+          } catch {
+            // Malformed legacy URLs cannot be opened.
+          }
+          return;
+        }
+        onPreview(resource);
+      }}
       className="group flex min-w-0 w-full select-text items-center gap-3 rounded-xl border border-border bg-card/60 px-3 py-3 text-left transition-colors hover:border-primary/25 hover:bg-primary/5 sm:px-4"
     >
       <div
@@ -1098,7 +1118,10 @@ export default function LessonMapPublicPage({
   return (
     <div className={cn("min-h-screen bg-background text-foreground", SELECTABLE_TEXT)}>
 
-      <CourseNavbar creator={course.creator} />
+      <CourseNavbar
+        creator={course.creator}
+        hideBranding={course.hideBranding}
+      />
       <UpgradeDialog open={upgradeOpen} onClose={() => setUpgradeOpen(false)} />
 
       <main className="mx-auto w-full max-w-7xl px-4 py-4 sm:px-6 sm:py-8 lg:px-8">
@@ -1251,22 +1274,26 @@ export default function LessonMapPublicPage({
         </div>
       </main>
 
-      <footer className="border-t border-border py-8 text-center">
-        <div className="flex flex-col items-center gap-1.5">
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <span>Made with</span>
-            <Heart className="h-3 w-3 fill-destructive text-destructive" />
-            <span>by</span>
-            <span className="font-semibold text-muted-foreground">LessonMap</span>
-            <span>·</span>
-            <span>Stacex Technologies</span>
+      {!course.hideBranding && (
+        <footer className="border-t border-border py-8 text-center">
+          <div className="flex flex-col items-center gap-1.5">
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <span>Made with</span>
+              <Heart className="h-3 w-3 fill-destructive text-destructive" />
+              <span>by</span>
+              <span className="font-semibold text-muted-foreground">
+                LessonMap
+              </span>
+              <span>·</span>
+              <span>Stacex Technologies</span>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              © {new Date().getFullYear()} Stacex Technologies. All rights
+              reserved.
+            </p>
           </div>
-          <p className="text-xs text-muted-foreground">
-            © {new Date().getFullYear()} Stacex Technologies. All rights
-            reserved.
-          </p>
-        </div>
-      </footer>
+        </footer>
+      )}
     </div>
   );
 }

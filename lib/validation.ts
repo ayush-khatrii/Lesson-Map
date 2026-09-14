@@ -93,6 +93,7 @@ export const createResourceSchema = z.object({
 
 // Schema for updating a resource
 export const updateResourceSchema = z.object({
+  type: z.enum(resourceTypes).optional(),
   name: z.string().min(1, "Name is required").optional(),
   meta: z.string().nullable().optional(),
   content: z.string().nullable().optional(),

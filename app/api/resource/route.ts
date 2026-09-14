@@ -68,6 +68,10 @@ export async function POST(request: Request) {
       );
     }
 
+    if (result.data.key || ["PDF", "Image"].includes(result.data.type)) {
+      return NextResponse.json({ error: "Use the file upload flow for file resources." }, { status: 400 });
+    }
+
     const lesson = await db.lesson.findFirst({
       where: {
         id: result.data.lessonId,

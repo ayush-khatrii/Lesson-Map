@@ -108,14 +108,6 @@ import {
   arrayMove,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import {
-  CodeBlock,
-  CodeBlockHeader,
-  CodeBlockBody,
-  CodeBlockItem,
-  CodeBlockContent,
-} from "@/components/kibo-ui/code-block";
-
 // ── Types ──────────────────────────────────────────────────────────────
 export type ResourceType = "Code" | "PDF" | "Link" | "Note" | "Image";
 
@@ -766,31 +758,66 @@ function ResourceRow({
 }) {
   const config = getTypeConfig(resource.type);
   const Icon = config.icon;
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const isText = resource.type === "Note" || resource.type === "Code";
+  const rawUrl = resource.url || (resource.type === "Link" ? resource.meta : null);
+  let href: string | undefined;
+  if (resource.type === "PDF" || resource.type === "Image") {
+    href = `/api/resource/${encodeURIComponent(resource.id)}/open`;
+  } else if (rawUrl) {
+    try {
+      const url = new URL(rawUrl);
+      if (url.protocol === "https:" || url.protocol === "http:") href = url.href;
+    } catch { /* Invalid legacy links remain unavailable. */ }
+  }
+  const resourceLabel = (
+    <>
+      <span className="flex-shrink-0 w-9 h-9 rounded-md bg-muted flex items-center justify-center">
+        <Icon className="w-4 h-4 text-muted-foreground" />
+      </span>
+      <span className="min-w-0 text-sm font-semibold leading-snug truncate group-hover:underline">
+        {resource.name}
+      </span>
+    </>
+  );
+  const actionClass = "group flex min-w-0 items-center gap-3 rounded-md text-left hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
   return (
-    <div className="flex items-center gap-3 px-4 py-3 border-b border-border last:border-b-0 hover:bg-muted/30 transition-colors">
-      <div className="flex-shrink-0 w-9 h-9 rounded-md bg-muted flex items-center justify-center">
-        <Icon className="w-4 h-4 text-muted-foreground" />
-      </div>
+    <div className="flex flex-wrap sm:flex-nowrap items-center gap-3 px-4 py-3 border-b border-border last:border-b-0 hover:bg-muted/30 transition-colors">
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold leading-snug truncate">
-          {resource.name}
-        </p>
-        <p className="text-xs text-muted-foreground truncate">
+        {isText ? (
+          <button type="button" className={actionClass} onClick={() => setPreviewOpen(true)} aria-label={`Open ${resource.name}`}>
+            {resourceLabel}
+          </button>
+        ) : href ? (
+          <a href={href} target="_blank" rel="noopener noreferrer" className={actionClass} aria-label={`Open ${resource.name} in a new tab`}>
+            {resourceLabel}
+          </a>
+        ) : (
+          <span className={actionClass} title="No valid resource URL available">{resourceLabel}</span>
+        )}
+        <p className="pl-12 text-xs text-muted-foreground truncate">
           {resource.meta}
-          {linkedToLabel && (
-            <>
-              {" "}
-              <span className="text-muted-foreground/50">·</span>{" "}
-              <Paperclip className="w-2.5 h-2.5 inline-block mb-0.5 mr-0.5 opacity-60" />
-              Linked to{" "}
-              <span className="font-semibold text-foreground">
-                {linkedToLabel}
-              </span>
-            </>
-          )}
+          {linkedToLabel && <span> · Linked to {linkedToLabel}</span>}
         </p>
       </div>
+      {isText && (
+        <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+          <DialogContent className="flex max-h-[90dvh] min-w-0 flex-col overflow-hidden sm:max-w-3xl">
+            <DialogHeader className="min-w-0 shrink-0">
+              <DialogTitle className="break-words">{resource.name}</DialogTitle>
+              <DialogDescription>{resource.type === "Code" ? "Code resource" : "Lesson notes"}</DialogDescription>
+            </DialogHeader>
+            <div tabIndex={0} role="region" aria-label={`${resource.type} content`} className="min-h-0 min-w-0 overflow-auto overscroll-contain rounded-md border bg-muted/30 p-4" data-lenis-prevent>
+              {resource.type === "Code" ? (
+                <pre className="text-sm leading-relaxed"><code>{resource.content || "No code provided."}</code></pre>
+              ) : (
+                <div className="whitespace-pre-wrap break-words text-sm leading-relaxed">{resource.content || "No notes provided."}</div>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -949,9 +976,6 @@ function OutlineTab({
   const [isAddingModule, setIsAddingModule] = useState(false);
   const [addingLessonFor, setAddingLessonFor] = useState<string | null>(null);
   // Track which code accordions have been opened (lazy-load Shiki)
-  const [openedCodeAccordions, setOpenedCodeAccordions] = useState<Set<string>>(
-    new Set(),
-  );
 
   const moduleSensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -1401,109 +1425,14 @@ function OutlineTab({
                                           </AccordionTrigger>
                                           <AccordionContent className="px-3.5 pb-3">
                                             <div className="rounded-lg border overflow-hidden">
-                                              {lessonResources.map((res) =>
-                                                res.type === "Code" &&
-                                                res.content ? (
-                                                  <Accordion
-                                                    key={res.id}
-                                                    type="single"
-                                                    collapsible
-                                                    onValueChange={(v) => {
-                                                      if (v === res.id) {
-                                                        setOpenedCodeAccordions(
-                                                          (prev) => {
-                                                            const next =
-                                                              new Set(prev);
-                                                            next.add(res.id);
-                                                            return next;
-                                                          },
-                                                        );
-                                                      }
-                                                    }}
-                                                  >
-                                                    <AccordionItem
-                                                      value={res.id}
-                                                      className="border-none"
-                                                    >
-                                                      <AccordionTrigger className="px-4 py-3 hover:no-underline [&>svg]:hidden group border-b border-border last:border-b-0">
-                                                        <div className="flex items-center gap-3 w-full">
-                                                          <div className="flex-shrink-0 w-9 h-9 rounded-md bg-muted flex items-center justify-center">
-                                                            <Code2 className="w-4 h-4 text-muted-foreground" />
-                                                          </div>
-                                                          <div className="flex-1 min-w-0 text-left">
-                                                            <p className="text-sm font-semibold leading-snug truncate">
-                                                              {res.name}
-                                                            </p>
-                                                            <p className="text-xs text-muted-foreground truncate">
-                                                              {res.meta}
-                                                            </p>
-                                                          </div>
-                                                          <ChevronDown className="w-4 h-4 text-muted-foreground flex-shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-180" />
-                                                        </div>
-                                                      </AccordionTrigger>
-                                                      <AccordionContent className="p-0">
-                                                        {openedCodeAccordions.has(
-                                                          res.id,
-                                                        ) && (
-                                                          <div className="border-b border-border">
-                                                            <CodeBlock
-                                                              value={res.name}
-                                                              data={[
-                                                                {
-                                                                  language:
-                                                                    "typescript",
-                                                                  filename:
-                                                                    res.name,
-                                                                  code: res.content,
-                                                                },
-                                                              ]}
-                                                            >
-                                                              <div className="max-w-full overflow-x-auto">
-                                                                <CodeBlockHeader className="border-b bg-muted/40 px-4 py-2">
-                                                                  <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-                                                                    <Code2 className="w-3.5 h-3.5" />
-                                                                    {res.name}
-                                                                  </div>
-                                                                </CodeBlockHeader>
-                                                                <CodeBlockBody>
-                                                                  {(item) => (
-                                                                    <CodeBlockItem
-                                                                      value={
-                                                                        item.filename
-                                                                      }
-                                                                      lineNumbers
-                                                                    >
-                                                                      <CodeBlockContent
-                                                                        language={
-                                                                          "typescript" as any
-                                                                        }
-                                                                      >
-                                                                        {res.content ??
-                                                                          ""}
-                                                                      </CodeBlockContent>
-                                                                    </CodeBlockItem>
-                                                                  )}
-                                                                </CodeBlockBody>
-                                                              </div>
-                                                            </CodeBlock>
-                                                          </div>
-                                                        )}
-                                                      </AccordionContent>
-                                                    </AccordionItem>
-                                                  </Accordion>
-                                                ) : (
-                                                  <ResourceRow
-                                                    key={res.id}
-                                                    resource={res}
-                                                    onTypeChange={
-                                                      handleTypeChange
-                                                    }
-                                                    onDelete={
-                                                      handleDeleteResource
-                                                    }
-                                                  />
-                                                ),
-                                              )}
+                                              {lessonResources.map((res) => (
+                                                <ResourceRow
+                                                  key={res.id}
+                                                  resource={res}
+                                                  onTypeChange={handleTypeChange}
+                                                  onDelete={handleDeleteResource}
+                                                />
+                                              ))}
                                             </div>
                                           </AccordionContent>
                                         </AccordionItem>

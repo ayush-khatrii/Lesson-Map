@@ -4,6 +4,7 @@ import type { Course } from "@/components/CoursePreview";
 import { notFound } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
+import { effectiveAiPlan } from "@/lib/ai/schema";
 
 export default async function CoursePreviewPage({
   params,
@@ -29,7 +30,14 @@ export default async function CoursePreviewPage({
     },
     include: {
       user: {
-        select: { name: true, image: true },
+        select: {
+          name: true,
+          image: true,
+          plan: true,
+          subscriptionStatus: true,
+          subscriptionCancelAtPeriodEnd: true,
+          subscriptionCurrentPeriodEnd: true,
+        },
       },
       Module: {
         orderBy: { order: "asc" },
@@ -53,6 +61,7 @@ export default async function CoursePreviewPage({
   );
 
   const previewCourse: Course = {
+    hideBranding: effectiveAiPlan(course.user) !== "FREE",
     id: course.shareSlug ?? course.id,
     title: course.courseName,
     description: course.description,
@@ -79,7 +88,9 @@ export default async function CoursePreviewPage({
           title: r.name,
           type: r.type,
           meta: r.meta,
-          url: r.url ?? undefined,
+          url: r.type === "PDF" || r.type === "Image"
+            ? `/api/resource/${encodeURIComponent(r.id)}/open`
+            : r.url ?? undefined,
           content: r.content,
         })),
       })),

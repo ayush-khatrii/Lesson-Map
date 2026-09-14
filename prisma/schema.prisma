@@ -14,6 +14,7 @@ model User {
   emailVerified Boolean   @default(false)
   image         String?
   createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @default(now()) @updatedAt
   Course        Course[]
   accounts      Account[]
   sessions      Session[]
@@ -194,4 +195,14 @@ enum ResourceType {
   Link
   Note
   Image
+}
+
+// Shared authentication throttling across serverless instances.
+model RateLimit {
+  id          String @id
+  key         String @unique
+  count       Int
+  lastRequest BigInt
+
+  @@map("rateLimit")
 }

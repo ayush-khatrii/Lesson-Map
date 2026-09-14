@@ -86,7 +86,12 @@ const SettingsPage = async () => {
   const publicCourses = courses.filter((c) => c.isPublic).length;
 
   const appUrl =
-    process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    (process.env.NEXT_PUBLIC_BASE_URL ||
+      (process.env.VERCEL_PROJECT_PRODUCTION_URL
+        ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+        : process.env.NODE_ENV === "production"
+          ? "https://lessonmap.vercel.app"
+          : "http://localhost:3000")).replace(/\/$/, "");
 
   return (
     <div className="min-h-screen bg-background text-foreground px-4 md:px-10 py-24">
