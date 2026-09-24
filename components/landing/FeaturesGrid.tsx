@@ -44,7 +44,7 @@ export default function FeaturesGrid() {
     <section id="features" className="scroll-mt-20 py-20 sm:py-24">
       <div className={shell}>
         <Reveal className="mx-auto max-w-2xl text-center">
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary-foreground dark:text-primary">
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary">
             Everything in one map
           </p>
           <h2 className="mt-4 text-balance text-3xl font-semibold tracking-[-0.04em] sm:text-5xl">
@@ -62,7 +62,7 @@ export default function FeaturesGrid() {
               delay={(index % 3) * 0.05}
             >
               <Card className="group h-full gap-0 rounded-2xl border-border/80 bg-card/60 p-6 shadow-sm transition duration-200 hover:-translate-y-1 hover:border-primary/40 hover:shadow-xl">
-                <span className="grid size-10 place-items-center rounded-xl border border-primary/20 bg-primary/10 text-primary-foreground transition-transform duration-200 group-hover:scale-105 dark:text-primary">
+                <span className="grid size-10 place-items-center rounded-xl border border-primary/20 bg-primary/10 text-primary transition-transform duration-200 group-hover:scale-105">
                   <Icon className="size-4.5" aria-hidden="true" />
                 </span>
                 <h3 className="mt-6 text-base font-semibold tracking-tight">{title}</h3>

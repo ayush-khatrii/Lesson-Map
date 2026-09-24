@@ -30,7 +30,7 @@ export default function LegalPage({
     <main className="min-h-screen bg-background pb-20 pt-24 text-foreground sm:pt-28">
       <div className="mx-auto w-full max-w-3xl px-5 sm:px-8">
         <Reveal>
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary-foreground dark:text-primary">
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary">
             Legal
           </p>
           <h1 className="mt-3 text-3xl font-semibold tracking-[-0.04em] sm:text-4xl">{title}</h1>

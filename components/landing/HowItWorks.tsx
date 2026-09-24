@@ -50,7 +50,7 @@ export default function HowItWorks() {
     <section id="how-it-works" className="border-y border-border/70 bg-muted/20 py-20 sm:py-24">
       <div className={shell}>
         <Reveal className="mx-auto max-w-2xl text-center">
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary-foreground dark:text-primary">How it works</p>
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary">How it works</p>
           <h2 className="mt-4 text-balance text-3xl font-semibold tracking-[-0.04em] sm:text-5xl">Plan it. Add the material. <span className="text-muted-foreground">Share it.</span></h2>
         </Reveal>
         <div className="mt-12 grid gap-5 md:grid-cols-3">

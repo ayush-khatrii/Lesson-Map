@@ -60,7 +60,7 @@ export default function CoursePreview() {
                   <div key={module.title} className="overflow-hidden rounded-xl border border-border/80 bg-background/60 transition-colors hover:border-primary/40">
                     <button type="button" onClick={() => setOpen(isOpen ? -1 : index)} aria-expanded={isOpen} aria-controls={`hero-module-${index}`} className="flex min-h-12 w-full items-center gap-2.5 px-3 text-left focus-visible:outline-2 focus-visible:outline-inset focus-visible:outline-primary sm:px-4">
                       <GripVertical className="size-3.5 text-muted-foreground/50" aria-hidden="true" />
-                      <span className="grid size-6 place-items-center rounded-md bg-primary/15 font-mono text-[9px] font-bold text-primary-foreground dark:text-primary">0{index + 1}</span>
+                      <span className="grid size-6 place-items-center rounded-md bg-primary/15 font-mono text-[9px] font-bold text-primary">0{index + 1}</span>
                       <span className="flex-1 text-xs font-semibold sm:text-sm">{module.title}</span>
                       <span className="text-[10px] text-muted-foreground">{module.lessons.length} lessons</span>
                       <ChevronDown className={`size-3.5 text-muted-foreground transition-transform ${isOpen ? "rotate-180" : ""}`} aria-hidden="true" />

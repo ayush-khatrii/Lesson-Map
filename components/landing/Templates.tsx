@@ -9,7 +9,7 @@ export default function Templates() {
     <section className="border-y border-border/70 bg-muted/20 py-20 sm:py-24">
       <div className={`${shell} grid items-center gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:gap-16`}>
         <Reveal>
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary-foreground dark:text-primary">
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary">
             Choose how to begin
           </p>
           <h2 className="mt-4 max-w-lg text-balance text-3xl font-semibold tracking-[-0.04em] sm:text-5xl">

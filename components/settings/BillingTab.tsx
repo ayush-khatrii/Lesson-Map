@@ -198,7 +198,7 @@ export default function BillingTab({
 
       <section className="rounded-2xl border border-border/80 bg-card p-6 shadow-sm sm:p-8">
         <div className="mb-6">
-          <span className="grid size-10 place-items-center rounded-xl bg-primary/15 text-primary-foreground dark:text-primary">
+          <span className="grid size-10 place-items-center rounded-xl bg-primary/15 text-primary">
             <Sparkles className="size-4" />
           </span>
           <h2 className="mt-4 text-lg font-semibold tracking-tight">What your plan includes</h2>
@@ -232,7 +232,7 @@ export default function BillingTab({
 
       <section className="rounded-2xl border border-border/80 bg-card p-6 shadow-sm sm:p-8">
         <div className="mb-6">
-          <span className="grid size-10 place-items-center rounded-xl bg-primary/15 text-primary-foreground dark:text-primary">
+          <span className="grid size-10 place-items-center rounded-xl bg-primary/15 text-primary">
             <ReceiptText className="size-4" />
           </span>
           <h2 className="mt-4 text-lg font-semibold tracking-tight">Invoices &amp; payment method</h2>
