@@ -1,4 +1,4 @@
-import { Check, FilePlus2, ListTree, Send } from "lucide-react";
+import { FilePlus2, ListTree, Send } from "lucide-react";
 import Reveal from "@/components/marketing/Reveal";
 import { shell } from "./styles";
 
@@ -21,7 +21,6 @@ export default function StepsToShare() {
             </Reveal>
           ))}
         </ol>
-        <Reveal className="mx-auto mt-12 flex max-w-md items-center justify-center gap-2 rounded-full border border-border bg-muted/40 px-4 py-2.5 text-center text-xs text-muted-foreground"><Check className="size-3.5 text-emerald-500" />Public courses can be viewed without signing in.</Reveal>
       </div>
     </section>
   );
