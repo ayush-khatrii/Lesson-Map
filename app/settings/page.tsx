@@ -23,6 +23,7 @@ import {
 import UpdateProfileForm from "@/components/forms/UpdateProfileForm";
 import UpdateSocialLinksForm from "@/components/forms/UpdateSocialLinksForm";
 import SettingsTabs from "@/components/settings/SettingsTabs";
+import BillingTab from "@/components/settings/BillingTab";
 import ToggleCoursePublicButton from "@/components/ToggleCoursePublicButton";
 
 function formatDate(date: Date) {
@@ -43,6 +44,9 @@ export default async function SettingsPage() {
       where: { id: user.id },
       select: {
         plan: true,
+        subscriptionStatus: true,
+        subscriptionCurrentPeriodEnd: true,
+        subscriptionCancelAtPeriodEnd: true,
         socialInstagram: true,
         socialLinkedin: true,
         socialYoutube: true,
@@ -73,6 +77,7 @@ export default async function SettingsPage() {
         : "http://localhost:3000")
   ).replace(/\/$/, "");
   const plan = dbUser?.plan ?? "FREE";
+  const subscriptionPeriodEnd = dbUser?.subscriptionCurrentPeriodEnd ?? null;
 
   const socialInitialValues = {
     socialInstagram: dbUser?.socialInstagram ?? "",
@@ -138,13 +143,6 @@ export default async function SettingsPage() {
                   </div>
                   <UpdateSocialLinksForm initialValues={socialInitialValues} />
                 </section>
-                <aside className="rounded-2xl border border-border/80 bg-muted/20 p-6 shadow-sm sm:p-8">
-                  <span className="grid size-10 place-items-center rounded-xl bg-primary/15 text-primary-foreground dark:text-primary"><Sparkles className="size-4" /></span>
-                  <p className="mt-5 text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">Current plan</p>
-                  <h2 className="mt-2 text-2xl font-semibold tracking-tight">{plan}</h2>
-                  <p className="mt-3 text-sm leading-6 text-muted-foreground">Upgrade when you need branded-free course pages or Markdown exports.</p>
-                  <Button variant="outline" className="mt-6 w-full rounded-xl bg-background" asChild><Link href="/pricing">View plans <ArrowUpRight className="size-4" /></Link></Button>
-                </aside>
                 <section className="rounded-2xl border border-border/80 bg-card shadow-sm">
           <div className="flex flex-col gap-4 border-b border-border/70 p-6 sm:flex-row sm:items-center sm:justify-between sm:px-8">
             <div><h2 className="text-lg font-semibold tracking-tight">Course sharing</h2><p className="mt-1 text-sm text-muted-foreground">Choose which courses learners can open with a link.</p></div>
@@ -164,6 +162,14 @@ export default async function SettingsPage() {
           </div>
                 </section>
               </>
+            }
+            billing={
+              <BillingTab
+                plan={plan}
+                subscriptionStatus={dbUser?.subscriptionStatus ?? null}
+                renewsOn={subscriptionPeriodEnd ? formatDate(subscriptionPeriodEnd) : null}
+                cancelsAtPeriodEnd={dbUser?.subscriptionCancelAtPeriodEnd ?? false}
+              />
             }
           />
         </div>
