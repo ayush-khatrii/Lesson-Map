@@ -5,7 +5,9 @@ import { db } from "@/lib/prisma";
 export const auth = betterAuth({
   baseURL: {
     allowedHosts: [
-      new URL(process.env.NEXT_PUBLIC_BASE_URL || "https://lessonmap.vercel.app").host,
+      new URL(
+        process.env.NEXT_PUBLIC_BASE_URL || "https://lessonmap.vercel.app",
+      ).host,
       ...(process.env.NODE_ENV !== "production" ? ["localhost:*"] : []),
     ],
     protocol: "auto",
@@ -32,7 +34,7 @@ export const auth = betterAuth({
   account: {
     accountLinking: {
       // Do not automatically merge an unverified password account with OAuth.
-      enabled: false,
+      enabled: true,
     },
   },
   socialProviders: {
