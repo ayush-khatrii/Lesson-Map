@@ -7,6 +7,7 @@
     "build": "next build --turbopack",
     "start": "next start",
     "test:ai": "node --import tsx --test tests/ai*.test.ts",
+    "test:payments": "node --test tests/checkout.test.cjs",
     "typecheck": "tsc --noEmit --incremental false",
     "postinstall": "prisma generate"
   },

@@ -129,7 +129,7 @@ export function getExampleCourseTemplate(id?: string) {
 
 export const plans = [
   {
-    name: "Free",
+    name: "Free Plan",
     type: "FREE",
     description:
       "Create your first courses and share them with learners.",
@@ -146,7 +146,7 @@ export const plans = [
     ],
   },
   {
-    name: "Creator",
+    name: "Creator Plan",
     type: "CREATOR",
     description:
       "More courses, visual maps, and expanded AI generation.",

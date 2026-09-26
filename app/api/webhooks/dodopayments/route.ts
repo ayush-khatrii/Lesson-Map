@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Webhook } from "standardwebhooks";
 import { db } from "@/lib/prisma";
+import { productIdForPlan } from "@/lib/payments/config";
 
 type PaidPlan = "CREATOR" | "PROFESSIONAL";
 
@@ -25,8 +26,8 @@ type DodoWebhookPayload = {
 function paidPlanForProduct(productId: string | undefined): PaidPlan | null {
   if (!productId) return null;
 
-  const creatorProductId = process.env.DODO_PRODUCT_CREATOR;
-  const professionalProductId = process.env.DODO_PRODUCT_PROFESSIONAL;
+  const creatorProductId = productIdForPlan("CREATOR");
+  const professionalProductId = productIdForPlan("PROFESSIONAL");
 
   if (creatorProductId && productId === creatorProductId) return "CREATOR";
   if (professionalProductId && productId === professionalProductId) {
@@ -43,9 +44,9 @@ function optionalDate(value: string | undefined): Date | null {
 }
 
 export async function POST(req: NextRequest) {
-  const webhookSecret = process.env.DODOPAYMENTS_WEBHOOK_SECRET;
+  const webhookSecret = process.env.DODO_PAYMENTS_WEBHOOK_SECRET?.trim();
   if (!webhookSecret) {
-    console.error("DODOPAYMENTS_WEBHOOK_SECRET is not configured");
+    console.error("DODO_PAYMENTS_WEBHOOK_SECRET is not configured");
     return NextResponse.json(
       { error: "Webhook is not configured" },
       { status: 500 },

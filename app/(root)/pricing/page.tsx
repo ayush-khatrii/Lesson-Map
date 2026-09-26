@@ -230,7 +230,7 @@ const PricingPage = () => {
                       <span className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
                         <ShieldCheck className="h-3.5 w-3.5" />
                       </span>
-                      Free
+                      Free Plan
                     </span>
                   </th>
                   <th className="px-4 py-3 font-medium">
@@ -238,7 +238,7 @@ const PricingPage = () => {
                       <span className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-violet-500/10 text-violet-600 dark:text-violet-300">
                         <Sparkles className="h-3.5 w-3.5" />
                       </span>
-                      Creator
+                      Creator Plan
                     </span>
                   </th>
                 </tr>

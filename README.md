@@ -108,6 +108,44 @@ npm run build
 npm start
 ```
 
+## Payment configuration (local and Vercel)
+
+Use the same variable names in `.env` and Vercel Project Settings > Environment Variables.
+`.env.example` is a template; it does not configure a deployed app.
+
+| Variable | Value |
+| --- | --- |
+| `DODO_PAYMENTS_API_KEY` | API key from Dodo Developer > API Keys. This is the only API key variable the app reads. |
+| `DODO_PAYMENTS_ENVIRONMENT` | `test_mode` for testing, `live_mode` for real purchases. Required explicitly. |
+| `DODO_PRODUCT_CREATOR` | Product ID for the Creator $12/month subscription. |
+| `DODO_PRODUCT_PROFESSIONAL` | Product ID for Professional, required when checking out that plan. |
+| `DODO_PAYMENTS_WEBHOOK_SECRET` | Signing secret for the Dodo webhook endpoint, distinct from the API key. |
+| `NEXT_PUBLIC_BASE_URL` | Your application origin, e.g. `https://lessonmap.vercel.app`. |
+
+Find each Product ID under **Dodo Dashboard > Products > View Details**.
+These are product IDs, not plan names, prices, API keys, or subscription IDs.
+The Dodo product controls the amount and billing interval: configure Creator as a recurring
+USD $12 monthly product. The price displayed on the pricing page does not set the checkout price.
+Use API keys, products and webhook settings from the same Dodo mode.
+See the [Dodo checkout guide](https://docs.dodopayments.com/developer-resources/checkout-session).
+
+For existing deployments, copy the value of `DODO_PAYMENTS_KEY` (or `DODOPAYMENTS_KEY`)
+into `DODO_PAYMENTS_API_KEY`, then remove the old API key variables.
+Copy `DODOPAYMENTS_WEBHOOK_SECRET` (or `DODO_PAYMENTS_WEBHOOK_SIGNING_SECRET`)
+into `DODO_PAYMENTS_WEBHOOK_SECRET`, then remove the old webhook variables.
+Do not replace the webhook secret with the API key.
+
+Configure the Dodo webhook URL as `https://YOUR_DOMAIN/api/webhooks/dodopayments`
+and subscribe to `subscription.active`, `subscription.renewed`, `subscription.plan_changed`,
+`subscription.updated`, `subscription.cancelled`, `subscription.on_hold`,
+`subscription.failed`, and `subscription.expired` so payment updates account access.
+
+Apply the variables to the intended Vercel environment (Production or Preview),
+then redeploy. Restart `npm run dev` after editing local variables.
+If checkout returns `CHECKOUT_NOT_CONFIGURED`, inspect the `/api/checkout` function logs:
+they identify the missing or invalid variable without printing its value.
+Run `npm run test:payments` to check checkout behavior without charging a card.
+
 ## Feedback and contributions
 
 Found a problem or have an idea? [Open an issue](https://github.com/ayush-khatrii/Lesson-Map/issues) with the steps to reproduce it, expected behavior, and a screenshot when useful.
