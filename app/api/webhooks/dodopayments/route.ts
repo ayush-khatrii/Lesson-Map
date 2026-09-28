@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Webhook } from "standardwebhooks";
 import { db } from "@/lib/prisma";
 import { productIdForPlan } from "@/lib/payments/config";
+import type { Prisma } from "@/app/generated/prisma/client";
 
 type PaidPlan = "CREATOR" | "PROFESSIONAL";
 
@@ -110,16 +111,6 @@ export async function POST(req: NextRequest) {
       const plan = paidPlanForProduct(data.product_id);
       const periodEnd = optionalDate(data.next_billing_date);
 
-      const userWhere = metadataUserId
-        ? { id: metadataUserId }
-        : subscriptionId
-          ? { subscriptionId }
-          : customerId
-            ? { customerId }
-            : customerEmail
-              ? { email: customerEmail }
-              : null;
-
       const grantEvents = new Set([
         "subscription.active",
         "subscription.renewed",
@@ -137,31 +128,51 @@ export async function POST(req: NextRequest) {
         eventType === "subscription.cancelled" ||
         revokeEvents.has(eventType);
 
+      // The identifiers on a subscription event are not equally useful. On a
+      // first purchase our user row has no subscriptionId/customerId yet, so
+      // picking whichever identifier the payload happens to contain first (the
+      // old behaviour) always missed the user and made the webhook fail. Try
+      // every identifier we have and stop at the first one that matches.
+      const candidateFilters: Prisma.UserWhereInput[] = [];
+      if (metadataUserId) candidateFilters.push({ id: metadataUserId });
+      if (customerEmail) candidateFilters.push({ email: customerEmail });
+      if (customerId) candidateFilters.push({ customerId });
+      if (subscriptionId) candidateFilters.push({ subscriptionId });
+
+      let matchedUser: { id: string } | null = null;
+      for (const where of candidateFilters) {
+        matchedUser = await tx.user.findFirst({
+          where,
+          select: { id: true },
+        });
+        if (matchedUser) break;
+      }
+
       // Every subscription event that can change access must resolve to one
       // existing user. Otherwise we would acknowledge the event while
       // leaving a user paid by mistake.
-      if (needsUser && !userWhere) {
-        throw new Error(`Cannot find a user for ${eventType}`);
-      }
-
-      const matchedUser = userWhere
-        ? await tx.user.findFirst({
-            where: userWhere,
-            select: { id: true },
-          })
-        : null;
-
       if (needsUser && !matchedUser) {
+        console.error("No user matched this Dodo event", {
+          webhookId,
+          eventType,
+          hasMetadataUserId: Boolean(metadataUserId),
+          hasCustomerEmail: Boolean(customerEmail),
+          hasCustomerId: Boolean(customerId),
+          hasSubscriptionId: Boolean(subscriptionId),
+          productId: data.product_id ?? null,
+        });
         throw new Error(`No matching user for ${eventType}`);
       }
 
+      const userId = matchedUser?.id ?? null;
+
       if (grantEvents.has(eventType)) {
-        if (!userWhere || !subscriptionId || !customerId || !plan) {
+        if (!userId || !subscriptionId || !customerId || !plan) {
           throw new Error(`Cannot safely grant access for ${eventType}`);
         }
 
         await tx.user.update({
-          where: { id: matchedUser!.id },
+          where: { id: userId },
           data: {
             plan,
             subscriptionId,
@@ -174,6 +185,9 @@ export async function POST(req: NextRequest) {
           },
         });
       } else if (eventType === "subscription.updated") {
+        if (!userId) {
+          throw new Error("Cannot update a user that was not matched");
+        }
         if (
           data.status === "active" &&
           (!plan || !subscriptionId || !customerId)
@@ -190,7 +204,7 @@ export async function POST(req: NextRequest) {
           data.status !== "active" && !accessContinues;
 
         await tx.user.update({
-          where: { id: matchedUser!.id },
+          where: { id: userId },
           data: {
             ...(data.status === "active" && plan ? { plan } : {}),
             ...(shouldRevoke ? { plan: "FREE" as const } : {}),
@@ -208,13 +222,17 @@ export async function POST(req: NextRequest) {
           },
         });
       } else if (eventType === "subscription.cancelled") {
+        if (!userId) {
+          throw new Error("Cannot cancel a subscription for an unmatched user");
+        }
+
         const accessContinues =
           data.cancel_at_next_billing_date === true &&
           periodEnd !== null &&
           periodEnd.getTime() > Date.now();
 
         await tx.user.update({
-          where: { id: matchedUser!.id },
+          where: { id: userId },
           data: {
             ...(accessContinues ? {} : { plan: "FREE" }),
             subscriptionStatus: "cancelled",
@@ -223,8 +241,12 @@ export async function POST(req: NextRequest) {
           },
         });
       } else if (revokeEvents.has(eventType)) {
+        if (!userId) {
+          throw new Error("Cannot revoke access for an unmatched user");
+        }
+
         await tx.user.update({
-          where: { id: matchedUser!.id },
+          where: { id: userId },
           data: {
             plan: "FREE",
             subscriptionStatus: data.status ?? eventType.split(".")[1],
