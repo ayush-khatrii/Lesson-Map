@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "@/lib/auth-client";
 import { toast } from "sonner";
@@ -10,6 +10,21 @@ const POLL_ATTEMPTS = 15;
 const POLL_INTERVAL_MS = 2_000;
 // A request that never settles must not be able to stall the poll loop.
 const REQUEST_TIMEOUT_MS = 8_000;
+// Absolute backstop. The poll loop below always terminates on its own, but if a
+// request ever hangs in a way AbortSignal cannot interrupt, the overlay must
+// still be torn down.
+const MAX_WAIT_MS =
+  POLL_ATTEMPTS * (POLL_INTERVAL_MS + REQUEST_TIMEOUT_MS) + 5_000;
+
+const delay = (milliseconds: number) =>
+  new Promise((resolve) => window.setTimeout(resolve, milliseconds));
+
+const PENDING_MESSAGE = {
+  title: "Payment received",
+  description:
+    "Activation is still processing. Refresh in a moment if your plan has not updated.",
+  variant: "info",
+} as const;
 
 type SubscriptionStatusResponse = {
   plan?: string;
@@ -27,26 +42,36 @@ export default function PostPurchaseHandler() {
   // that never resolved) nothing ever removed those params, so the overlay
   // stayed on screen forever. Visibility now depends on this explicit state.
   const [isSettled, setIsSettled] = useState(false);
+  // `finish` may be reachable from both the poll loop and the watchdog timer;
+  // never toast or redirect twice.
+  const settledRef = useRef(false);
 
   const subscriptionId = searchParams.get("subscription_id");
   const checkoutStatus = searchParams.get("status");
   const isPurchaseReturn = Boolean(subscriptionId && checkoutStatus);
 
-  const delay = (milliseconds: number) =>
-    new Promise((resolve) => window.setTimeout(resolve, milliseconds));
+  // A primitive, so a refetched session cannot change this effect's deps.
+  // better-auth recreates the `user` object on every fetch, and it refetches on
+  // window focus (see session-refresh). Keying the effect on `session?.user`
+  // meant every refetch re-ran the effect, which cancelled the in-flight poll
+  // while `startedRef` refused to start a new one - the spinner never resolved.
+  const hasUser = Boolean(session?.user);
 
-  useEffect(() => {
-    if (!isPurchaseReturn || isPending || startedRef.current) return;
+  // Same reasoning for the router: it must not be an effect dependency.
+  const routerRef = useRef(router);
+  routerRef.current = router;
 
-    startedRef.current = true;
-    let cancelled = false;
-
-    const finish = (options?: {
+  const finish = useCallback(
+    (options?: {
       title: string;
       description: string;
       variant: "success" | "error" | "info";
     }) => {
+      if (settledRef.current) return;
+      settledRef.current = true;
+
       setIsSettled(true);
+
       if (options) {
         if (options.variant === "success") {
           toast.success(options.title, { description: options.description });
@@ -59,16 +84,24 @@ export default function PostPurchaseHandler() {
           });
         }
       }
+
       // Drop the checkout params so a reload does not restart this flow.
-      router.replace("/dashboard");
-      router.refresh();
-    };
+      routerRef.current.replace("/dashboard");
+      routerRef.current.refresh();
+    },
+    [],
+  );
+
+  useEffect(() => {
+    if (!isPurchaseReturn || isPending || startedRef.current) return;
+
+    startedRef.current = true;
 
     // The dashboard is already server-guarded, so there is no need to bounce to
     // /sign-in from here. Doing so while the server session *was* valid created
     // a dashboard -> sign-in -> dashboard redirect loop.
-    if (!session?.user) {
-      setIsSettled(true);
+    if (!hasUser) {
+      finish();
       return;
     }
 
@@ -81,8 +114,22 @@ export default function PostPurchaseHandler() {
       return;
     }
 
+    let cancelled = false;
+
+    const stop = () => {
+      cancelled = true;
+      window.clearTimeout(watchdog);
+    };
+
+    const watchdog = window.setTimeout(() => {
+      stop();
+      finish(PENDING_MESSAGE);
+    }, MAX_WAIT_MS);
+
     async function waitForVerifiedWebhook() {
-      for (let attempt = 0; attempt < POLL_ATTEMPTS && !cancelled; attempt += 1) {
+      for (let attempt = 0; attempt < POLL_ATTEMPTS; attempt += 1) {
+        if (cancelled) return;
+
         try {
           const response = await fetch("/api/subscription/status", {
             cache: "no-store",
@@ -99,6 +146,7 @@ export default function PostPurchaseHandler() {
               subscription.subscriptionStatus === "active";
 
             if (isVerified) {
+              stop();
               finish({
                 title: "Your paid plan is active",
                 description: "Welcome to LessonMap!",
@@ -117,20 +165,21 @@ export default function PostPurchaseHandler() {
 
       if (cancelled) return;
 
-      finish({
-        title: "Payment received",
-        description:
-          "Activation is still processing. Refresh in a moment if your plan has not updated.",
-        variant: "info",
-      });
+      stop();
+      finish(PENDING_MESSAGE);
     }
 
     void waitForVerifiedWebhook();
 
-    return () => {
-      cancelled = true;
-    };
-  }, [checkoutStatus, isPending, isPurchaseReturn, router, session?.user, subscriptionId]);
+    return stop;
+  }, [
+    checkoutStatus,
+    finish,
+    hasUser,
+    isPending,
+    isPurchaseReturn,
+    subscriptionId,
+  ]);
 
   if (!isPurchaseReturn || isSettled) return null;
 
