@@ -24,8 +24,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const body = (await req.json()) as { plan?: unknown };
-    if (typeof body.plan !== "string" || !VALID_CHECKOUT_PLANS.includes(body.plan)) {
+    const body = await req.json().catch(() => null) as { plan?: unknown } | null;
+    if (!body || typeof body.plan !== "string" || !VALID_CHECKOUT_PLANS.includes(body.plan)) {
       return NextResponse.json({ error: "Invalid checkout plan." }, { status: 400 });
     }
 
@@ -34,8 +34,11 @@ export async function POST(req: NextRequest) {
 
     const existingSubscription = await db.user.findUnique({
       where: { id: userId },
-      select: { plan: true, subscriptionStatus: true },
+      select: { plan: true, subscriptionStatus: true, customerId: true },
     });
+    if (!existingSubscription) {
+      return NextResponse.json({ error: "User not found." }, { status: 404 });
+    }
     if (
       existingSubscription?.plan !== "FREE" &&
       existingSubscription?.subscriptionStatus === "active"
@@ -49,7 +52,9 @@ export async function POST(req: NextRequest) {
     const dodoPayments = createDodoPayments(config.apiKey, config.environment);
     const checkout = await dodoPayments.checkoutSessions.create({
       product_cart: [{ product_id: config.productId, quantity: 1 }],
-      customer: { name: username, email },
+      customer: existingSubscription.customerId
+        ? { customer_id: existingSubscription.customerId }
+        : { name: username, email },
       metadata: { plan, userId },
       return_url: config.returnUrl,
     });
@@ -66,7 +71,11 @@ export async function POST(req: NextRequest) {
     if (error instanceof PaymentConfigurationError) {
       console.error("Checkout configuration error:", error.message);
       return NextResponse.json(
-        { error: "Checkout is temporarily unavailable. Please contact support.", code: "CHECKOUT_NOT_CONFIGURED" },
+        {
+          error: "Checkout is temporarily unavailable. Please try again later.",
+          code: "CHECKOUT_NOT_CONFIGURED",
+          ...(process.env.NODE_ENV !== "production" ? { detail: error.message } : {}),
+        },
         { status: 503 },
       );
     }

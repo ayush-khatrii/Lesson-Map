@@ -4,6 +4,7 @@ import { useState, type FormEvent } from "react";
 import { useSearchParams } from "next/navigation";
 import { FaGithub, FaGoogle } from "react-icons/fa";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { signIn, signUp } from "@/lib/auth-client";
 import { getAuthRedirect } from "@/lib/auth-redirect";
 import { cn } from "@/lib/utils";
@@ -22,6 +23,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+  const [email, setEmail] = useState("");
   const searchParams = useSearchParams();
   const callbackURL = getAuthRedirect(searchParams.get("callbackUrl"));
 
@@ -30,7 +32,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
     if (pending) return;
     const form = event.currentTarget;
     const values = new FormData(form);
-    const email = String(values.get("email") || "").trim();
+    const email = String(values.get("email") || "").trim().toLowerCase();
     const password = String(values.get("password") || "");
     const name = String(values.get("name") || "").trim();
     setError(null);
@@ -45,18 +47,31 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
         ? await signUp.email({ name, email, password })
         : await signIn.email({ email, password, callbackURL });
       if (result.error) {
+        if (isSignUp && (result.error.code === "USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL" || result.error.code === "USER_ALREADY_EXISTS")) {
+          setEmail(email);
+          setIsSignUp(false);
+          setShowPassword(false);
+          const message = "User with this email already exists. Please sign in.";
+          setNotice(`${message} If you registered with Google or GitHub, continue with that provider.`);
+          toast.error(message);
+          return;
+        }
         setError(result.error.status === 429
           ? "Too many attempts. Please wait a minute and try again."
+          : result.error.status >= 500
+            ? "The authentication service is unavailable. Please try again shortly."
           : isSignUp
             ? "Unable to create your account. Check your details or try signing in."
-            : "Unable to sign in. Check your email and password and try again.");
+            : "Unable to sign in. Check your email and password, or use Google or GitHub if you registered with them.");
         return;
       }
       form.reset();
       setShowPassword(false);
       if (isSignUp) {
+        setEmail(email);
         setIsSignUp(false);
-        setNotice("If this email is available, your account is ready. Sign in to continue. If you previously used Google or GitHub, continue with that provider.");
+        setNotice("Account created successfully. Sign in with your email and password to continue.");
+        toast.success("Account created successfully. Please sign in.");
       } else {
         // A fresh navigation ensures server components read the new session cookie.
         window.location.assign(callbackURL);
@@ -103,7 +118,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
           )}
           <div className="space-y-2">
             <Label htmlFor="auth-email">Email</Label>
-            <Input id="auth-email" name="email" type="email" autoComplete="email" required maxLength={254} placeholder="you@example.com" />
+            <Input id="auth-email" name="email" type="email" autoComplete="email" required maxLength={254} placeholder="you@example.com" value={email} onChange={(event) => setEmail(event.target.value)} />
           </div>
           <div className="space-y-2">
             <Label htmlFor="auth-password">Password</Label>

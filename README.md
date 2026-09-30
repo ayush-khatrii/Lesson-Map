@@ -146,6 +146,30 @@ If checkout returns `CHECKOUT_NOT_CONFIGURED`, inspect the `/api/checkout` funct
 they identify the missing or invalid variable without printing its value.
 Run `npm run test:payments` to check checkout behavior without charging a card.
 
+Run `npm run check:payments` before testing checkout. It loads the same local environment
+files as Next.js and reports missing configuration without exposing secrets or calling
+Dodo. Add `-- --all` to check Professional too. Both a product ID and a webhook signing
+secret are required in addition to the API key. Product IDs cannot be derived from an
+API key: create the recurring product in Dodo and copy its ID into the matching variable.
+
+Checkout reads server environment variables on each request. After adding or rotating
+credentials in `.env.local`, restart the local server; on Vercel, update environment
+variables and redeploy. Never pass the API key from the browser or prefix it with
+`NEXT_PUBLIC_`.
+
+The flow is pricing → sign-in if needed → hosted Dodo checkout → `/checkout/return`.
+The return page checks the authenticated subscription status for up to one minute and
+offers a retry while confirmation is pending. Signed subscription webhooks update
+paid access; the return page can also recover a missed activation by retrieving the
+subscription directly from Dodo and verifying its user metadata, product, and active
+status on the server. Redirect query parameters alone do not grant access. A cancelled or unsuccessful
+checkout leaves the user's plan unchanged.
+
+For local end-to-end testing, expose `/api/webhooks/dodopayments` through a public HTTPS
+tunnel and register that URL in the Dodo test-mode dashboard. Complete a test checkout,
+confirm that `subscription.active` is delivered successfully, and check that the return
+page shows the active plan. A localhost URL alone cannot receive provider webhooks.
+
 ## Feedback and contributions
 
 Found a problem or have an idea? [Open an issue](https://github.com/ayush-khatrii/Lesson-Map/issues) with the steps to reproduce it, expected behavior, and a screenshot when useful.

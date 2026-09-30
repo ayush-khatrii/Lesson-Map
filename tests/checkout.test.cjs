@@ -10,6 +10,7 @@ function harness(overrides = {}, options = {}) {
     NODE_ENV: "production", DODO_PAYMENTS_API_KEY: "test-secret",
     DODO_PAYMENTS_ENVIRONMENT: "test_mode", DODO_PRODUCT_CREATOR: "pdt_creator",
     DODO_PRODUCT_PROFESSIONAL: "pdt_professional", NEXT_PUBLIC_BASE_URL: "https://example.com/",
+    DODO_PAYMENTS_WEBHOOK_SECRET: "test-webhook-secret",
     ...overrides,
   };
   const calls = [];
@@ -61,13 +62,14 @@ for (const plan of ["CREATOR", "PROFESSIONAL"]) {
     assert.equal(request.product_cart[0].product_id, `pdt_${plan.toLowerCase()}`);
     assert.equal(request.metadata.userId, "user-1");
     assert.equal(request.metadata.plan, plan);
-    assert.equal(request.return_url, "https://example.com/dashboard");
+    assert.equal(request.return_url, `https://example.com/checkout/return?plan=${plan}`);
   });
 }
 
 for (const [overrides, expected] of [
   [{ DODO_PAYMENTS_API_KEY: "", DODO_PAYMENTS_KEY: "legacy-secret" }, "DODO_PAYMENTS_API_KEY"],
   [{ DODO_PRODUCT_CREATOR: " " }, "DODO_PRODUCT_CREATOR"],
+  [{ DODO_PAYMENTS_WEBHOOK_SECRET: "" }, "DODO_PAYMENTS_WEBHOOK_SECRET"],
   [{ DODO_PAYMENTS_ENVIRONMENT: "" }, "DODO_PAYMENTS_ENVIRONMENT"],
   [{ DODO_PAYMENTS_ENVIRONMENT: "live" }, "DODO_PAYMENTS_ENVIRONMENT"],
   [{ NEXT_PUBLIC_BASE_URL: "" }, "NEXT_PUBLIC_BASE_URL"],
@@ -98,4 +100,11 @@ test("authentication, valid plan and existing subscription checks prevent checko
 
 test("missing hosted URL is a failure instead of a successful redirect", async () => {
   assert.equal((await harness({}, { noUrl: true }).post()).status, 500);
+});
+
+test("setup diagnostics are available locally, but hidden in production", async () => {
+  const local = await harness({ NODE_ENV: "development", DODO_PRODUCT_CREATOR: "" }).post();
+  assert.match((await local.json()).detail, /DODO_PRODUCT_CREATOR/);
+  const production = await harness({ DODO_PRODUCT_CREATOR: "" }).post();
+  assert.equal((await production.json()).detail, undefined);
 });

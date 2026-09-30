@@ -1,6 +1,7 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { db } from "@/lib/prisma";
+import { emailAuthOptions } from "@/lib/auth-email";
 
 export const auth = betterAuth({
   baseURL: {
@@ -15,14 +16,13 @@ export const auth = betterAuth({
   },
   database: prismaAdapter(db, {
     provider: "postgresql",
+    // Persist the user and password account together, or roll both back.
+    transaction: true,
   }),
-  emailAndPassword: {
-    enabled: true,
-    minPasswordLength: 12,
-    maxPasswordLength: 128,
-    // A generic sign-up response avoids revealing registered email addresses.
-    autoSignIn: false,
-  },
+  ...emailAuthOptions((email) => db.user.findFirst({
+    where: { email: { equals: email, mode: "insensitive" } },
+    select: { id: true },
+  })),
   rateLimit: {
     enabled: true,
     storage: "database",

@@ -7,7 +7,9 @@
     "build": "next build --turbopack",
     "start": "next start",
     "test:ai": "node --import tsx --test tests/ai*.test.ts",
-    "test:payments": "node --test tests/checkout.test.cjs",
+    "test:payments": "node --test tests/checkout.test.cjs tests/payment-webhooks.test.cjs tests/subscription-confirm.test.cjs",
+    "check:payments": "node --import tsx scripts/check-payments.ts",
+    "test:auth": "node --import tsx --test tests/auth.test.ts",
     "typecheck": "tsc --noEmit --incremental false",
     "postinstall": "prisma generate"
   },

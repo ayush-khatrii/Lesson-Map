@@ -17,6 +17,10 @@ export function checkoutConfiguration(plan: PaidPlan): {
     throw new PaymentConfigurationError("Missing DODO_PAYMENTS_API_KEY.");
   }
 
+  if (!process.env.DODO_PAYMENTS_WEBHOOK_SECRET?.trim()) {
+    throw new PaymentConfigurationError("Missing DODO_PAYMENTS_WEBHOOK_SECRET.");
+  }
+
   const environment = process.env.DODO_PAYMENTS_ENVIRONMENT?.trim();
   if (environment !== "test_mode" && environment !== "live_mode") {
     throw new PaymentConfigurationError(
@@ -42,5 +46,5 @@ export function checkoutConfiguration(plan: PaidPlan): {
     throw new PaymentConfigurationError("Set NEXT_PUBLIC_BASE_URL to your application's http(s) origin.");
   }
 
-  return { apiKey, environment, productId, returnUrl: `${origin}/dashboard` };
+  return { apiKey, environment, productId, returnUrl: `${origin}/checkout/return?plan=${plan}` };
 }

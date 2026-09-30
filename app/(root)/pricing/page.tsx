@@ -56,8 +56,9 @@ const PricingPage = () => {
   }, [isSessionPending, session?.user?.id]);
 
   const handlePurchase = async (plan: string) => {
+    if (loadingPlan || isSessionPending) return;
     if (!session?.user) {
-      router.push("/sign-in");
+      router.push("/sign-in?callbackUrl=%2Fpricing");
       return;
     }
 
@@ -81,19 +82,17 @@ const PricingPage = () => {
         body: JSON.stringify({ plan }),
       });
       const data = await response.json();
-      if (response.ok) {
+      if (response.status === 401) {
+        router.push("/sign-in?callbackUrl=%2Fpricing");
+      } else if (response.ok && typeof data.checkoutUrl === "string") {
         window.location.href = data.checkoutUrl;
       } else {
-        toast.error(data.error || "Failed to create checkout session.");
-        console.error("Checkout error:", data.error);
+        toast.error(data.error || "Failed to create checkout session.", {
+          description: process.env.NODE_ENV !== "production" ? data.detail : undefined,
+        });
       }
-    } catch (error) {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "An unexpected error occurred.",
-      );
-      console.error("Error purchasing plan:", error);
+    } catch {
+      toast.error("Could not connect to checkout. Please try again.");
     } finally {
       setLoadingPlan(null);
     }
