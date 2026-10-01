@@ -22,6 +22,18 @@ function failure(error: unknown) {
   }
 
   if (error instanceof Prisma.PrismaClientKnownRequestError) {
+    if (error.code === "P2003") {
+      return NextResponse.json(
+        {
+          error: "Your account session is no longer valid. Please sign in again and retry.",
+          newRequest: true,
+        },
+        {
+          status: 401,
+          headers: { "Cache-Control": "no-store" },
+        },
+      );
+    }
     console.error("AI Prisma failure", {
       code: error.code,
       meta: error.meta,

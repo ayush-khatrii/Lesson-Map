@@ -40,6 +40,9 @@ export async function createAiCourse(userId: string, input: GenerateCourseInput,
   const { requestId, ...requirements } = input;
   const inputHash = createHash("sha256").update(JSON.stringify(requirements)).digest("hex");
 
+  const userExists = await database.user.findUnique({ where: { id: userId }, select: { id: true } });
+  if (!userExists) throw new AiError(401, "Please sign in again.");
+
   // Reserve before spending tokens. Database locks work across server instances.
   const reservation = await database.$transaction(async (tx) => {
     const user = await lockCourseOwner(tx, userId);
@@ -109,6 +112,8 @@ export async function createAiCourse(userId: string, input: GenerateCourseInput,
     const created = await database.$transaction(async (tx) => {
       const user = await lockCourseOwner(tx, userId);
       if (!user) throw new AiError(401, "Please sign in again.");
+      const userRow = await tx.user.findUnique({ where: { id: userId }, select: { id: true } });
+      if (!userRow) throw new AiError(401, "Please sign in again.");
       const plan = effectiveAiPlan(user);
       assertPlanAllows(plan, input);
       const courseLimit = COURSE_LIMITS[plan];
