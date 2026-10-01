@@ -6,6 +6,8 @@ import { createAiCourse, getAiAllowance } from "@/lib/ai/service";
 
 export const maxDuration = 60;
 
+import { Prisma } from "@prisma/client";
+
 function failure(error: unknown) {
   if (error instanceof AiError) {
     return NextResponse.json(
@@ -19,11 +21,27 @@ function failure(error: unknown) {
       },
     );
   }
-  // Never log arbitrary provider responses, request bodies, or credentials.
-  console.error("AI course request failed", { kind: error instanceof Error ? error.name : "Unknown" });
+
+  if (error instanceof Prisma.PrismaClientKnownRequestError) {
+    console.error("AI Prisma failure", {
+      code: error.code,
+      meta: error.meta,
+    });
+  } else {
+    console.error("AI course request failed", {
+      kind: error instanceof Error ? error.name : "Unknown",
+    });
+  }
+
   return NextResponse.json(
-    { error: "Could not finish the request. Retry with the same details to check its status." },
-    { status: 500, headers: { "Cache-Control": "no-store" } },
+    {
+      error:
+        "Could not finish the request. Retry with the same details to check its status.",
+    },
+    {
+      status: 500,
+      headers: { "Cache-Control": "no-store" },
+    },
   );
 }
 
