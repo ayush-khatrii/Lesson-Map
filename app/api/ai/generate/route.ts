@@ -3,10 +3,9 @@ import { NextResponse } from "next/server";
 import { generateCourseSchema } from "@/lib/ai/schema";
 import { AiError, readLimitedJson } from "@/lib/ai/http";
 import { createAiCourse, getAiAllowance } from "@/lib/ai/service";
+import { Prisma, PrismaClient } from "@/app/generated/prisma/client";
 
 export const maxDuration = 60;
-
-import { Prisma } from "@prisma/client";
 
 function failure(error: unknown) {
   if (error instanceof AiError) {
