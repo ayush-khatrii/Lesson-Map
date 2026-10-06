@@ -19,20 +19,6 @@ import {
   TriangleAlert,
 } from "lucide-react";
 
-/**
- * Set to true once `POST /api/billing/portal` exists. That route should create a
- * hosted Dodo Payments portal session and return its URL:
- *
- *   const { link } = await dodoPayments.customers.customerPortal.create(customerId, {
- *     return_url: `${baseUrl}/settings`,
- *   });
- *   return NextResponse.json({ url: link });
- *
- * The button below already handles the response, so flipping this flag is the
- * only front-end change required.
- */
-const BILLING_PORTAL_ENABLED = false;
-
 type PlanName = "FREE" | "CREATOR" | "PROFESSIONAL";
 
 const PLAN_META: Record<PlanName, { name: string; price: string; period: string }> = {
@@ -43,7 +29,12 @@ const PLAN_META: Record<PlanName, { name: string; price: string; period: string 
 
 function statusMeta(status: string | null, isPaid: boolean) {
   const neutral = { label: "Free plan", className: "" };
-  if (!isPaid) return neutral;
+  if (!status) return isPaid
+    ? {
+        label: "Active",
+        className: "border border-emerald-500/25 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
+      }
+    : neutral;
 
   switch (status) {
     case "on_hold":
@@ -72,20 +63,24 @@ function statusMeta(status: string | null, isPaid: boolean) {
         className: "border border-amber-500/25 bg-amber-500/10 text-amber-600 dark:text-amber-400",
       };
     default:
-      return {
-        label: "Active",
-        className: "border border-emerald-500/25 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
-      };
+      return isPaid
+        ? {
+            label: "Active",
+            className: "border border-emerald-500/25 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
+          }
+        : neutral;
   }
 }
 
 export default function BillingTab({
   plan,
+  canManageBilling,
   subscriptionStatus,
   renewsOn,
   cancelsAtPeriodEnd,
 }: {
   plan: PlanName;
+  canManageBilling: boolean;
   subscriptionStatus: string | null;
   /** Formatted current-period-end date, or null when there is none. */
   renewsOn: string | null;
@@ -111,13 +106,6 @@ export default function BillingTab({
   ];
 
   async function handleManageBilling() {
-    if (!BILLING_PORTAL_ENABLED) {
-      toast.info(
-        "Billing management is being connected. Email support and we will update your subscription for you.",
-      );
-      return;
-    }
-
     setOpening(true);
     try {
       const response = await fetch("/api/billing/portal", { method: "POST" });
@@ -164,7 +152,7 @@ export default function BillingTab({
           </div>
 
           <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:items-center">
-            {isPaid ? (
+            {canManageBilling ? (
               <Button
                 onClick={handleManageBilling}
                 disabled={opening}
@@ -243,7 +231,7 @@ export default function BillingTab({
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          {isPaid ? (
+          {canManageBilling ? (
             <Button
               onClick={handleManageBilling}
               disabled={opening}

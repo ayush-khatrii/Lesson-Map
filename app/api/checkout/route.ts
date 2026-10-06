@@ -2,13 +2,21 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/prisma";
 import { createDodoPayments } from "@/lib/payments/dodopayments";
 import { checkoutConfiguration, PaymentConfigurationError, type PaidPlan } from "@/lib/payments/config";
+import { isSameOriginRequest } from "@/lib/payments/request-security";
+import { effectiveAiPlan } from "@/lib/ai/schema";
 import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
-const VALID_CHECKOUT_PLANS = ["CREATOR", "PROFESSIONAL"];
+function isPaidPlan(plan: unknown): plan is PaidPlan {
+  return plan === "CREATOR" || plan === "PROFESSIONAL";
+}
 
 export async function POST(req: NextRequest) {
   try {
+    if (!isSameOriginRequest(req)) {
+      return NextResponse.json({ error: "Invalid request origin." }, { status: 403 });
+    }
+
     const session = await auth.api.getSession({ headers: await headers() });
     const userId = session?.session?.userId;
     if (!userId) {
@@ -25,24 +33,27 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json().catch(() => null) as { plan?: unknown } | null;
-    if (!body || typeof body.plan !== "string" || !VALID_CHECKOUT_PLANS.includes(body.plan)) {
+    if (!body || !isPaidPlan(body.plan)) {
       return NextResponse.json({ error: "Invalid checkout plan." }, { status: 400 });
     }
 
-    const plan = body.plan as PaidPlan;
+    const plan = body.plan;
     const config = checkoutConfiguration(plan);
 
     const existingSubscription = await db.user.findUnique({
       where: { id: userId },
-      select: { plan: true, subscriptionStatus: true, customerId: true },
+      select: {
+        plan: true,
+        subscriptionStatus: true,
+        subscriptionCancelAtPeriodEnd: true,
+        subscriptionCurrentPeriodEnd: true,
+        customerId: true,
+      },
     });
     if (!existingSubscription) {
       return NextResponse.json({ error: "User not found." }, { status: 404 });
     }
-    if (
-      existingSubscription?.plan !== "FREE" &&
-      existingSubscription?.subscriptionStatus === "active"
-    ) {
+    if (effectiveAiPlan(existingSubscription) !== "FREE") {
       return NextResponse.json(
         { error: "You already have an active paid subscription." },
         { status: 409 },
@@ -57,7 +68,7 @@ export async function POST(req: NextRequest) {
         : { name: username, email },
       metadata: { plan, userId },
       return_url: config.returnUrl,
-    });
+    }, { timeout: 10000, maxRetries: 0 });
 
     if (!checkout.checkout_url) {
       throw new Error("Dodo did not return a hosted checkout URL.");

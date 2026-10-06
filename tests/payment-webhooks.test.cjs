@@ -8,17 +8,22 @@ const { Webhook } = require("standardwebhooks");
 
 function fixture() {
   const secret = Buffer.from("local-test-webhook-signing-secret").toString("base64");
-  const user = { id: "user-1", plan: "FREE" };
+  const user = {
+    id: "user-1", plan: "FREE", subscriptionId: null, customerId: null,
+    subscriptionStatus: null, subscriptionCancelAtPeriodEnd: false,
+    subscriptionCurrentPeriodEnd: null,
+  };
   const events = new Map();
   const tx = {
     user: {
-      findFirst: async ({ where }) => where.id === user.id ? { id: user.id } : null,
+      findFirst: async ({ where }) => where.id === user.id ? { ...user } : null,
       update: async ({ data }) => Object.assign(user, data),
     },
     webhookEvent: {
       findUnique: async ({ where }) => events.get(where.id) ?? null,
       create: async ({ data }) => events.set(data.id, data),
     },
+    $queryRaw: async () => [],
   };
   const module = { exports: {} };
   const source = ts.transpileModule(fs.readFileSync(path.join(__dirname, "../app/api/webhooks/dodopayments/route.ts"), "utf8"), {
@@ -32,6 +37,10 @@ function fixture() {
       if (id === "standardwebhooks") return { Webhook };
       if (id === "next/server") return { NextResponse: { json: (body, init) => Response.json(body, init) } };
       if (id === "@/lib/payments/config") return { productIdForPlan: (plan) => plan === "CREATOR" ? "pdt_creator" : "pdt_pro" };
+      if (id === "@/lib/ai/schema") return { effectiveAiPlan: (user) =>
+        user.plan !== "FREE" && (user.subscriptionStatus === "active" ||
+          (user.subscriptionStatus === "cancelled" && user.subscriptionCancelAtPeriodEnd &&
+            user.subscriptionCurrentPeriodEnd > new Date())) ? user.plan : "FREE" };
       if (id === "@/lib/prisma") return { db: { $transaction: async (callback) => callback(tx) } };
       throw new Error(`Unexpected import ${id}`);
     },
@@ -82,4 +91,29 @@ test("a signed subscription failure revokes paid access", async () => {
   assert.equal((await deliver("subscription.failed", "event-2", false, { status: "failed" })).status, 200);
   assert.equal(user.plan, "FREE");
   assert.equal(user.subscriptionStatus, "failed");
+});
+
+test("an old subscription event cannot revoke a user's replacement subscription", async () => {
+  const { deliver, user } = fixture();
+  await deliver();
+  user.subscriptionId = "sub-replacement";
+  user.plan = "PROFESSIONAL";
+  assert.equal((await deliver("subscription.failed", "event-2", false, {
+    subscription_id: "sub-1",
+  })).status, 200);
+  assert.equal(user.plan, "PROFESSIONAL");
+  assert.equal(user.subscriptionId, "sub-replacement");
+});
+
+test("a second active subscription cannot replace the account's current one", async () => {
+  const { deliver, user } = fixture();
+  user.plan = "CREATOR";
+  user.subscriptionId = "sub-existing";
+  user.customerId = "customer-1";
+  user.subscriptionStatus = "active";
+  assert.equal((await deliver("subscription.active", "event-1", false, {
+    subscription_id: "sub-another",
+  })).status, 500);
+  assert.equal(user.plan, "CREATOR");
+  assert.equal(user.subscriptionId, "sub-existing");
 });

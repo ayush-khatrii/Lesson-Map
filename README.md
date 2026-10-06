@@ -165,6 +165,11 @@ subscription directly from Dodo and verifying its user metadata, product, and ac
 status on the server. Redirect query parameters alone do not grant access. A cancelled or unsuccessful
 checkout leaves the user's plan unchanged.
 
+Signed-in users with a linked Dodo customer can manage payment methods, invoices, and
+cancellation from **Settings > Billing**. The portal URL is created on the server for
+the customer ID stored on that user's account; checkout, confirmation, and portal
+requests also reject cross-origin browser submissions.
+
 For local end-to-end testing, expose `/api/webhooks/dodopayments` through a public HTTPS
 tunnel and register that URL in the Dodo test-mode dashboard. Complete a test checkout,
 confirm that `subscription.active` is delivered successfully, and check that the return

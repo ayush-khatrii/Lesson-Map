@@ -4,9 +4,14 @@ import { checkoutConfiguration, PaymentConfigurationError } from "@/lib/payments
 import { createDodoPayments } from "@/lib/payments/dodopayments";
 import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
+import { isSameOriginRequest } from "@/lib/payments/request-security";
 
 // Recover a completed checkout when webhook delivery is delayed (including localhost).
 export async function POST(req: NextRequest) {
+  if (!isSameOriginRequest(req)) {
+    return NextResponse.json({ error: "Invalid request origin." }, { status: 403 });
+  }
+
   const session = await auth.api.getSession({ headers: await headers() });
   const userId = session?.user.id;
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -39,7 +44,13 @@ export async function POST(req: NextRequest) {
     }
     // Do not overwrite a different subscription already attached to this account.
     const updated = await db.user.updateMany({
-      where: { id: userId, OR: [{ subscriptionId: null }, { subscriptionId: body.subscriptionId }] },
+      where: {
+        id: userId,
+        OR: [
+          { subscriptionId: body.subscriptionId },
+          { subscriptionId: null, plan: "FREE" },
+        ],
+      },
       data: {
         plan: body.plan,
         subscriptionId: body.subscriptionId,

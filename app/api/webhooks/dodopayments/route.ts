@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Webhook } from "standardwebhooks";
 import { db } from "@/lib/prisma";
 import { productIdForPlan } from "@/lib/payments/config";
+import { effectiveAiPlan } from "@/lib/ai/schema";
 import type { Prisma } from "@/app/generated/prisma/client";
 
 type PaidPlan = "CREATOR" | "PROFESSIONAL";
@@ -66,6 +67,9 @@ export async function POST(req: NextRequest) {
   }
 
   const rawBody = await req.text();
+  if (rawBody.length > 1024 * 1024 || webhookId.length > 200) {
+    return NextResponse.json({ error: "Webhook request is too large" }, { status: 413 });
+  }
 
   try {
     const webhook = new Webhook(webhookSecret);
@@ -139,14 +143,35 @@ export async function POST(req: NextRequest) {
       if (customerId) candidateFilters.push({ customerId });
       if (subscriptionId) candidateFilters.push({ subscriptionId });
 
-      let matchedUser: { id: string } | null = null;
+      const userSelect = {
+        id: true,
+        plan: true,
+        subscriptionId: true,
+        customerId: true,
+        subscriptionStatus: true,
+        subscriptionCancelAtPeriodEnd: true,
+        subscriptionCurrentPeriodEnd: true,
+      } as const;
+      const candidateUsers = new Map<string, {
+        id: string;
+        plan: "FREE" | "CREATOR" | "PROFESSIONAL";
+        subscriptionId: string | null;
+        customerId: string | null;
+        subscriptionStatus: string | null;
+        subscriptionCancelAtPeriodEnd: boolean;
+        subscriptionCurrentPeriodEnd: Date | null;
+      }>();
       for (const where of candidateFilters) {
-        matchedUser = await tx.user.findFirst({
+        const candidate = await tx.user.findFirst({
           where,
-          select: { id: true },
+          select: userSelect,
         });
-        if (matchedUser) break;
+        if (candidate) candidateUsers.set(candidate.id, candidate);
       }
+      if (candidateUsers.size > 1) {
+        throw new Error(`Conflicting user identifiers for ${eventType}`);
+      }
+      let matchedUser = candidateUsers.values().next().value ?? null;
 
       // Every subscription event that can change access must resolve to one
       // existing user. Otherwise we would acknowledge the event while
@@ -165,10 +190,47 @@ export async function POST(req: NextRequest) {
       }
 
       const userId = matchedUser?.id ?? null;
+      if (userId) {
+        await tx.$queryRaw`SELECT "id" FROM "user" WHERE "id" = ${userId} FOR UPDATE`;
+        matchedUser = await tx.user.findFirst({
+          where: { id: userId },
+          select: userSelect,
+        });
+        if (!matchedUser) throw new Error("Matched user disappeared during webhook processing");
+      }
+
+      const staleSubscription = Boolean(
+        matchedUser?.subscriptionId &&
+        subscriptionId &&
+        matchedUser.subscriptionId !== subscriptionId,
+      );
+      if (staleSubscription && !grantEvents.has(eventType)) {
+        await tx.webhookEvent.create({
+          data: { id: webhookId, type: eventType },
+        });
+        return true;
+      }
+      if (
+        matchedUser?.customerId &&
+        customerId &&
+        matchedUser.customerId !== customerId
+      ) {
+        throw new Error("Dodo customer does not match the account's linked customer");
+      }
+      if (
+        staleSubscription &&
+        matchedUser &&
+        effectiveAiPlan(matchedUser) !== "FREE"
+      ) {
+        throw new Error("A different active subscription is already linked to this account");
+      }
 
       if (grantEvents.has(eventType)) {
         if (!userId || !subscriptionId || !customerId || !plan) {
           throw new Error(`Cannot safely grant access for ${eventType}`);
+        }
+        if (data.status && data.status !== "active") {
+          throw new Error(`Cannot grant access from a ${data.status} subscription`);
         }
 
         await tx.user.update({

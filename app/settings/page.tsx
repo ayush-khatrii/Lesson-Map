@@ -25,6 +25,7 @@ import UpdateSocialLinksForm from "@/components/forms/UpdateSocialLinksForm";
 import SettingsTabs from "@/components/settings/SettingsTabs";
 import BillingTab from "@/components/settings/BillingTab";
 import ToggleCoursePublicButton from "@/components/ToggleCoursePublicButton";
+import { effectiveAiPlan } from "@/lib/ai/schema";
 
 function formatDate(date: Date) {
   return new Intl.DateTimeFormat("en-US", {
@@ -44,6 +45,7 @@ export default async function SettingsPage() {
       where: { id: user.id },
       select: {
         plan: true,
+        customerId: true,
         subscriptionStatus: true,
         subscriptionCurrentPeriodEnd: true,
         subscriptionCancelAtPeriodEnd: true,
@@ -76,7 +78,7 @@ export default async function SettingsPage() {
         ? "https://lessonmap.vercel.app"
         : "http://localhost:3000")
   ).replace(/\/$/, "");
-  const plan = dbUser?.plan ?? "FREE";
+  const plan = dbUser ? effectiveAiPlan(dbUser) : "FREE";
   const subscriptionPeriodEnd = dbUser?.subscriptionCurrentPeriodEnd ?? null;
 
   const socialInitialValues = {
@@ -166,6 +168,7 @@ export default async function SettingsPage() {
             billing={
               <BillingTab
                 plan={plan}
+                canManageBilling={Boolean(dbUser?.customerId)}
                 subscriptionStatus={dbUser?.subscriptionStatus ?? null}
                 renewsOn={subscriptionPeriodEnd ? formatDate(subscriptionPeriodEnd) : null}
                 cancelsAtPeriodEnd={dbUser?.subscriptionCancelAtPeriodEnd ?? false}

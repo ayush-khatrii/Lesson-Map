@@ -28,6 +28,11 @@ function harness(overrides = {}, options = {}) {
       require(id) {
         if (id === "@/lib/payments/config") return load("lib/payments/config.ts");
         if (id === "@/lib/payments/dodopayments") return load("lib/payments/dodopayments.ts");
+        if (id === "@/lib/payments/request-security") return { isSameOriginRequest: () => true };
+        if (id === "@/lib/ai/schema") return { effectiveAiPlan: (user) =>
+          user.plan !== "FREE" && (user.subscriptionStatus === "active" ||
+            (user.subscriptionStatus === "cancelled" && user.subscriptionCancelAtPeriodEnd &&
+              user.subscriptionCurrentPeriodEnd > new Date())) ? user.plan : "FREE" };
         if (id === "dodopayments") return { DodoPayments: class {
           constructor(config) { calls.push({ config }); }
           checkoutSessions = { create: async (request) => {
@@ -47,7 +52,10 @@ function harness(overrides = {}, options = {}) {
     });
     return cache[file] = module.exports;
   }
-  return { calls, logs, post: (plan = "CREATOR") => load("app/api/checkout/route.ts").POST({ json: async () => ({ plan }) }) };
+  return { calls, logs, post: (plan = "CREATOR") => load("app/api/checkout/route.ts").POST({
+    headers: new Headers({ origin: "https://example.com" }),
+    json: async () => ({ plan }),
+  }) };
 }
 
 for (const plan of ["CREATOR", "PROFESSIONAL"]) {

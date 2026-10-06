@@ -18,6 +18,7 @@ function fixture(options = {}) {
       if (id === "@/lib/auth") return { auth: { api: { getSession: async () => options.signedOut ? null : { user: { id: "user-1" } } } } };
       if (id === "next/headers") return { headers: async () => new Headers() };
       if (id === "next/server") return { NextResponse: { json: (body, init) => Response.json(body, init) } };
+      if (id === "@/lib/payments/request-security") return { isSameOriginRequest: () => true };
       if (id === "@/lib/payments/config") return { PaymentConfigurationError: class extends Error {}, checkoutConfiguration: () => ({ apiKey: "test", environment: "test_mode", productId: "pdt_creator" }) };
       if (id === "@/lib/payments/dodopayments") return { createDodoPayments: () => ({ subscriptions: { retrieve: async (id, config) => {
         reads.push({ id, config });
@@ -34,7 +35,10 @@ function fixture(options = {}) {
       throw new Error(`Unexpected import ${id}`);
     },
   });
-  return { writes, reads, post: (body = { subscriptionId: "sub_example", plan: "CREATOR" }) => module.exports.POST({ json: async () => body }) };
+  return { writes, reads, post: (body = { subscriptionId: "sub_example", plan: "CREATOR" }) => module.exports.POST({
+    headers: new Headers({ origin: "http://localhost:3000" }),
+    json: async () => body,
+  }) };
 }
 
 test("verified active subscription repairs missing webhook activation", async () => {
@@ -45,7 +49,10 @@ test("verified active subscription repairs missing webhook activation", async ()
   assert.equal(h.writes[0].where.id, "user-1");
   assert.equal(h.writes[0].data.plan, "CREATOR");
   assert.equal(h.writes[0].data.subscriptionId, "sub_example");
-  assert.equal(h.writes[0].where.OR[1].subscriptionId, "sub_example");
+  assert.equal(JSON.stringify(h.writes[0].where.OR), JSON.stringify([
+    { subscriptionId: "sub_example" },
+    { subscriptionId: null, plan: "FREE" },
+  ]));
   assert.equal(h.reads[0].config.timeout, 10000);
 });
 
