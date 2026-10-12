@@ -82,6 +82,7 @@ import FileUpload, {
   type UploadedResource,
 } from "@/components/forms/FileUpload";
 import { AiCourseGenerator } from "@/components/forms/AiCourseGenerator";
+import { AiCourseEditor } from "@/components/forms/AiCourseEditor";
 import { downloadCoursePdf } from "@/lib/export/course-pdf";
 import {
   createCourseWithOutlineAction,
@@ -2225,6 +2226,7 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [saved, setSaved] = useState(false);
   const [outlineView, setOutlineView] = useState("accordion");
+  const [aiAssistOpen, setAiAssistOpen] = useState(false);
 
   const [editOpen, setEditOpen] = useState(false);
   const [editTitle, setEditTitle] = useState("");
@@ -2272,7 +2274,18 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
       });
     return () => controller.abort();
   }, [session?.user?.id]);
+// The dashboard "AI Assist" action deep-links here with #ai-assist so the
+  // dialog opens straight away for the course being edited.
+  useEffect(() => {
+    if (courseId && window.location.hash === "#ai-assist") setAiAssistOpen(true);
+  }, [courseId]);
 
+  const defaultLessonsPerModule = Math.max(
+    1,
+    ...modules.map((module) => module.lessons.length),
+  );
+
+  
   const handleSave = async () => {
     if (isGenerating) return;
     if (!session) {
@@ -2547,6 +2560,18 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
             </div>
 
             <div className="flex w-full items-center gap-2 sm:w-auto sm:flex-shrink-0">
+              {courseId && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="gap-1.5"
+                  onClick={() => setAiAssistOpen(true)}
+                  disabled={isGenerating || isSaving}
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-primary" />
+                  AI Assist
+                </Button>
+              )}
               <PreviewDialog
                 title={title}
                 description={description}
@@ -2815,6 +2840,17 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
           </TabsContent>
         </Tabs>
       </div>
+
+      {courseId && (
+        <AiCourseEditor
+          open={aiAssistOpen}
+          onOpenChange={setAiAssistOpen}
+          courseId={courseId}
+          courseName={title || "Untitled course"}
+          defaultModuleCount={Math.max(1, modules.length)}
+          defaultLessonsPerModule={defaultLessonsPerModule}
+        />
+      )}
 
       {/* ── Edit Course Dialog ───────────────────────────────────────── */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>

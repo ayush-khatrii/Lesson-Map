@@ -39,14 +39,11 @@ export function effectiveAiPlan(user: {
   return "FREE";
 }
 
-export const generateCourseSchema = z.strictObject({
-  requestId: z.string().uuid(),
-  type: z.literal("course"),
-  topic: z.string().trim().min(3).max(500),
-  audience: z.string().trim().min(3).max(200),
-  moduleCount: z.number().int().min(1).max(MAX_AI_OUTLINE_ITEMS),
-  lessonsPerModule: z.number().int().min(1).max(MAX_AI_OUTLINE_ITEMS),
-}).superRefine((input, context) => {
+// Shared shape for the outline-size driven schemas. Both fresh course generation
+// and AI-assisted revision describe how many modules and lessons the model must return.
+export type OutlineShape = { moduleCount: number; lessonsPerModule: number };
+
+const outlineShapeRefinement = (input: OutlineShape, context: z.RefinementCtx) => {
   const outlineItems = input.moduleCount * (input.lessonsPerModule + 1);
   if (outlineItems > MAX_AI_OUTLINE_ITEMS) {
     context.addIssue({
@@ -55,11 +52,31 @@ export const generateCourseSchema = z.strictObject({
       message: `One AI request can generate up to ${MAX_AI_OUTLINE_ITEMS} total modules and lessons. You can add unlimited items manually afterward.`,
     });
   }
-});
+};
+
+export const generateCourseSchema = z.strictObject({
+  requestId: z.string().uuid(),
+  type: z.literal("course"),
+  topic: z.string().trim().min(3).max(500),
+  audience: z.string().trim().min(3).max(200),
+  moduleCount: z.number().int().min(1).max(MAX_AI_OUTLINE_ITEMS),
+  lessonsPerModule: z.number().int().min(1).max(MAX_AI_OUTLINE_ITEMS),
+}).superRefine(outlineShapeRefinement);
 
 export type GenerateCourseInput = z.infer<typeof generateCourseSchema>;
 
-export function courseOutputSchema(input: GenerateCourseInput) {
+export const reviseCourseSchema = z.strictObject({
+  requestId: z.string().uuid(),
+  courseId: z.string().trim().min(1).max(100),
+  instructions: z.string().trim().min(3).max(1000),
+  moduleCount: z.number().int().min(1).max(MAX_AI_OUTLINE_ITEMS),
+  lessonsPerModule: z.number().int().min(1).max(MAX_AI_OUTLINE_ITEMS),
+  rewriteMeta: z.boolean().default(false),
+}).superRefine(outlineShapeRefinement);
+
+export type ReviseCourseInput = z.infer<typeof reviseCourseSchema>;
+
+export function courseOutputSchema(input: OutlineShape) {
   return z.strictObject({
     courseName: z.string().trim().min(3).max(120),
     description: z.string().trim().min(20).max(1200),
@@ -81,7 +98,7 @@ export type GeneratedCourse = z.infer<ReturnType<typeof courseOutputSchema>>;
 export const SINGLE_CALL_MODULE_LIMIT = 3;
 export const MAX_MODULES_PER_AI_CALL = 4;
 
-export function outlineOutputSchema(input: GenerateCourseInput) {
+export function outlineOutputSchema(input: OutlineShape) {
   return z.strictObject({
     courseName: z.string().trim().min(3).max(120),
     description: z.string().trim().min(20).max(1200),

@@ -177,17 +177,79 @@ export function OutlineSkeleton() {
 
 export function PublicCourseSkeleton() {
   return (
-    <LoadingRegion label="Loading shared course" className="min-h-screen bg-zinc-950 text-white [&_.bg-muted]:bg-zinc-800">
-      <div className="border-b border-zinc-800"><div className={cn(container, "flex items-center justify-between py-4")}><div className="flex items-center gap-2.5"><Skeleton className="size-8 rounded-lg" /><span className="font-bold">LessonMap</span></div><Skeleton className="size-8 rounded-full" /></div></div>
-      <div className={cn(container, "py-8")}>
-        <div className="overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-950">
-          <div className="space-y-3 border-b border-zinc-800 px-6 py-6 md:px-8"><p className="text-xs font-bold uppercase tracking-wide text-amber-400">Public Course</p><Skeleton className="h-9 w-2/3" /><Lines count={2} /></div>
-          <div className="grid grid-cols-2 gap-3 border-b border-zinc-800 px-6 py-5 md:grid-cols-4 md:px-8">{["Modules", "Lessons", "Content", "Students"].map(label => <div key={label} className="space-y-2 rounded-2xl border border-zinc-800 p-4"><Skeleton className="h-7 w-12" /><p className="text-xs text-zinc-500">{label}</p></div>)}</div>
-          <div className="space-y-2 border-b border-zinc-800 px-6 py-4 md:px-8"><p className="text-sm font-semibold">Your progress</p><Skeleton className="h-2 w-full" /><Skeleton className="h-3 w-48" /></div>
-          <div className="px-6 py-6 md:px-8"><div className="mb-5 flex items-center justify-between"><h2 className="text-base font-bold">Course curriculum</h2><Skeleton className="h-9 w-28" /></div><div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(280px,340px)_1fr]"><div className="space-y-3">{[0, 1, 2].map(i => <Skeleton key={i} className="h-20 w-full rounded-xl" />)}</div><div className="min-h-80 space-y-6 rounded-2xl border border-zinc-800 p-6"><Skeleton className="h-7 w-2/3" /><Lines count={5} /></div></div></div>
-          <div className="flex items-start gap-4 border-t border-zinc-800 px-6 py-5 md:px-8"><Skeleton className="size-12 shrink-0 rounded-2xl" /><div className="w-48 space-y-2"><p className="text-xs text-zinc-500">Course creator</p><Lines count={2} /></div></div>
-        </div>
+    <LoadingRegion label="Loading shared course" className="min-h-screen bg-background text-foreground">
+      {/* Share bar */}
+      <div className="mx-auto flex w-full max-w-7xl justify-end px-4 pt-5 sm:px-6 lg:px-8">
+        <Skeleton className="h-9 w-24 rounded-xl" />
       </div>
+
+      <main className="mx-auto w-full max-w-7xl px-4 py-4 sm:px-6 sm:py-8 lg:px-8">
+        <div>
+          {/* Header strip */}
+          <div className="border-b border-border px-4 py-4 sm:px-6 sm:py-6 md:px-8">
+            <Skeleton className="mb-3 h-5 w-28 rounded-md" />
+            <Skeleton className="h-7 w-3/4 max-w-2xl rounded-md sm:h-9" />
+            <div className="mt-3 space-y-2">
+              <Skeleton className="h-4 w-full max-w-3xl" />
+              <Skeleton className="h-4 w-2/3 max-w-xl" />
+            </div>
+          </div>
+
+          {/* Stat cards row */}
+          <div className="grid grid-cols-2 gap-3 border-b border-border py-5">
+            {["Modules", "Lessons"].map((label) => (
+              <div key={label} className="rounded-2xl border border-border bg-card p-4">
+                <div className="flex items-center gap-3">
+                  <Skeleton className="size-9 shrink-0 rounded-xl" />
+                  <div className="min-w-0 flex-1">
+                    <Skeleton className="h-[18px] w-10" />
+                    <p className="mt-1 truncate text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                      {label}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Progress bar */}
+          <div className="border-b border-border px-6 py-4 md:px-8">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-semibold text-foreground">Your progress</span>
+              <Skeleton className="h-4 w-10" />
+            </div>
+            <Skeleton className="mt-2 h-2 w-full rounded-full" />
+            <Skeleton className="mt-2 h-3 w-52 max-w-full" />
+          </div>
+
+          {/* Curriculum: view toggle + two-column body */}
+          <div className="py-6">
+            <div className="mb-5 flex items-center justify-between">
+              <h2 className="text-base font-bold text-foreground">Course curriculum</h2>
+              <Skeleton className="h-9 w-32 rounded-xl" />
+            </div>
+            <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(280px,340px)_1fr]">
+              <div className="space-y-2.5 pr-1">
+                {[0, 1, 2].map((i) => (
+                  <Skeleton key={i} className="h-16 w-full rounded-2xl" />
+                ))}
+              </div>
+              <Skeleton className="h-[420px] w-full rounded-2xl" />
+            </div>
+          </div>
+
+          {/* Creator footer */}
+          <div className="border-t border-border px-6 py-5 md:px-8">
+            <div className="flex items-start gap-4">
+              <Skeleton className="size-12 shrink-0 rounded-2xl" />
+              <div className="min-w-0 flex-1 space-y-2">
+                <Skeleton className="h-3 w-24" />
+                <Skeleton className="h-4 w-40" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
     </LoadingRegion>
   );
 }
