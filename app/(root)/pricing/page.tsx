@@ -105,7 +105,8 @@ const PricingPage = () => {
             A plan for your next course
           </h1>
           <p className="mt-2 text-sm leading-6 text-muted-foreground">
-            Start free. Choose Creator when you need more.
+            Start free. Upgrade to Creator for full AI outlines, Markdown &amp; PDF
+            export, and unbranded sharing.
           </p>
         </div>
 
@@ -261,7 +262,7 @@ const PricingPage = () => {
             </div>
             <div className="rounded-2xl border border-border bg-background/70 p-4">
               <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-foreground"><Sparkles className="h-4 w-4 text-violet-500" /> Creator plan</div>
-              <p className="text-sm text-muted-foreground">Best for creators who want a more visual, branded, shareable, and AI-assisted course experience.</p>
+              <p className="text-sm text-muted-foreground">Best for creators who want full multi-module AI generation, a more visual and branded course experience, and one-click Markdown &amp; PDF export.</p>
             </div>
           </div>
         </section>

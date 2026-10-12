@@ -75,6 +75,34 @@ export function courseOutputSchema(input: GenerateCourseInput) {
 
 export type GeneratedCourse = z.infer<ReturnType<typeof courseOutputSchema>>;
 
+// Small requests are generated in a single call. Larger courses are split so no
+// single response can be truncated or time out — the outline is generated first,
+// then lessons are produced in small parallel batches.
+export const SINGLE_CALL_MODULE_LIMIT = 3;
+export const MAX_MODULES_PER_AI_CALL = 4;
+
+export function outlineOutputSchema(input: GenerateCourseInput) {
+  return z.strictObject({
+    courseName: z.string().trim().min(3).max(120),
+    description: z.string().trim().min(20).max(1200),
+    modules: z.array(z.strictObject({
+      moduleName: z.string().trim().min(3).max(120),
+      description: z.string().trim().min(10).max(500),
+    })).length(input.moduleCount),
+  });
+}
+
+export function lessonsOutputSchema(moduleCount: number, lessonsPerModule: number) {
+  return z.strictObject({
+    modules: z.array(z.strictObject({
+      moduleName: z.string().trim().min(1).max(200),
+      lessons: z.array(z.strictObject({
+        lessonName: z.string().trim().min(3).max(120),
+      })).length(lessonsPerModule),
+    })).length(moduleCount),
+  });
+}
+
 export function monthWindow(now = new Date()) {
   return {
     start: new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)),

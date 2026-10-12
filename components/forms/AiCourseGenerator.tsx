@@ -109,7 +109,7 @@ export function AiCourseGenerator({ disabled, onGeneratingChange }: {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(parsed.data),
-        signal: AbortSignal.timeout(65_000),
+        signal: AbortSignal.timeout(200_000),
       });
       const result = await response.json();
       if (!response.ok) {
@@ -185,8 +185,8 @@ export function AiCourseGenerator({ disabled, onGeneratingChange }: {
                     {generating ? "Creating your course…" : canRetry ? "Retry / check course" : "Generate & create private course"}
                   </Button>
                 </fieldset>
-                {generating && <p role="status" className="text-sm text-muted-foreground">Building your outline and saving the draft. This can take up to a minute.</p>}
-                {allowance && <p className="text-xs text-muted-foreground">{allowance.remaining} of {allowance.limits.monthlyAttempts} AI attempts left this month. Resets {new Date(allowance.resetsAt).toLocaleDateString()}. Attempts that reach AI count even if generation fails.</p>}
+                {generating && <p role="status" className="text-sm text-muted-foreground">Building your outline and saving the draft. Large courses are generated in batches, so this can take up to a couple of minutes.</p>}
+                {allowance && <p className="text-xs text-muted-foreground">{allowance.remaining} of {allowance.limits.monthlyAttempts} AI attempts left this month. Resets {new Date(allowance.resetsAt).toLocaleDateString()}. Only successful generations count — failed attempts are never deducted.</p>}
                 {allowance && !allowance.enabled && <p className="text-sm text-muted-foreground">AI generation is not available yet. You can still create a course manually below.</p>}
               </form>}
         {error && <p role="alert" className="mt-3 text-sm text-destructive">{error}</p>}

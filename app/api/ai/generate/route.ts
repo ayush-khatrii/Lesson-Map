@@ -5,7 +5,7 @@ import { AiError, readLimitedJson } from "@/lib/ai/http";
 import { createAiCourse, getAiAllowance } from "@/lib/ai/service";
 import { Prisma, PrismaClient } from "@/app/generated/prisma/client";
 
-export const maxDuration = 60;
+export const maxDuration = 300;
 
 function failure(error: unknown) {
   if (error instanceof AiError) {

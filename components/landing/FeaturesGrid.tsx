@@ -35,7 +35,8 @@ const features = [
   {
     icon: FileStack,
     title: "Pro publishing controls",
-    description: "Remove LessonMap branding and export your course as Markdown.",
+    description:
+      "Remove LessonMap branding and export your course as Markdown or PDF.",
   },
 ];
 

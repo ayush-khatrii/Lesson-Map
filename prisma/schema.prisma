@@ -85,7 +85,8 @@ model Course {
   updatedAt   DateTime @default(now()) @updatedAt
 }
 
-// No prompt or generated text is stored here. Attempts include provider failures.
+// No prompt or generated text is stored here. Failed attempts are recorded so
+// they can be replayed safely, but they never count against the monthly allowance.
 model AiGeneration {
   id               String   @id @default(cuid())
   userId           String

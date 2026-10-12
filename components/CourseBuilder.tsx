@@ -73,6 +73,8 @@ import {
   Share2,
   FileImage,
   Download,
+  FileDown,
+  Lock,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useSession } from "@/lib/auth-client";
@@ -80,6 +82,7 @@ import FileUpload, {
   type UploadedResource,
 } from "@/components/forms/FileUpload";
 import { AiCourseGenerator } from "@/components/forms/AiCourseGenerator";
+import { downloadCoursePdf } from "@/lib/export/course-pdf";
 import {
   createCourseWithOutlineAction,
   createModulesAction,
@@ -1738,11 +1741,8 @@ function SettingsRow({
 function SettingsTab({
   courseId,
   isPublic,
-  shareSlug,
   onTogglePublic,
   isToggling,
-  onExportMarkdown,
-  isExporting,
   showSocialLinks,
   onToggleSocialLinks,
   isTogglingSocialLinks,
@@ -1750,11 +1750,8 @@ function SettingsTab({
 }: {
   courseId: string | null;
   isPublic: boolean;
-  shareSlug?: string | null;
   onTogglePublic: (checked: boolean) => void;
   isToggling: boolean;
-  onExportMarkdown: () => void;
-  isExporting: boolean;
   showSocialLinks: boolean;
   onToggleSocialLinks: (checked: boolean) => void;
   isTogglingSocialLinks: boolean;
@@ -1803,21 +1800,176 @@ function SettingsTab({
           and they will show up here.
         </p>
       )}
-      <SettingsRow
-        icon={Download}
-        title="Export Markdown"
-        description="Download your course as a Markdown file"
-        control={
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={onExportMarkdown}
-            disabled={!courseId || isExporting}
+    </div>
+  );
+}
+
+// ── Export Tab ────────────────────────────────────────────────────────
+function ExportTab({
+  courseId,
+  isPaid,
+  isPlanLoading,
+  onExportMarkdown,
+  onExportPdf,
+  isExportingMarkdown,
+  isExportingPdf,
+}: {
+  courseId: string | null;
+  isPaid: boolean;
+  isPlanLoading: boolean;
+  onExportMarkdown: () => void;
+  onExportPdf: () => void;
+  isExportingMarkdown: boolean;
+  isExportingPdf: boolean;
+}) {
+  const locked = !isPlanLoading && !isPaid;
+  const busy = isExportingMarkdown || isExportingPdf;
+
+  const formats = [
+    {
+      key: "markdown",
+      icon: Download,
+      title: "Markdown",
+      extension: ".md",
+      description:
+        "A clean, plain-text outline you can paste into Notion, Google Docs, GitHub, or any editor.",
+      action: onExportMarkdown,
+      busy: isExportingMarkdown,
+      busyLabel: "Exporting…",
+      label: "Download .md",
+    },
+    {
+      key: "pdf",
+      icon: FileDown,
+      title: "PDF document",
+      extension: ".pdf",
+      description:
+        "A polished, print-ready document with your description, modules, lessons, notes, and resources.",
+      action: onExportPdf,
+      busy: isExportingPdf,
+      busyLabel: "Generating…",
+      label: "Download .pdf",
+    },
+  ];
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h3 className="text-sm font-semibold">Export your course</h3>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            Download a copy of this course with all its modules, lessons, and
+            resources.
+          </p>
+        </div>
+        {!isPlanLoading && (
+          <Badge
+            variant={isPaid ? "default" : "secondary"}
+            className="shrink-0 gap-1"
           >
-            {isExporting ? "Exporting…" : "Download .md"}
+            {isPaid ? (
+              <>
+                <Crown className="w-3 h-3" /> Creator
+              </>
+            ) : (
+              "Free plan"
+            )}
+          </Badge>
+        )}
+      </div>
+
+      {!courseId && (
+        <div className="rounded-xl border border-dashed bg-muted/30 p-4 text-sm text-muted-foreground">
+          Save your course first to enable exports. Use the{" "}
+          <span className="font-medium text-foreground">Save</span> button at
+          the top of the page.
+        </div>
+      )}
+
+      {locked && (
+        <div className="flex flex-col gap-3 rounded-xl border border-primary/30 bg-primary/[0.04] p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+              <Lock className="h-4 w-4 text-primary" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold">
+                Exports are a Creator feature
+              </p>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                Upgrade to Creator to download your courses as Markdown and PDF.
+              </p>
+            </div>
+          </div>
+          <Button asChild className="shrink-0 gap-1.5">
+            <Link href="/pricing">
+              <Crown className="w-3.5 h-3.5" />
+              Upgrade to Creator
+            </Link>
           </Button>
-        }
-      />
+        </div>
+      )}
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        {formats.map((format) => {
+          const Icon = format.icon;
+          const disabled = !courseId || busy || locked || isPlanLoading;
+          return (
+            <div
+              key={format.key}
+              className="flex flex-col rounded-xl border bg-background p-4"
+            >
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted">
+                  <Icon className="h-4 w-4 text-muted-foreground" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold">{format.title}</p>
+                  <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                    {format.extension}
+                  </p>
+                </div>
+              </div>
+              <p className="mt-3 flex-1 text-xs leading-relaxed text-muted-foreground">
+                {format.description}
+              </p>
+              <Button
+                size="sm"
+                variant="outline"
+                className="mt-3 w-full gap-1.5"
+                onClick={format.action}
+                disabled={disabled}
+              >
+                {format.busy ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Icon className="h-3.5 w-3.5" />
+                )}
+                {format.busy ? format.busyLabel : format.label}
+              </Button>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="rounded-xl border bg-muted/30 p-4">
+        <p className="text-xs font-semibold text-foreground">
+          What&apos;s included
+        </p>
+        <ul className="mt-2 grid gap-1.5 text-xs text-muted-foreground sm:grid-cols-2">
+          {[
+            "Course title, description, and audience",
+            "Every module and its description",
+            "Every lesson title and description",
+            "Attached notes, code, and resource details",
+          ].map((item) => (
+            <li key={item} className="flex items-start gap-2">
+              <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
+              <span>{item}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
     </div>
   );
 }
@@ -1998,9 +2150,9 @@ function UpgradeDialog({ children }: { children: React.ReactNode }) {
         <div className="space-y-2 py-2">
           {[
             "Visual flow map of modules & lessons",
-            "Unlimited courses and resources",
-            "AI-powered course regeneration",
-            "Priority support",
+            "Full multi-module AI generation",
+            "Export courses as Markdown & PDF",
+            "Unbranded public share links",
           ].map((perk) => (
             <div key={perk} className="flex items-center gap-2.5 text-sm">
               <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
@@ -2087,12 +2239,39 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
   );
   const [isTogglingPublic, setIsTogglingPublic] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
+  const [plan, setPlan] = useState<string | null>(null);
+  const [isPlanLoading, setIsPlanLoading] = useState(false);
   const [showSocialLinks, setShowSocialLinks] = useState(
     initialData?.showSocialLinks ?? true,
   );
   const [isTogglingSocialLinks, setIsTogglingSocialLinks] = useState(false);
 
   const totalLessons = modules.reduce((a, m) => a + m.lessons.length, 0);
+
+  // Export gating needs the current plan. Markdown is re-checked server-side and
+  // the PDF is only built for paid users. Unknown/failed lookups fall back to Free.
+  useEffect(() => {
+    if (!session?.user) {
+      setPlan(null);
+      return;
+    }
+    const controller = new AbortController();
+    setIsPlanLoading(true);
+    fetch("/api/subscription/status", { cache: "no-store", signal: controller.signal })
+      .then(async (response) => {
+        if (!response.ok) throw new Error("Could not load plan");
+        return response.json() as Promise<{ plan?: string }>;
+      })
+      .then((data) => setPlan(data.plan ?? "FREE"))
+      .catch(() => {
+        if (!controller.signal.aborted) setPlan("FREE");
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setIsPlanLoading(false);
+      });
+    return () => controller.abort();
+  }, [session?.user?.id]);
 
   const handleSave = async () => {
     if (isGenerating) return;
@@ -2309,6 +2488,40 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
     }
   };
 
+  const handleExportPdf = async () => {
+    if (!courseId) return;
+    setIsExportingPdf(true);
+    try {
+      await downloadCoursePdf({
+        title: title || "Untitled course",
+        description,
+        audience: initialData?.audience ?? null,
+        modules: modules.map((module) => ({
+          name: module.name,
+          description: module.description,
+          lessons: module.lessons.map((lesson) => ({
+            name: lesson.name,
+            description: lesson.description,
+            resources: resources
+              .filter((resource) => resource.lessonId === lesson.id)
+              .map((resource) => ({
+                name: resource.name,
+                type: resource.type,
+                meta: resource.meta,
+                content: resource.content,
+                url: resource.url,
+              })),
+          })),
+        })),
+      });
+      toast.success("PDF export downloaded.");
+    } catch {
+      toast.error("PDF export failed. Please try again.");
+    } finally {
+      setIsExportingPdf(false);
+    }
+  };
+
   return (
     <div className="min-h-screen w-full overflow-x-hidden bg-background text-foreground">
       <div className="mx-auto w-full min-w-0 max-w-7xl px-4 py-6 sm:px-6 lg:px-8 sm:py-10">
@@ -2505,6 +2718,10 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
                   <Settings2 className="w-3.5 h-3.5" />
                   Settings
                 </TabsTrigger>
+                <TabsTrigger value="export" className="gap-1.5 text-xs h-7 px-3">
+                  <FileDown className="w-3.5 h-3.5" />
+                  Export
+                </TabsTrigger>
                 <TabsTrigger value="share" className="gap-1.5 text-xs h-7 px-3">
                   <Share2 className="w-3.5 h-3.5" />
                   Share
@@ -2567,15 +2784,24 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
             <SettingsTab
               courseId={courseId}
               isPublic={isPublic}
-              shareSlug={shareSlug}
               onTogglePublic={handleTogglePublic}
               isToggling={isTogglingPublic}
-              onExportMarkdown={handleExportMarkdown}
-              isExporting={isExporting}
               showSocialLinks={showSocialLinks}
               onToggleSocialLinks={handleToggleSocialLinks}
               isTogglingSocialLinks={isTogglingSocialLinks}
               hasSocialLinks={initialData?.hasSocialLinks ?? false}
+            />
+          </TabsContent>
+
+          <TabsContent value="export">
+            <ExportTab
+              courseId={courseId}
+              isPaid={plan !== null && plan !== "FREE"}
+              isPlanLoading={isPlanLoading}
+              onExportMarkdown={handleExportMarkdown}
+              onExportPdf={handleExportPdf}
+              isExportingMarkdown={isExporting}
+              isExportingPdf={isExportingPdf}
             />
           </TabsContent>
 

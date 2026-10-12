@@ -139,7 +139,7 @@ export const plans = [
     accent: "Starter",
     features: [
       `${COURSE_LIMITS.FREE} course maps`,
-      `${AI_LIMITS.FREE.monthlyAttempts} AI attempts/month: 1 module and 1 lesson per course`,
+      `${AI_LIMITS.FREE.monthlyAttempts} AI generations/month · 1 module, 1 lesson per course`,
       "Accordion-style course builder",
       "Shareable public link with LessonMap branding",
       "Basic customization and editing",
@@ -149,7 +149,7 @@ export const plans = [
     name: "Creator Plan",
     type: "CREATOR",
     description:
-      "More courses, visual maps, and expanded AI generation.",
+      "More courses, full AI outlines, visual maps, and clean exports.",
     price: "$12",
     period: "/month",
     isPopular: true,
@@ -157,12 +157,13 @@ export const plans = [
     accent: "Most Popular",
     features: [
       `${COURSE_LIMITS.CREATOR} course maps`,
-      `${AI_LIMITS.CREATOR.monthlyAttempts} AI attempts/month: full course outlines`,
+      `${AI_LIMITS.CREATOR.monthlyAttempts} AI generations/month · full multi-module courses`,
+      "Only successful AI generations count — failed attempts are never charged",
       "Unlimited modules and lessons in every course",
       "Accordion view + Flow / node-like view",
+      "Export any course as Markdown (.md) and print-ready PDF",
       "Shareable links without LessonMap branding",
-      "Creator-native branding and social-ready presentation",
-      "Advanced customization, themes, and export-ready structure",
+      "Advanced customization, themes, and creator-native polish",
     ],
   },
 ];
@@ -175,8 +176,18 @@ export const comparisonRows = [
   },
   {
     label: "AI outline generation",
-    free: `${AI_LIMITS.FREE.monthlyAttempts} attempts/month · 1 module, 1 lesson`,
-    creator: `${AI_LIMITS.CREATOR.monthlyAttempts} attempts/month · full outlines`,
+    free: `${AI_LIMITS.FREE.monthlyAttempts} generations/month · 1 module, 1 lesson`,
+    creator: `${AI_LIMITS.CREATOR.monthlyAttempts} generations/month · full multi-module courses`,
+  },
+  {
+    label: "Failed AI generations",
+    free: "Never counted against your limit",
+    creator: "Never counted against your limit",
+  },
+  {
+    label: "Export options",
+    free: "Not included",
+    creator: "Markdown (.md) + PDF (.pdf)",
   },
   {
     label: "Builder style",

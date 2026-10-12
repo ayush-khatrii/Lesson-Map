@@ -17,7 +17,7 @@ const features = [
 	},
 	{
 		title: "PDF Export",
-		description: "Export your outlines into clean, printable PDFs for easy sharing and presentation.",
+		description: "Export your outlines into clean, printable PDFs for easy sharing and presentation. Included with Creator.",
 		icon: <FaFilePdf className="text-3xl text-pink-400" />,
 	},
 	{

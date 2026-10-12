@@ -6,7 +6,7 @@ import { AiError } from "./http";
 import { generateCourse } from "./deepseek";
 import { COURSE_LIMITS } from "@/lib/plans";
 
-const REQUEST_LIFETIME_MS = 120_000;
+const REQUEST_LIFETIME_MS = 180_000;
 
 export function assertPlanAllows(plan: AiPlan, input: GenerateCourseInput) {
   const limits = AI_LIMITS[plan];
@@ -24,8 +24,10 @@ export async function getAiAllowance(userId: string) {
   const plan = effectiveAiPlan(user);
   const limits = AI_LIMITS[plan];
   const { start, end } = monthWindow();
+  // Only generations that actually reach the user count against the allowance.
+  // Attempts that fail (provider errors, timeouts, invalid output) are free.
   const used = await db.aiGeneration.count({
-    where: { userId, createdAt: { gte: start, lt: end } },
+    where: { userId, createdAt: { gte: start, lt: end }, status: { not: "FAILED" } },
   });
   return {
     plan,
@@ -78,7 +80,8 @@ export async function createAiCourse(userId: string, input: GenerateCourseInput,
     }
     const now = new Date();
     const latest = await tx.aiGeneration.findFirst({
-      where: { userId }, orderBy: { createdAt: "desc" },
+      // Failed attempts never start a course, so they should not block a retry.
+      where: { userId, status: { not: "FAILED" } }, orderBy: { createdAt: "desc" },
     });
     if (latest) {
       const elapsed = now.getTime() - latest.createdAt.getTime();
@@ -88,8 +91,10 @@ export async function createAiCourse(userId: string, input: GenerateCourseInput,
       }
     }
     const { start, end } = monthWindow(now);
+    // Failed generations are refunded automatically: only attempts that reached
+    // the user (or are still running) count toward the monthly allowance.
     const attempts = await tx.aiGeneration.count({
-      where: { userId, createdAt: { gte: start, lt: end } },
+      where: { userId, createdAt: { gte: start, lt: end }, status: { not: "FAILED" } },
     });
     if (attempts >= AI_LIMITS[plan].monthlyAttempts) {
       throw new AiError(429, "Your monthly AI allowance is used up. It resets next month.");
