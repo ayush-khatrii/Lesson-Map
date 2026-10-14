@@ -8,8 +8,10 @@ import { effectiveAiPlan } from "@/lib/ai/schema";
 
 export default async function CoursePreviewPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ lesson?: string | string[] }>;
 }) {
   const { slug } = await params;
 
@@ -71,12 +73,28 @@ export default async function CoursePreviewPage({
   const socials: SocialLink[] = [];
   if (course.showSocialLinks) {
     const candidates: SocialLink[] = [
-      { key: "instagram", label: "Instagram", url: course.user.socialInstagram ?? "" },
-      { key: "linkedin", label: "LinkedIn", url: course.user.socialLinkedin ?? "" },
-      { key: "youtube", label: "YouTube", url: course.user.socialYoutube ?? "" },
+      {
+        key: "instagram",
+        label: "Instagram",
+        url: course.user.socialInstagram ?? "",
+      },
+      {
+        key: "linkedin",
+        label: "LinkedIn",
+        url: course.user.socialLinkedin ?? "",
+      },
+      {
+        key: "youtube",
+        label: "YouTube",
+        url: course.user.socialYoutube ?? "",
+      },
       { key: "github", label: "GitHub", url: course.user.socialGithub ?? "" },
       { key: "twitter", label: "X", url: course.user.socialTwitter ?? "" },
-      { key: "website", label: "Website", url: course.user.socialWebsite ?? "" },
+      {
+        key: "website",
+        label: "Website",
+        url: course.user.socialWebsite ?? "",
+      },
     ];
     socials.push(...candidates.filter((candidate) => candidate.url.length > 0));
   }
@@ -111,16 +129,32 @@ export default async function CoursePreviewPage({
           title: r.name,
           type: r.type,
           meta: r.meta,
-          url: r.type === "PDF" || r.type === "Image"
-            ? `/api/resource/${encodeURIComponent(r.id)}/open`
-            : r.url ?? undefined,
+          url:
+            r.type === "PDF" || r.type === "Image"
+              ? `/api/resource/${encodeURIComponent(r.id)}/open`
+              : (r.url ?? undefined),
           content: r.content,
         })),
       })),
     })),
   };
 
+  const requestedLesson = (await searchParams).lesson;
+  const initialLessonId =
+    typeof requestedLesson === "string" &&
+    course.Module.some((mod) =>
+      mod.Lesson.some((lesson) => lesson.id === requestedLesson),
+    )
+      ? requestedLesson
+      : undefined;
+
   return (
-    <LessonMapPublicPage course={previewCourse} slug={slug} />
+    <LessonMapPublicPage
+      course={previewCourse}
+      slug={slug}
+      canUseFlow={effectiveAiPlan(course.user) !== "FREE"}
+      isOwner={userId === course.userId}
+      initialLessonId={initialLessonId}
+    />
   );
 }

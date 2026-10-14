@@ -38,9 +38,8 @@ function fixture() {
       if (id === "next/server") return { NextResponse: { json: (body, init) => Response.json(body, init) } };
       if (id === "@/lib/payments/config") return { productIdForPlan: (plan) => plan === "CREATOR" ? "pdt_creator" : "pdt_pro" };
       if (id === "@/lib/ai/schema") return { effectiveAiPlan: (user) =>
-        user.plan !== "FREE" && (user.subscriptionStatus === "active" ||
-          (user.subscriptionStatus === "cancelled" && user.subscriptionCancelAtPeriodEnd &&
-            user.subscriptionCurrentPeriodEnd > new Date())) ? user.plan : "FREE" };
+        user.plan !== "FREE" && user.subscriptionStatus === "active" &&
+          !user.subscriptionCancelAtPeriodEnd ? user.plan : "FREE" };
       if (id === "@/lib/prisma") return { db: { $transaction: async (callback) => callback(tx) } };
       throw new Error(`Unexpected import ${id}`);
     },
@@ -91,6 +90,34 @@ test("a signed subscription failure revokes paid access", async () => {
   assert.equal((await deliver("subscription.failed", "event-2", false, { status: "failed" })).status, 200);
   assert.equal(user.plan, "FREE");
   assert.equal(user.subscriptionStatus, "failed");
+});
+
+test("cancelling immediately revokes paid access even before the billing period ends", async () => {
+  const { deliver, user } = fixture();
+  await deliver();
+  const futurePeriodEnd = "2026-12-01T00:00:00.000Z";
+  assert.equal((await deliver("subscription.cancelled", "event-2", false, {
+    status: "cancelled",
+    cancel_at_next_billing_date: true,
+    next_billing_date: futurePeriodEnd,
+  })).status, 200);
+  assert.equal(user.plan, "FREE");
+  assert.equal(user.subscriptionStatus, "cancelled");
+  assert.equal(user.subscriptionCancelAtPeriodEnd, true);
+  assert.equal(user.subscriptionCurrentPeriodEnd.toISOString(), futurePeriodEnd);
+});
+
+test("scheduling cancellation through a subscription update immediately revokes paid access", async () => {
+  const { deliver, user } = fixture();
+  await deliver();
+  assert.equal((await deliver("subscription.updated", "event-2", false, {
+    status: "active",
+    cancel_at_next_billing_date: true,
+    next_billing_date: "2026-12-01T00:00:00.000Z",
+  })).status, 200);
+  assert.equal(user.plan, "FREE");
+  assert.equal(user.subscriptionStatus, "active");
+  assert.equal(user.subscriptionCancelAtPeriodEnd, true);
 });
 
 test("an old subscription event cannot revoke a user's replacement subscription", async () => {

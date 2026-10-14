@@ -1,7 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
+import {
+  LazyCourseFlowView,
+  FlowViewSwitcher,
+  FlowAccessDialog,
+  type OutlineView,
+} from "@/components/flow/FlowViewControls";
+import { useSubscriptionPlan } from "@/lib/flow/useSubscriptionPlan";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -134,6 +141,8 @@ function CourseAccordionItem({
   onDelete,
   publishPending,
   deletePending,
+  canUseFlow,
+  isPlanLoading,
 }: {
   course: CourseWithRelations;
   index: number;
@@ -142,7 +151,28 @@ function CourseAccordionItem({
   onDelete: (courseId: string) => void;
   publishPending: boolean;
   deletePending: boolean;
+  canUseFlow: boolean;
+  isPlanLoading: boolean;
 }) {
+  const router = useRouter();
+  const [view, setView] = useState<OutlineView>("accordion");
+  const [flowAccessOpen, setFlowAccessOpen] = useState(false);
+  const outline = useMemo(
+    () => ({
+      id: course.id,
+      title: course.courseName,
+      modules: [...course.Module]
+        .sort((a, b) => a.order - b.order)
+        .map((mod) => ({
+          id: mod.id,
+          title: mod.moduleName,
+          lessons: [...mod.Lesson]
+            .sort((a, b) => a.order - b.order)
+            .map((lesson) => ({ id: lesson.id, title: lesson.lessonName })),
+        })),
+    }),
+    [course],
+  );
   const [deleteOpen, setDeleteOpen] = useState(false);
   const isOwner = course.userId === currentUserId;
   const canPublish = isOwner && course.Module.length > 0;
@@ -369,10 +399,34 @@ function CourseAccordionItem({
           )}
         </div>
 
-        {course.Module.length > 0 ? (
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <h3 className="text-sm font-semibold">Course curriculum</h3>
+          <FlowViewSwitcher
+            view={canUseFlow ? view : "accordion"}
+            onChange={setView}
+            canUseFlow={canUseFlow}
+            isLoading={isPlanLoading}
+            onLocked={() => setFlowAccessOpen(true)}
+          />
+        </div>
+        <FlowAccessDialog
+          open={flowAccessOpen}
+          onOpenChange={setFlowAccessOpen}
+        />
+        {view === "flow" && canUseFlow ? (
+          <LazyCourseFlowView
+            outline={outline}
+            onSelectLesson={(_, lessonId) =>
+              router.push(
+                `/p/${course.id}?lesson=${encodeURIComponent(lessonId)}`,
+              )
+            }
+          />
+        ) : course.Module.length > 0 ? (
           <Accordion type="multiple" className="space-y-2.5">
-            {course.Module.sort((a, b) => a.order - b.order).map(
-              (module, idx) => (
+            {[...course.Module]
+              .sort((a, b) => a.order - b.order)
+              .map((module, idx) => (
                 <AccordionItem
                   key={module.id}
                   value={module.id}
@@ -412,24 +466,24 @@ function CourseAccordionItem({
                     <Separator className="mb-3 bg-border/50" />
                     {module.Lesson.length > 0 ? (
                       <div className="space-y-1.5">
-                        {module.Lesson.sort(
-                          (a, b) => (a.order || 0) - (b.order || 0),
-                        ).map((lesson, lessonIdx) => (
-                          <div
-                            key={lesson.id}
-                            className="group/lesson flex items-center gap-3 rounded-lg border border-border/60 bg-background/40 px-3 py-2.5 transition-all hover:border-border"
-                          >
-                            <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded border border-border text-[10px] font-semibold text-muted-foreground">
-                              {lessonIdx + 1}
+                        {[...module.Lesson]
+                          .sort((a, b) => (a.order || 0) - (b.order || 0))
+                          .map((lesson, lessonIdx) => (
+                            <div
+                              key={lesson.id}
+                              className="group/lesson flex items-center gap-3 rounded-lg border border-border/60 bg-background/40 px-3 py-2.5 transition-all hover:border-border"
+                            >
+                              <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded border border-border text-[10px] font-semibold text-muted-foreground">
+                                {lessonIdx + 1}
+                              </div>
+
+                              <p className="flex-1 text-sm font-medium leading-snug text-foreground">
+                                {lesson.lessonName || `Lesson ${lessonIdx + 1}`}
+                              </p>
+
+                              <PenLine className="h-3.5 w-3.5 text-transparent transition-colors group-hover/lesson:text-muted-foreground" />
                             </div>
-
-                            <p className="flex-1 text-sm font-medium leading-snug text-foreground">
-                              {lesson.lessonName || `Lesson ${lessonIdx + 1}`}
-                            </p>
-
-                            <PenLine className="h-3.5 w-3.5 text-transparent transition-colors group-hover/lesson:text-muted-foreground" />
-                          </div>
-                        ))}
+                          ))}
                       </div>
                     ) : (
                       <div className="py-5 text-center text-muted-foreground">
@@ -449,8 +503,7 @@ function CourseAccordionItem({
                     )}
                   </AccordionContent>
                 </AccordionItem>
-              ),
-            )}
+              ))}
           </Accordion>
         ) : (
           <div className="rounded-xl border border-dashed border-border py-10 text-center">
@@ -489,6 +542,8 @@ export default function DashboardCourses({
 }) {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { canUseFlow, isLoading: isPlanLoading } =
+    useSubscriptionPlan(currentUserId);
   const [pendingCourseId, setPendingCourseId] = useState<string | null>(null);
   const [deletingCourseId, setDeletingCourseId] = useState<string | null>(null);
 
@@ -576,6 +631,8 @@ export default function DashboardCourses({
         <CourseAccordionItem
           key={course.id}
           course={course}
+          canUseFlow={canUseFlow}
+          isPlanLoading={isPlanLoading}
           index={index}
           currentUserId={currentUserId}
           publishPending={pendingCourseId === course.id}

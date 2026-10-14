@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "@/lib/auth-client";
 import { toast } from "sonner";
@@ -33,6 +34,7 @@ type SubscriptionStatusResponse = {
 };
 
 export default function PostPurchaseHandler() {
+  const queryClient = useQueryClient();
   const searchParams = useSearchParams();
   const router = useRouter();
   const { data: session, isPending } = useSession();
@@ -71,6 +73,7 @@ export default function PostPurchaseHandler() {
       settledRef.current = true;
 
       setIsSettled(true);
+      void queryClient.invalidateQueries({ queryKey: ["subscription-plan"] });
 
       if (options) {
         if (options.variant === "success") {
@@ -89,7 +92,7 @@ export default function PostPurchaseHandler() {
       routerRef.current.replace("/dashboard");
       routerRef.current.refresh();
     },
-    [],
+    [queryClient],
   );
 
   useEffect(() => {

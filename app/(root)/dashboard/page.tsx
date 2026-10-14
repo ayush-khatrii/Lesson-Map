@@ -103,19 +103,19 @@ const Dashboard = async () => {
     <div className="min-h-screen my-20 bg-background text-foreground">
       <PostPurchaseHandler />
       <main className="mx-auto w-full max-w-7xl space-y-8 px-4 py-8 sm:px-6 lg:px-8">
-        <section className="relative overflow-hidden px-6 py-8 md:px-10">
-          <div className="flex flex-col items-center justify-center gap-4 text-center relative z-10">
+        <section className="relative rounded-2xl border border-border bg-card px-6 py-6 md:px-8">
+          <div className="relative z-10 flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="mb-1 text-xs font-medium uppercase tracking-widest text-muted-foreground">
                 Welcome back
               </p>
-              <h1 className="mb-1 text-2xl font-bold tracking-tight text-card-foreground md:text-5xl">
-                Hey, {firstName} 👋
+              <h1 className="mb-1 text-2xl font-bold tracking-tight text-card-foreground md:text-3xl">
+                Welcome back, {firstName}
               </h1>
               <p className="max-w-sm text-sm text-muted-foreground">
                 {initialCourses.length === 0
                   ? "Start mapping your first course and build structured learning journeys."
-                  : `You have ${initialCourses.length} ${initialCourses.length === 1 ? "course" : "courses"} in your workspace. Keep building!`}
+                  : `You have ${initialCourses.length} ${initialCourses.length === 1 ? "course" : "courses"} in your workspace.`}
               </p>
               {recentCourse && (
                 <div className="mt-3 flex items-center gap-2">
@@ -131,7 +131,7 @@ const Dashboard = async () => {
               )}
             </div>
 
-            <div className="flex shrink-0 gap-2">
+            <div className="flex shrink-0 flex-wrap gap-2">
               <Button
                 variant="outline"
                 size="sm"

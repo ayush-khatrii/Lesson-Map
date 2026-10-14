@@ -171,7 +171,6 @@ export default async function SettingsPage() {
                 canManageBilling={Boolean(dbUser?.customerId)}
                 subscriptionStatus={dbUser?.subscriptionStatus ?? null}
                 renewsOn={subscriptionPeriodEnd ? formatDate(subscriptionPeriodEnd) : null}
-                cancelsAtPeriodEnd={dbUser?.subscriptionCancelAtPeriodEnd ?? false}
               />
             }
           />

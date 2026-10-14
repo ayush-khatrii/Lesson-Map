@@ -16,7 +16,6 @@ import {
   ReceiptText,
   ShieldCheck,
   Sparkles,
-  TriangleAlert,
 } from "lucide-react";
 
 type PlanName = "FREE" | "CREATOR" | "PROFESSIONAL";
@@ -77,14 +76,12 @@ export default function BillingTab({
   canManageBilling,
   subscriptionStatus,
   renewsOn,
-  cancelsAtPeriodEnd,
 }: {
   plan: PlanName;
   canManageBilling: boolean;
   subscriptionStatus: string | null;
   /** Formatted current-period-end date, or null when there is none. */
   renewsOn: string | null;
-  cancelsAtPeriodEnd: boolean;
 }) {
   const [opening, setOpening] = useState(false);
   const isPaid = plan !== "FREE";
@@ -143,9 +140,7 @@ export default function BillingTab({
               {renewsOn && isPaid && (
                 <p className="mt-1.5 flex items-center gap-2 text-xs text-muted-foreground">
                   <CalendarDays className="size-3.5 shrink-0" />
-                  {cancelsAtPeriodEnd
-                    ? `Access ends ${renewsOn}`
-                    : `Renews on ${renewsOn}`}
+                  Renews on {renewsOn}
                 </p>
               )}
             </div>
@@ -171,17 +166,6 @@ export default function BillingTab({
             )}
           </div>
         </div>
-
-        {isPaid && cancelsAtPeriodEnd && renewsOn && (
-          <div className="flex items-start gap-3 border-t border-border/70 bg-amber-500/5 px-6 py-4 sm:px-8">
-            <TriangleAlert className="mt-0.5 size-4 shrink-0 text-amber-600 dark:text-amber-400" />
-            <p className="text-xs leading-5 text-muted-foreground">
-              Your subscription is set to cancel. You keep every paid feature until{" "}
-              <span className="font-medium text-foreground">{renewsOn}</span>, and you will not be
-              charged again.
-            </p>
-          </div>
-        )}
       </section>
 
       <section className="rounded-2xl border border-border/80 bg-card p-6 shadow-sm sm:p-8">
@@ -256,8 +240,8 @@ export default function BillingTab({
         <div className="mt-6 flex items-start gap-3 rounded-xl border border-border bg-muted/20 px-4 py-3">
           <ShieldCheck className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
           <p className="text-xs leading-5 text-muted-foreground">
-            Cancelling keeps your paid features until the end of the period you already paid for.
-            Renewal payments are charged automatically until you cancel.
+            Cancelling immediately returns your account to the Free plan and stops future renewal
+            charges.
           </p>
         </div>
       </section>

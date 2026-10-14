@@ -30,9 +30,8 @@ function harness(overrides = {}, options = {}) {
         if (id === "@/lib/payments/dodopayments") return load("lib/payments/dodopayments.ts");
         if (id === "@/lib/payments/request-security") return { isSameOriginRequest: () => true };
         if (id === "@/lib/ai/schema") return { effectiveAiPlan: (user) =>
-          user.plan !== "FREE" && (user.subscriptionStatus === "active" ||
-            (user.subscriptionStatus === "cancelled" && user.subscriptionCancelAtPeriodEnd &&
-              user.subscriptionCurrentPeriodEnd > new Date())) ? user.plan : "FREE" };
+          user.plan !== "FREE" && user.subscriptionStatus === "active" &&
+            !user.subscriptionCancelAtPeriodEnd ? user.plan : "FREE" };
         if (id === "dodopayments") return { DodoPayments: class {
           constructor(config) { calls.push({ config }); }
           checkoutSessions = { create: async (request) => {

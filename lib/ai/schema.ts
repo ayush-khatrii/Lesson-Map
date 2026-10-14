@@ -24,19 +24,12 @@ export function effectiveAiPlan(user: {
   subscriptionStatus: string | null;
   subscriptionCancelAtPeriodEnd: boolean;
   subscriptionCurrentPeriodEnd: Date | null;
-}, now = new Date()): AiPlan {
-  const paidPeriodContinues =
-    user.subscriptionCancelAtPeriodEnd &&
-    user.subscriptionCurrentPeriodEnd !== null &&
-    user.subscriptionCurrentPeriodEnd > now;
-  const paidPeriodExpired =
-    user.subscriptionCancelAtPeriodEnd &&
-    (!user.subscriptionCurrentPeriodEnd || user.subscriptionCurrentPeriodEnd <= now);
-
-  if (user.plan !== "FREE" && !paidPeriodExpired && (
-    user.subscriptionStatus === "active" ||
-    (user.subscriptionStatus === "cancelled" && paidPeriodContinues)
-  )) return user.plan;
+}): AiPlan {
+  if (
+    user.plan !== "FREE" &&
+    user.subscriptionStatus === "active" &&
+    !user.subscriptionCancelAtPeriodEnd
+  ) return user.plan;
   return "FREE";
 }
 

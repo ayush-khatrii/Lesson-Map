@@ -236,7 +236,9 @@ export async function POST(req: NextRequest) {
         await tx.user.update({
           where: { id: userId },
           data: {
-            plan,
+            // A cancellation request revokes LessonMap entitlements immediately,
+            // even if the provider keeps the subscription active until period end.
+            plan: data.cancel_at_next_billing_date === true ? "FREE" : plan,
             subscriptionId,
             customerId,
             subscriptionProductId: data.product_id,
@@ -257,18 +259,13 @@ export async function POST(req: NextRequest) {
           throw new Error("Cannot safely keep access from an incomplete event");
         }
 
-        const accessContinues =
-          data.status === "cancelled" &&
-          data.cancel_at_next_billing_date === true &&
-          periodEnd !== null &&
-          periodEnd.getTime() > Date.now();
         const shouldRevoke =
-          data.status !== "active" && !accessContinues;
+          data.status !== "active" || data.cancel_at_next_billing_date === true;
 
         await tx.user.update({
           where: { id: userId },
           data: {
-            ...(data.status === "active" && plan ? { plan } : {}),
+            ...(data.status === "active" && plan && !shouldRevoke ? { plan } : {}),
             ...(shouldRevoke ? { plan: "FREE" as const } : {}),
             ...(subscriptionId ? { subscriptionId } : {}),
             ...(customerId ? { customerId } : {}),
@@ -277,10 +274,7 @@ export async function POST(req: NextRequest) {
               : {}),
             ...(data.status ? { subscriptionStatus: data.status } : {}),
             subscriptionCurrentPeriodEnd: periodEnd,
-            subscriptionCancelAtPeriodEnd:
-              data.status === "cancelled"
-                ? accessContinues
-                : (data.cancel_at_next_billing_date ?? false),
+            subscriptionCancelAtPeriodEnd: data.cancel_at_next_billing_date ?? false,
           },
         });
       } else if (eventType === "subscription.cancelled") {
@@ -288,18 +282,13 @@ export async function POST(req: NextRequest) {
           throw new Error("Cannot cancel a subscription for an unmatched user");
         }
 
-        const accessContinues =
-          data.cancel_at_next_billing_date === true &&
-          periodEnd !== null &&
-          periodEnd.getTime() > Date.now();
-
         await tx.user.update({
           where: { id: userId },
           data: {
-            ...(accessContinues ? {} : { plan: "FREE" }),
+            plan: "FREE",
             subscriptionStatus: "cancelled",
             subscriptionCurrentPeriodEnd: periodEnd,
-            subscriptionCancelAtPeriodEnd: accessContinues,
+            subscriptionCancelAtPeriodEnd: data.cancel_at_next_billing_date ?? false,
           },
         });
       } else if (revokeEvents.has(eventType)) {

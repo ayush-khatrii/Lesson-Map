@@ -71,6 +71,17 @@ test("browser status cannot activate a provider-pending subscription", async () 
   assert.equal(h.writes.length, 0);
 });
 
+test("checkout recovery cannot restore a subscription scheduled for cancellation", async () => {
+  const h = fixture({ subscription: {
+    status: "active",
+    cancel_at_next_billing_date: true,
+  } });
+  const response = await h.post();
+  assert.equal(response.status, 200);
+  assert.equal((await response.json()).subscriptionStatus, "cancelled");
+  assert.equal(h.writes.length, 0);
+});
+
 test("requires authentication and a valid checkout reference before contacting Dodo", async () => {
   const h = fixture({ signedOut: true });
   assert.equal((await h.post()).status, 401);

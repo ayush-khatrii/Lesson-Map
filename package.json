@@ -7,8 +7,9 @@
     "build": "next build --turbopack",
     "start": "next start",
     "test:ai": "node --import tsx --test tests/ai*.test.ts",
-    "test:payments": "node --test tests/checkout.test.cjs tests/payment-webhooks.test.cjs tests/subscription-confirm.test.cjs tests/billing-portal.test.cjs",
+    "test:payments": "node --test tests/checkout.test.cjs tests/payment-webhooks.test.cjs tests/subscription-confirm.test.cjs tests/subscription-status.test.cjs tests/billing-portal.test.cjs",
     "check:payments": "node --import tsx scripts/check-payments.ts",
+    "test:flow": "node --import tsx --test tests/flow.test.ts",
     "test:auth": "node --import tsx --test tests/auth.test.ts",
     "typecheck": "tsc --noEmit --incremental false",
     "postinstall": "prisma generate"
@@ -33,6 +34,7 @@
     "@radix-ui/react-use-controllable-state": "^1.2.3",
     "@shikijs/transformers": "^4.2.0",
     "@tanstack/react-query": "^5.96.2",
+    "@xyflow/react": "^12.12.0",
     "better-auth": "^1.3.24",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

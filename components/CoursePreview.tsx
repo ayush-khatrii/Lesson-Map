@@ -2,21 +2,21 @@
 
 import { useState, useMemo, useCallback, useEffect } from "react";
 import Link from "next/link";
+import {
+  LazyCourseFlowView,
+  FlowViewSwitcher,
+  FlowAccessDialog,
+} from "@/components/flow/FlowViewControls";
+
 import type { LucideIcon } from "lucide-react";
 import {
   Check,
   CheckCircle2,
   Circle,
-  Lock,
-  GraduationCap,
-  LayoutGrid,
-  List,
   Share2,
   Layers,
   Clock,
   Heart,
-  Zap,
-  ArrowRight,
   Trophy,
   BookOpen,
   FileText,
@@ -39,7 +39,6 @@ import {
 } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import {
   Dialog,
@@ -49,12 +48,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
-import {
-  Tabs,
-  TabsList,
-  TabsTrigger,
-  TabsContent,
-} from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useLessonProgress } from "@/lib/useLessonProgress";
 import { cn } from "@/lib/utils";
 import {
@@ -332,58 +326,6 @@ function moduleProgress(
 
 // ─── Upgrade Dialog ───────────────────────────────────────────────────────────
 
-function UpgradeDialog({
-  open,
-  onClose,
-}: {
-  open: boolean;
-  onClose: () => void;
-}) {
-  return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-md border-primary/20 bg-background text-foreground">
-        <DialogHeader>
-          <div className="mb-4 flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-primary/20 bg-primary/10">
-              <Zap className="h-5 w-5 text-primary" />
-            </div>
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-widest text-primary">
-                Premium Feature
-              </p>
-              <DialogTitle className="text-xl text-foreground">
-                Upgrade to Creator Plan
-              </DialogTitle>
-            </div>
-          </div>
-          <DialogDescription className="leading-relaxed text-muted-foreground">
-            <span className="font-semibold text-primary">Flow View</span>{" "}
-            gives you an interactive node graph of your entire learning path —
-            visualize connections and unlock milestones as you advance.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="mt-2 flex gap-3">
-          <Button
-            variant="outline"
-            className="flex-1 border-border text-foreground hover:bg-secondary hover:text-foreground"
-            onClick={onClose}
-          >
-            Maybe Later
-          </Button>
-          <Button
-            asChild
-            className="flex-1 gap-2 bg-primary font-bold text-primary-foreground hover:bg-primary/90"
-          >
-            <Link href="/pricing">
-              Upgrade Now <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
 // ─── Share bar ────────────────────────────────────────────────────────────────
 
 // There is deliberately no header on the public page: the only chrome is a
@@ -478,7 +420,9 @@ function StatCard({
           <Icon className="h-4 w-4 text-primary" />
         </div>
         <div className="min-w-0">
-          <p className="text-lg font-bold leading-none text-foreground">{value}</p>
+          <p className="text-lg font-bold leading-none text-foreground">
+            {value}
+          </p>
           <p className="mt-1 truncate text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
             {label}
           </p>
@@ -557,7 +501,10 @@ function ResourcePreviewDialog({
   const hasText = Boolean(resource.content?.trim());
 
   return (
-    <Dialog open={Boolean(resource)} onOpenChange={(open) => !open && onClose()}>
+    <Dialog
+      open={Boolean(resource)}
+      onOpenChange={(open) => !open && onClose()}
+    >
       <DialogContent className="flex max-h-[82vh] w-[calc(100%-1rem)] max-w-4xl flex-col gap-0 overflow-hidden border-border bg-background p-0 text-foreground">
         <DialogHeader className="shrink-0 border-b border-border px-4 py-3 text-left sm:px-5">
           <DialogTitle className="break-words pr-8 text-base sm:text-lg">
@@ -771,7 +718,9 @@ function ModuleSidebar({
                           <span
                             className={cn(
                               "block break-words text-xs font-medium leading-snug [overflow-wrap:anywhere] sm:text-sm",
-                              done ? "text-muted-foreground line-through" : "text-foreground",
+                              done
+                                ? "text-muted-foreground line-through"
+                                : "text-foreground",
                             )}
                           >
                             <span className="mr-1.5 text-xs text-muted-foreground">
@@ -780,9 +729,7 @@ function ModuleSidebar({
                             {lesson.title}
                           </span>
                         </div>
-
                       </div>
-
                     </div>
                   );
                 })}
@@ -828,7 +775,7 @@ function LessonContentPanel({
           Welcome to {courseTitle}
         </h2>
         <p className="mx-auto mb-6 max-w-md text-sm leading-relaxed text-muted-foreground">
-          Select a lesson from the sidebar to begin. Your progress is saved
+          Select a lesson to begin. Your progress is saved
           locally in your browser — pick up where you left off anytime.
         </p>
       </div>
@@ -951,124 +898,6 @@ function LessonContentPanel({
   );
 }
 
-// ─── Flow View (Locked) ───────────────────────────────────────────────────────
-
-function FlowView({
-  modules,
-  onLockClick,
-}: {
-  modules: Module[];
-  onLockClick: () => void;
-}) {
-  const nodes = modules.map((module, index) => ({
-    id: module.id,
-    x: index % 2 === 0 ? 80 : 520,
-    y: 30 + Math.floor(index / 2) * 110,
-    title: module.title,
-    done: false,
-    label: String(index + 1).padStart(2, "0"),
-  }));
-  const edges: [string, string][] = nodes
-    .slice(1)
-    .map((node, index) => [nodes[index].id, node.id]);
-  const nm = Object.fromEntries(nodes.map((n) => [n.id, n]));
-
-  return (
-    <div
-      className="relative overflow-hidden rounded-2xl border border-border"
-      style={{
-        minHeight: 500,
-        background:
-          "radial-gradient(ellipse at 50% 30%, color-mix(in oklch, var(--primary) 8%, transparent) 0%, var(--background) 60%)",
-      }}
-    >
-      <div
-        className="absolute inset-0 z-10 flex items-center justify-center"
-        style={{
-          backdropFilter: "blur(10px)",
-          background:
-            "color-mix(in oklch, var(--background) 80%, transparent)",
-        }}
-      >
-        <Card className="max-w-sm border-primary/20 bg-popover/95 text-center shadow-2xl">
-          <CardContent className="p-8">
-            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10">
-              <Lock className="h-5 w-5 text-primary" />
-            </div>
-            <h3 className="mb-2 text-base font-bold text-foreground">
-              Flow View Locked
-            </h3>
-            <p className="mb-5 text-sm leading-relaxed text-muted-foreground">
-              See your full learning path as an interactive node graph on the
-              Creator Plan.
-            </p>
-            <Button
-              onClick={onLockClick}
-              className="w-full gap-2 bg-primary font-bold text-primary-foreground hover:bg-primary/90"
-            >
-              <Zap className="h-3.5 w-3.5" /> Unlock Flow View
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-      <svg
-        width="100%"
-        height="480"
-        viewBox="0 0 760 480"
-        style={{ filter: "blur(2px)", opacity: 0.25 }}
-      >
-        {edges.map(([a, b], i) => {
-          const na = nm[a],
-            nb = nm[b];
-          return (
-            <line
-              key={i}
-              x1={na.x + 80}
-              y1={na.y + 30}
-              x2={nb.x + 80}
-              y2={nb.y + 30}
-              stroke="var(--primary)"
-              strokeWidth="1"
-              strokeDasharray="5 5"
-              opacity="0.4"
-            />
-          );
-        })}
-        {nodes.map((n) => (
-          <g key={n.id} transform={`translate(${n.x},${n.y})`}>
-            <rect
-              width="160"
-              height="58"
-              rx="14"
-              fill={n.done ? "var(--accent)" : "var(--card)"}
-              stroke={n.done ? "var(--primary)" : "var(--border)"}
-              strokeWidth="1.5"
-            />
-            <text
-              x="12"
-              y="22"
-              fill="var(--primary)"
-              fontSize="9"
-              fontWeight="700"
-            >
-              {n.label}
-            </text>
-            <text
-              x="12"
-              y="42"
-              fill={n.done ? "var(--foreground)" : "var(--muted-foreground)"}
-              fontSize="11"
-              fontWeight="500"
-            >
-              {n.title}
-            </text>
-          </g>
-        ))}
-      </svg>
-    </div>
-  );
-}
-
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 type ViewMode = "accordion" | "flow";
@@ -1076,12 +905,21 @@ type ViewMode = "accordion" | "flow";
 export default function LessonMapPublicPage({
   course: rawCourse = SAMPLE_COURSE,
   slug,
+  canUseFlow = false,
+  isOwner = false,
+  initialLessonId,
 }: {
   course?: Course;
   slug?: string;
+  canUseFlow?: boolean;
+  isOwner?: boolean;
+  initialLessonId?: string;
 }) {
   const course = useMemo(
-    () => rawCourse === SAMPLE_COURSE ? enrichCourseWithMockResources(rawCourse) : rawCourse,
+    () =>
+      rawCourse === SAMPLE_COURSE
+        ? enrichCourseWithMockResources(rawCourse)
+        : rawCourse,
     [rawCourse],
   );
   const courseId = slug ?? course.id ?? "default-course";
@@ -1094,17 +932,28 @@ export default function LessonMapPublicPage({
 
   const [view, setView] = useState<ViewMode>("accordion");
   const [upgradeOpen, setUpgradeOpen] = useState(false);
-  const [openModuleId, setOpenModuleId] = useState(course.modules[0]?.id ?? "");
-  const [selectedLessonId, setSelectedLessonId] = useState<string | null>(null);
-
-  const totalLessons = course.modules.reduce(
-    (s, m) => s + m.lessons.length,
-    0,
+  const [openModuleId, setOpenModuleId] = useState(
+    course.modules.find((m) => m.lessons.some((l) => l.id === initialLessonId))
+      ?.id ??
+      course.modules[0]?.id ??
+      "",
   );
+  const [selectedLessonId, setSelectedLessonId] = useState<string | null>(
+    initialLessonId ?? null,
+  );
+
+  const flowOutline = useMemo(
+    () => ({
+      id: course.id ?? courseId,
+      title: course.title,
+      modules: course.modules,
+    }),
+    [course, courseId],
+  );
+
+  const totalLessons = course.modules.reduce((s, m) => s + m.lessons.length, 0);
   const overallPct =
-    totalLessons === 0
-      ? 0
-      : Math.round((completedCount / totalLessons) * 100);
+    totalLessons === 0 ? 0 : Math.round((completedCount / totalLessons) * 100);
 
   const selectedModule = useMemo(
     () =>
@@ -1137,10 +986,19 @@ export default function LessonMapPublicPage({
   }
 
   return (
-    <div className={cn("min-h-screen bg-background text-foreground", SELECTABLE_TEXT)}>
-
+    <div
+      className={cn(
+        "min-h-screen bg-background text-foreground",
+        SELECTABLE_TEXT,
+      )}
+    >
       <ShareBar />
-      <UpgradeDialog open={upgradeOpen} onClose={() => setUpgradeOpen(false)} />
+      <FlowAccessDialog
+        open={upgradeOpen}
+        onOpenChange={setUpgradeOpen}
+        isOwner={isOwner}
+        creatorName={course.creator.name}
+      />
 
       <main className="mx-auto w-full max-w-7xl px-4 py-4 sm:px-6 sm:py-8 lg:px-8">
         {/* ── Dashboard shell (wireframe container) ── */}
@@ -1158,12 +1016,20 @@ export default function LessonMapPublicPage({
             <p className="mt-2 max-w-3xl text-sm leading-relaxed text-muted-foreground">
               {course.description}
             </p>
-            {course.audience && <p className="mt-2 text-sm text-muted-foreground">For: {course.audience}</p>}
+            {course.audience && (
+              <p className="mt-2 text-sm text-muted-foreground">
+                For: {course.audience}
+              </p>
+            )}
           </div>
 
           {/* Stat cards row */}
           <div className="grid grid-cols-2 gap-3 border-b border-border py-5">
-            <StatCard icon={Layers} value={course.stats.modules} label="Modules" />
+            <StatCard
+              icon={Layers}
+              value={course.stats.modules}
+              label="Modules"
+            />
             <StatCard
               icon={BookOpen}
               value={course.stats.lessons}
@@ -1181,7 +1047,9 @@ export default function LessonMapPublicPage({
           {/* Progress bar */}
           <div className="border-b border-border px-6 py-4 md:px-8">
             <div className="flex items-center justify-between text-sm">
-              <span className="font-semibold text-foreground">Your progress</span>
+              <span className="font-semibold text-foreground">
+                Your progress
+              </span>
               <span className="font-bold text-primary">{overallPct}%</span>
             </div>
             <Progress value={overallPct} className="mt-2 h-2 bg-secondary" />
@@ -1193,45 +1061,19 @@ export default function LessonMapPublicPage({
 
           {/* View toggle + two-column body */}
           <div className="py-6">
-            <div className="mb-5 flex items-center justify-between">
+            <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
               <h2 className="text-base font-bold text-foreground">
                 Course curriculum
               </h2>
-              <div className="flex items-center gap-1 rounded-xl border border-border bg-muted/50 p-1">
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => setView("accordion")}
-                  className={cn(
-                    "gap-1.5 rounded-lg text-xs font-semibold transition-all",
-                    view === "accordion"
-                      ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                      : "text-muted-foreground hover:text-foreground",
-                  )}
-                >
-                  <List className="h-3.5 w-3.5" /> List
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => {
-                    setView("flow");
-                    setUpgradeOpen(true);
-                  }}
-                  className={cn(
-                    "gap-1.5 rounded-lg text-xs font-semibold transition-all",
-                    view === "flow"
-                      ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                      : "text-muted-foreground hover:text-foreground",
-                  )}
-                >
-                  <Lock className="h-3 w-3" />
-                  <LayoutGrid className="h-3.5 w-3.5" /> Flow
-                </Button>
-              </div>
+              <FlowViewSwitcher
+                view={canUseFlow ? view : "accordion"}
+                onChange={setView}
+                canUseFlow={canUseFlow}
+                onLocked={() => setUpgradeOpen(true)}
+              />
             </div>
 
-            {view === "accordion" ? (
+            {view === "accordion" || !canUseFlow ? (
               <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(280px,340px)_1fr]">
                 {/* Left: module accordions */}
                 <div className="pr-1">
@@ -1256,10 +1098,21 @@ export default function LessonMapPublicPage({
                 />
               </div>
             ) : (
-              <FlowView
-                modules={course.modules}
-                onLockClick={() => setUpgradeOpen(true)}
-              />
+              <div className="grid min-w-0 grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,1.4fr)_minmax(300px,1fr)]">
+                <LazyCourseFlowView
+                  outline={flowOutline}
+                  selectedLessonId={selectedLessonId}
+                  isDone={isDone}
+                  onSelectLesson={handleSelectLesson}
+                />
+                <LessonContentPanel
+                  courseTitle={course.title}
+                  module={selectedModule}
+                  lesson={selectedLesson}
+                  isDone={isDone}
+                  onToggleLesson={toggle}
+                />
+              </div>
             )}
           </div>
 

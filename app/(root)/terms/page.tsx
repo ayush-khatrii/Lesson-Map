@@ -63,7 +63,7 @@ export default function TermsPage() {
             </>,
             "Paid subscriptions renew automatically at the interval shown at checkout until you cancel.",
             "Payments are processed by Dodo Payments as merchant of record. Your payment is subject to their terms in addition to ours.",
-            "When you cancel, your plan stays active until the end of the period you already paid for, and then reverts to the free plan. Access to paid features is not pro-rated.",
+            "When you cancel, your account returns to the free plan immediately and paid features are revoked. You will not be charged again.",
             "If a renewal payment fails, your paid features may be suspended until payment succeeds.",
             "We may change our prices. We will give notice before a change affects an existing subscription.",
           ]}

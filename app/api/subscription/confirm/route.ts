@@ -34,8 +34,15 @@ export async function POST(req: NextRequest) {
     if (subscription.metadata?.userId !== userId || subscription.product_id !== config.productId) {
       return NextResponse.json({ error: "This checkout does not match your account and plan." }, { status: 403 });
     }
-    if (subscription.status !== "active") {
-      return NextResponse.json({ subscriptionStatus: subscription.status }, { headers: { "Cache-Control": "no-store" } });
+    if (subscription.status !== "active" || subscription.cancel_at_next_billing_date) {
+      return NextResponse.json(
+        {
+          subscriptionStatus: subscription.cancel_at_next_billing_date
+            ? "cancelled"
+            : subscription.status,
+        },
+        { headers: { "Cache-Control": "no-store" } },
+      );
     }
 
     const periodEnd = new Date(subscription.next_billing_date);

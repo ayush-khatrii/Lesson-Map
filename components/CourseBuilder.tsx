@@ -1,6 +1,13 @@
 "use client";
+import {
+  LazyCourseFlowView,
+  FlowViewSwitcher,
+  FlowAccessDialog,
+  type OutlineView,
+} from "@/components/flow/FlowViewControls";
+import { useSubscriptionPlan } from "@/lib/flow/useSubscriptionPlan";
 
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, useMemo } from "react";
 import Link from "next/link";
 import {
   Accordion,
@@ -58,7 +65,6 @@ import {
   Image as ImageIcon,
   Trash2,
   LayoutList,
-  Workflow,
   Globe,
   Copy,
   Check,
@@ -2130,55 +2136,6 @@ function PreviewDialog({
   );
 }
 
-// ── Upgrade Dialog ────────────────────────────────────────────────────
-function UpgradeDialog({ children }: { children: React.ReactNode }) {
-  const [open, setOpen] = useState(false);
-
-  return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center mb-2">
-            <Crown className="w-5 h-5 text-primary" />
-          </div>
-          <DialogTitle>Flow Map is a Creator Plan feature</DialogTitle>
-          <DialogDescription>
-            Visualize your course as an interactive flow diagram, with branching
-            paths and module connections — available on the Creator plan.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="space-y-2 py-2">
-          {[
-            "Visual flow map of modules & lessons",
-            "Full multi-module AI generation",
-            "Export courses as Markdown & PDF",
-            "Unbranded public share links",
-          ].map((perk) => (
-            <div key={perk} className="flex items-center gap-2.5 text-sm">
-              <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                <Check className="w-3 h-3 text-primary" />
-              </div>
-              {perk}
-            </div>
-          ))}
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)}>
-            Maybe later
-          </Button>
-          <Button asChild className="gap-1.5">
-            <Link href="/pricing">
-              <Sparkles className="w-3.5 h-3.5" />
-              Upgrade to Creator
-            </Link>
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
 // ── Stat Pill ─────────────────────────────────────────────────────────
 function StatPill({
   icon: Icon,
@@ -2225,7 +2182,8 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [outlineView, setOutlineView] = useState("accordion");
+  const [activeTab, setActiveTab] = useState("outline");
+  const [outlineView, setOutlineView] = useState<OutlineView>("accordion");
   const [aiAssistOpen, setAiAssistOpen] = useState(false);
 
   const [editOpen, setEditOpen] = useState(false);
@@ -2242,8 +2200,31 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
   const [isTogglingPublic, setIsTogglingPublic] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [isExportingPdf, setIsExportingPdf] = useState(false);
-  const [plan, setPlan] = useState<string | null>(null);
-  const [isPlanLoading, setIsPlanLoading] = useState(false);
+  const {
+    plan,
+    canUseFlow,
+    isLoading: isPlanLoading,
+  } = useSubscriptionPlan(session?.user?.id);
+  const [flowAccessOpen, setFlowAccessOpen] = useState(false);
+  const [flowLessonId, setFlowLessonId] = useState<string | null>(null);
+  const flowLesson = modules
+    .flatMap((module) => module.lessons)
+    .find((lesson) => lesson.id === flowLessonId);
+  const flowOutline = useMemo(
+    () => ({
+      id: courseId ?? "draft",
+      title,
+      modules: modules.map((module) => ({
+        id: module.id,
+        title: module.name,
+        lessons: module.lessons.map((lesson) => ({
+          id: lesson.id,
+          title: lesson.name,
+        })),
+      })),
+    }),
+    [courseId, title, modules],
+  );
   const [showSocialLinks, setShowSocialLinks] = useState(
     initialData?.showSocialLinks ?? true,
   );
@@ -2251,33 +2232,11 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
 
   const totalLessons = modules.reduce((a, m) => a + m.lessons.length, 0);
 
-  // Export gating needs the current plan. Markdown is re-checked server-side and
-  // the PDF is only built for paid users. Unknown/failed lookups fall back to Free.
-  useEffect(() => {
-    if (!session?.user) {
-      setPlan(null);
-      return;
-    }
-    const controller = new AbortController();
-    setIsPlanLoading(true);
-    fetch("/api/subscription/status", { cache: "no-store", signal: controller.signal })
-      .then(async (response) => {
-        if (!response.ok) throw new Error("Could not load plan");
-        return response.json() as Promise<{ plan?: string }>;
-      })
-      .then((data) => setPlan(data.plan ?? "FREE"))
-      .catch(() => {
-        if (!controller.signal.aborted) setPlan("FREE");
-      })
-      .finally(() => {
-        if (!controller.signal.aborted) setIsPlanLoading(false);
-      });
-    return () => controller.abort();
-  }, [session?.user?.id]);
-// The dashboard "AI Assist" action deep-links here with #ai-assist so the
+  // The dashboard "AI Assist" action deep-links here with #ai-assist so the
   // dialog opens straight away for the course being edited.
   useEffect(() => {
-    if (courseId && window.location.hash === "#ai-assist") setAiAssistOpen(true);
+    if (courseId && window.location.hash === "#ai-assist")
+      setAiAssistOpen(true);
   }, [courseId]);
 
   const defaultLessonsPerModule = Math.max(
@@ -2285,7 +2244,6 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
     ...modules.map((module) => module.lessons.length),
   );
 
-  
   const handleSave = async () => {
     if (isGenerating) return;
     if (!session) {
@@ -2465,9 +2423,7 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
       toast.success(result.message);
     } catch (error) {
       setShowSocialLinks(previous);
-      toast.error(
-        (error as Error).message || "Failed to update social links.",
-      );
+      toast.error((error as Error).message || "Failed to update social links.");
     } finally {
       setIsTogglingSocialLinks(false);
     }
@@ -2718,7 +2674,7 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
         )}
 
         {/* ── Main Tabs ────────────────────────────────────────────── */}
-        <Tabs defaultValue="outline">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
           <div className="mb-6 flex min-w-0 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-4">
             <div className="w-full max-w-full overflow-x-auto pb-1 sm:w-auto sm:pb-0">
               <TabsList className="h-9 w-max min-w-full border bg-muted/50 p-1 sm:min-w-0">
@@ -2743,7 +2699,10 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
                   <Settings2 className="w-3.5 h-3.5" />
                   Settings
                 </TabsTrigger>
-                <TabsTrigger value="export" className="gap-1.5 text-xs h-7 px-3">
+                <TabsTrigger
+                  value="export"
+                  className="gap-1.5 text-xs h-7 px-3"
+                >
                   <FileDown className="w-3.5 h-3.5" />
                   Export
                 </TabsTrigger>
@@ -2754,47 +2713,58 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
               </TabsList>
             </div>
 
-            <div className="max-w-full self-start overflow-x-auto sm:flex-shrink-0">
-              <ToggleGroup
-                type="single"
-                value={outlineView}
-                onValueChange={(v: string) => v && setOutlineView(v)}
-                className="border rounded-lg p-0.5 bg-muted/40 gap-0"
-              >
-                <ToggleGroupItem
-                  value="accordion"
-                  size="sm"
-                  className="gap-1.5 text-xs rounded-md h-7 px-3 data-[state=on]:bg-background data-[state=on]:shadow-sm"
-                >
-                  <LayoutList className="w-3.5 h-3.5" />
-                  Accordion
-                </ToggleGroupItem>
-                <UpgradeDialog>
-                  <ToggleGroupItem
-                    value="flowmap"
-                    size="sm"
-                    className="gap-1.5 text-xs rounded-md h-7 px-3 data-[state=on]:bg-background data-[state=on]:shadow-sm"
-                    asChild
-                  >
-                    <button>
-                      <Workflow className="w-3.5 h-3.5" />
-                      Flow Map
-                      <Crown className="w-3 h-3 text-primary ml-0.5" />
-                    </button>
-                  </ToggleGroupItem>
-                </UpgradeDialog>
-              </ToggleGroup>
+            <div hidden={activeTab !== "outline"} className="max-w-full self-start overflow-x-auto sm:flex-shrink-0">
+              <FlowViewSwitcher
+                view={canUseFlow ? outlineView : "accordion"}
+                onChange={setOutlineView}
+                canUseFlow={canUseFlow}
+                isLoading={isPlanLoading}
+                onLocked={() => setFlowAccessOpen(true)}
+              />
+              <FlowAccessDialog
+                open={flowAccessOpen}
+                onOpenChange={setFlowAccessOpen}
+              />
             </div>
           </div>
 
           <TabsContent value="outline">
-            <OutlineTab
-              courseId={courseId}
-              modules={modules}
-              resources={resources}
-              setModules={setModules}
-              setResources={setResources}
-            />
+            {outlineView === "flow" && canUseFlow ? (
+              <div className="space-y-4">
+                <LazyCourseFlowView
+                  outline={flowOutline}
+                  selectedLessonId={flowLessonId}
+                  onSelectLesson={(_, lessonId) => setFlowLessonId(lessonId)}
+                />
+                {flowLesson && (
+                  <div className="rounded-xl border bg-card p-5">
+                    <h3 className="break-words font-semibold">
+                      {flowLesson.name}
+                    </h3>
+                    <p className="mt-2 whitespace-pre-wrap break-words text-sm text-muted-foreground">
+                      {flowLesson.description ||
+                        "This lesson has no notes yet."}
+                    </p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="mt-4"
+                      onClick={() => setOutlineView("accordion")}
+                    >
+                      Edit in List view
+                    </Button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <OutlineTab
+                courseId={courseId}
+                modules={modules}
+                resources={resources}
+                setModules={setModules}
+                setResources={setResources}
+              />
+            )}
           </TabsContent>
 
           <TabsContent value="resources">

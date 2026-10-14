@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { Prisma } from "../app/generated/prisma/client";
 import { aiFailure } from "../lib/ai/failure";
 import { AiError } from "../lib/ai/http";
-import { generateCourseSchema, reviseCourseSchema } from "../lib/ai/schema";
+import { effectiveAiPlan, generateCourseSchema, reviseCourseSchema } from "../lib/ai/schema";
 import { assertPlanAllows } from "../lib/ai/service";
 
 test("foreign-key failures are logged as database errors, never expired sessions", async (t) => {
@@ -53,6 +53,22 @@ test("larger paid outlines do not bypass the Free plan restriction", () => {
     assert.equal(error.status, 403);
     return true;
   });
+});
+
+test("paid access ends immediately when cancellation is requested", () => {
+  const active = {
+    plan: "CREATOR" as const,
+    subscriptionStatus: "active",
+    subscriptionCancelAtPeriodEnd: false,
+    subscriptionCurrentPeriodEnd: new Date("2027-01-01T00:00:00.000Z"),
+  };
+  assert.equal(effectiveAiPlan(active), "CREATOR");
+  assert.equal(effectiveAiPlan({ ...active, subscriptionCancelAtPeriodEnd: true }), "FREE");
+  assert.equal(effectiveAiPlan({
+    ...active,
+    subscriptionStatus: "cancelled",
+    subscriptionCancelAtPeriodEnd: true,
+  }), "FREE");
 });
 
 for (const [moduleCount, lessonsPerModule, allowed] of [
