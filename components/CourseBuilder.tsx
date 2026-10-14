@@ -1365,13 +1365,13 @@ function OutlineTab({
       onDragEnd={handleModuleDragEnd}
     >
       <SortableContext items={moduleIds} strategy={verticalListSortingStrategy}>
-        <div className="space-y-3">
+        <div className="space-y-2">
           {modules.map((module, moduleIndex) => (
             <SortableModuleItem key={module.id} module={module}>
               <Accordion type="single" collapsible defaultValue={module.id}>
                 <AccordionItem
                   value={module.id}
-                  className="min-w-0 overflow-hidden rounded-2xl border"
+                  className="min-w-0 overflow-hidden rounded-2xl border border-input bg-card last:border-b data-[state=open]:border-primary/35"
                 >
                   <AccordionTrigger className="group px-2.5 py-3 transition-colors hover:bg-muted/30 hover:no-underline sm:px-4 sm:py-3.5 [&>svg]:hidden">
                     <div className="flex min-w-0 w-full items-start gap-1.5 sm:items-center sm:gap-3">
