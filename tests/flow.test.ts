@@ -127,3 +127,14 @@ test("only effective paid creator plans unlock Flow", () => {
   assert.equal(hasFlowAccess(undefined), false);
   assert.equal(hasFlowAccess("unknown"), false);
 });
+
+test("collapsed modules retain context and remove only their lesson branches", () => {
+  const graph = buildCourseGraph(outline, new Set(["same"]));
+  assert.ok(graph.nodes.some(node => node.id === "module:same"));
+  assert.ok(!graph.nodes.some(node => node.id === "lesson:same"));
+  assert.ok(!graph.edges.some(edge => edge.source === "module:same"));
+  assert.equal(graph.nodes.find(node => node.id === "module:same")?.data.lessonCount, 2);
+  assert.equal(graph.nodes.find(node => node.id === "module:same")?.data.collapsed, true);
+  assert.ok(graph.nodes.find(node => node.id === "module:last")!.position.y < buildCourseGraph(outline).nodes.find(node => node.id === "module:last")!.position.y);
+  assert.deepEqual(buildCourseGraph(outline, new Set()), buildCourseGraph(outline));
+});

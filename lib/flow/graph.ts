@@ -17,6 +17,10 @@ export interface OutlineNodeData extends Record<string, unknown> {
   completed?: boolean;
   selected?: boolean;
   onSelect?: () => void;
+  collapsed?: boolean;
+  lessonCount?: number;
+  completedCount?: number;
+  onToggle?: () => void;
 }
 
 export const NODE_WIDTH = 240;
@@ -26,7 +30,11 @@ const COLUMN_STEP = 340;
 
 // Array order is the curriculum order. Layout depends only on structure, never
 // selection or progress, so completing a lesson cannot move the canvas.
-export function buildCourseGraph(outline: CourseOutline) {
+export function buildCourseGraph(
+  outline: CourseOutline,
+  collapsedModules: ReadonlySet<string> = new Set(),
+  nodeHeight = NODE_HEIGHT,
+) {
   const nodes: {
     id: string;
     type: "outline";
@@ -51,30 +59,34 @@ export function buildCourseGraph(outline: CourseOutline) {
   };
   outline.modules.forEach((module, moduleIndex) => {
     const moduleId = `module:${module.id}`;
-    const height = Math.max(1, module.lessons.length) * (NODE_HEIGHT + ROW_GAP);
+    const collapsed = collapsedModules.has(module.id);
+    const visibleLessons = collapsed ? [] : module.lessons;
+    const height = Math.max(1, visibleLessons.length) * (nodeHeight + ROW_GAP);
     nodes.push({
       id: moduleId,
       type: "outline",
       position: {
         x: COLUMN_STEP,
-        y: cursor + (height - NODE_HEIGHT - ROW_GAP) / 2,
+        y: cursor + (height - nodeHeight - ROW_GAP) / 2,
       },
       data: {
         kind: "module",
         title: module.title,
         label: `Module ${moduleIndex + 1}`,
         moduleId: module.id,
+        collapsed,
+        lessonCount: module.lessons.length,
       },
     });
     connect(rootId, moduleId);
-    module.lessons.forEach((lesson, lessonIndex) => {
+    visibleLessons.forEach((lesson, lessonIndex) => {
       const lessonId = `lesson:${lesson.id}`;
       nodes.push({
         id: lessonId,
         type: "outline",
         position: {
           x: COLUMN_STEP * 2,
-          y: cursor + lessonIndex * (NODE_HEIGHT + ROW_GAP),
+          y: cursor + lessonIndex * (nodeHeight + ROW_GAP),
         },
         data: {
           kind: "lesson",
@@ -93,7 +105,7 @@ export function buildCourseGraph(outline: CourseOutline) {
     type: "outline",
     position: {
       x: 0,
-      y: Math.max(0, (cursor - NODE_HEIGHT - ROW_GAP * 2) / 2),
+      y: Math.max(0, (cursor - nodeHeight - ROW_GAP * 2) / 2),
     },
     data: {
       kind: "course",
