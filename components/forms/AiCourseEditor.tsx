@@ -5,6 +5,7 @@ import Link from "next/link";
 import { AlertTriangle, Loader2, Sparkles, Wand2 } from "lucide-react";
 import { toast } from "sonner";
 import { MAX_AI_OUTLINE_ITEMS, reviseCourseSchema, type AiPlan } from "@/lib/ai/schema";
+import { AI_CLIENT_TIMEOUT_MS } from "@/lib/ai/timing";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -140,7 +141,7 @@ export function AiCourseEditor({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(parsed.data),
-        signal: AbortSignal.timeout(200_000),
+        signal: AbortSignal.timeout(AI_CLIENT_TIMEOUT_MS),
       });
       const result = await response.json();
       if (!response.ok) {
@@ -244,6 +245,9 @@ export function AiCourseEditor({
               />
             </div>
           </div>
+
+          {allowance && !isFree && <p className="text-xs text-muted-foreground">One AI edit can create up to {MAX_AI_OUTLINE_ITEMS} total modules and lessons — for example, 25 modules with 5 lessons each.</p>}
+          {submitting && <p role="status" className="text-sm text-muted-foreground">Updating your outline. Large courses can take up to five minutes.</p>}
 
           <div className="flex items-center justify-between gap-4 rounded-xl border bg-background p-3.5">
             <div className="min-w-0">

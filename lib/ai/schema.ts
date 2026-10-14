@@ -14,7 +14,8 @@ export const AI_LIMITS = {
   PROFESSIONAL: { modules: null, lessonsPerModule: null, monthlyAttempts: 200 },
 } as const satisfies Record<string, AiLimits>;
 
-export const MAX_AI_OUTLINE_ITEMS = 100;
+// Modules count too: 25 modules with 5 lessons each use all 150 items.
+export const MAX_AI_OUTLINE_ITEMS = 150;
 
 export type AiPlan = keyof typeof AI_LIMITS;
 
@@ -92,9 +93,8 @@ export function courseOutputSchema(input: OutlineShape) {
 
 export type GeneratedCourse = z.infer<ReturnType<typeof courseOutputSchema>>;
 
-// Small requests are generated in a single call. Larger courses are split so no
-// single response can be truncated or time out — the outline is generated first,
-// then lessons are produced in small parallel batches.
+// Small requests are generated in a single call. Larger courses generate their
+// outline first, then lessons in small parallel batches to limit response size.
 export const SINGLE_CALL_MODULE_LIMIT = 3;
 export const MAX_MODULES_PER_AI_CALL = 4;
 

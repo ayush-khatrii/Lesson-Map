@@ -11,6 +11,7 @@ import {
   type ReviseCourseInput,
 } from "./schema";
 import { AiError, readLimitedJson } from "./http";
+import { AI_GENERATION_TIMEOUT_MS } from "./timing";
 
 export const DEEPSEEK_MODEL = "deepseek-v4-flash";
 
@@ -153,12 +154,25 @@ const DEEPSEEK_CHAT_URL = "https://api.deepseek.com/chat/completions";
 const REQUEST_TIMEOUT_MS = 45_000;
 const MAX_LESSON_CONCURRENCY = 3;
 
-async function callChat(messages: ChatMessage[], maxTokens: number) {
+async function withGenerationDeadline<T>(run: (signal: AbortSignal) => Promise<T>) {
+  const controller = new AbortController();
+  const signal = AbortSignal.any([controller.signal, AbortSignal.timeout(AI_GENERATION_TIMEOUT_MS)]);
+  try {
+    return await run(signal);
+  } finally {
+    // A failed batch must also stop sibling requests and their queued work.
+    controller.abort();
+  }
+}
+
+async function callChat(messages: ChatMessage[], maxTokens: number, generationSignal: AbortSignal) {
   const apiKey = process.env.DEEPSEEK_API_KEY?.trim();
   if (!apiKey) throw new AiError(503, "AI generation is not configured yet.");
 
+  const signal = AbortSignal.any([generationSignal, AbortSignal.timeout(REQUEST_TIMEOUT_MS)]);
   let response: Response;
   try {
+    signal.throwIfAborted();
     response = await fetch(DEEPSEEK_CHAT_URL, {
       method: "POST",
       headers: {
@@ -167,7 +181,7 @@ async function callChat(messages: ChatMessage[], maxTokens: number) {
       },
       cache: "no-store",
       redirect: "error",
-      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+      signal,
       body: JSON.stringify({
         model: DEEPSEEK_MODEL,
         thinking: { type: "disabled" },
@@ -177,7 +191,7 @@ async function callChat(messages: ChatMessage[], maxTokens: number) {
       }),
     });
   } catch (error) {
-    if (error instanceof Error && (error.name === "TimeoutError" || error.name === "AbortError")) {
+    if (signal.aborted || (error instanceof Error && (error.name === "TimeoutError" || error.name === "AbortError"))) {
       throw new AiError(504, "AI took too long. Please try again later.");
     }
     throw new AiError(502, "The AI service is unavailable. Please try again later.");
@@ -193,6 +207,7 @@ async function callChat(messages: ChatMessage[], maxTokens: number) {
   try {
     envelope = responseSchema.parse(await readLimitedJson(response.body, 256_000));
   } catch (error) {
+    if (signal.aborted) throw new AiError(504, "AI took too long. Please try again later.");
     if (error instanceof AiError) throw error;
     throw new AiError(502, "AI did not return a valid course. Please try again.");
   }
@@ -228,8 +243,8 @@ export type CurrentCourseContext = {
   modules: { moduleName: string; description: string; lessons: string[] }[];
 };
 
-async function requestJson<T>(messages: ChatMessage[], maxTokens: number, schema: Validator<T>) {
-  const { content, usage } = await callChat(messages, maxTokens);
+async function requestJson<T>(messages: ChatMessage[], maxTokens: number, schema: Validator<T>, signal: AbortSignal) {
+  const { content, usage } = await callChat(messages, maxTokens, signal);
   let parsed: unknown;
   try {
     parsed = JSON.parse(content);
@@ -245,12 +260,12 @@ async function requestJson<T>(messages: ChatMessage[], maxTokens: number, schema
 
 // A single retry recovers from transient provider or formatting hiccups without
 // hiding genuine configuration problems.
-async function requestJsonWithRetry<T>(messages: ChatMessage[], maxTokens: number, schema: Validator<T>) {
+async function requestJsonWithRetry<T>(messages: ChatMessage[], maxTokens: number, schema: Validator<T>, signal: AbortSignal) {
   try {
-    return await requestJson(messages, maxTokens, schema);
+    return await requestJson(messages, maxTokens, schema, signal);
   } catch (error) {
-    if (error instanceof AiError && error.status === 502) {
-      return requestJson(messages, maxTokens, schema);
+    if (error instanceof AiError && error.status === 502 && !signal.aborted) {
+      return requestJson(messages, maxTokens, schema, signal);
     }
     throw error;
   }
@@ -279,10 +294,10 @@ type ChunkedPlan = {
 };
 
 // The metadata and module skeleton are generated first, then lessons are produced
-// in small parallel batches so no single response can be truncated or time out.
-async function runChunked(shape: OutlineShape, plan: ChunkedPlan) {
+// in small parallel batches within one shared generation deadline.
+async function runChunked(shape: OutlineShape, plan: ChunkedPlan, signal: AbortSignal) {
   const outlineTokens = Math.min(8000, 900 + shape.moduleCount * 220);
-  const outline = await requestJsonWithRetry(plan.outlineMessages, outlineTokens, plan.outlineSchema);
+  const outline = await requestJsonWithRetry(plan.outlineMessages, outlineTokens, plan.outlineSchema, signal);
   const usage: Usage = { ...outline.usage };
 
   const batches: ModuleSkeleton[][] = [];
@@ -292,7 +307,7 @@ async function runChunked(shape: OutlineShape, plan: ChunkedPlan) {
 
   const batchResults = await mapWithConcurrency(batches, MAX_LESSON_CONCURRENCY, async (batch) => {
     const tokens = Math.min(12000, 400 + batch.length * (200 + shape.lessonsPerModule * 160));
-    return requestJsonWithRetry(plan.lessonMessages(batch), tokens, plan.lessonsSchema(batch.length));
+    return requestJsonWithRetry(plan.lessonMessages(batch), tokens, plan.lessonsSchema(batch.length), signal);
   });
 
   for (const batch of batchResults) {
@@ -341,20 +356,22 @@ export async function generateCourse(input: GenerateCourseInput) {
     throw new AiError(503, "AI generation is not configured yet.");
   }
 
-  // Small courses are cheap and reliable in one call.
-  if (input.moduleCount <= SINGLE_CALL_MODULE_LIMIT) {
-    const maxTokens = Math.min(16000, 1200 + input.moduleCount * (350 + input.lessonsPerModule * 120));
-    const { value, usage } = await requestJsonWithRetry(
-      courseMessages(input), maxTokens, courseOutputSchema(input),
-    );
-    return { course: value as GeneratedOutlineCourse, usage };
-  }
+  return withGenerationDeadline(async (signal) => {
+    // Small courses are cheap and reliable in one call.
+    if (input.moduleCount <= SINGLE_CALL_MODULE_LIMIT) {
+      const maxTokens = Math.min(16000, 1200 + input.moduleCount * (350 + input.lessonsPerModule * 120));
+      const { value, usage } = await requestJsonWithRetry(
+        courseMessages(input), maxTokens, courseOutputSchema(input), signal,
+      );
+      return { course: value as GeneratedOutlineCourse, usage };
+    }
 
-  return runChunked(input, {
-    outlineMessages: outlineMessages(input),
-    outlineSchema: outlineOutputSchema(input),
-    lessonMessages: (modules) => lessonMessages(input, modules),
-    lessonsSchema: (moduleCount) => lessonsOutputSchema(moduleCount, input.lessonsPerModule),
+    return runChunked(input, {
+      outlineMessages: outlineMessages(input),
+      outlineSchema: outlineOutputSchema(input),
+      lessonMessages: (modules) => lessonMessages(input, modules),
+      lessonsSchema: (moduleCount) => lessonsOutputSchema(moduleCount, input.lessonsPerModule),
+    }, signal);
   });
 }
 
@@ -448,10 +465,10 @@ export async function reviseCourse(input: ReviseCourseInput, current: CurrentCou
     throw new AiError(503, "AI generation is not configured yet.");
   }
 
-  return runChunked(input, {
+  return withGenerationDeadline((signal) => runChunked(input, {
     outlineMessages: reviseOutlineMessages(input, current),
     outlineSchema: outlineOutputSchema(input),
     lessonMessages: (modules) => reviseLessonMessages(input, modules),
     lessonsSchema: (moduleCount) => lessonsOutputSchema(moduleCount, input.lessonsPerModule),
-  });
+  }, signal));
 }

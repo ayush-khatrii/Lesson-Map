@@ -12,10 +12,43 @@ import {
 } from "./schema";
 import { AiError } from "./http";
 import { generateCourse, reviseCourse } from "./deepseek";
+import { logAiFailure } from "./failure";
+import { AI_SAVE_TRANSACTION_OPTIONS, createAiModules } from "./persistence";
+import { AI_REQUEST_LIFETIME_MS } from "./timing";
 import { COURSE_LIMITS } from "@/lib/plans";
 import type { Prisma } from "@/app/generated/prisma/client";
 
-const REQUEST_LIFETIME_MS = 180_000;
+async function failAttempt(
+  database: typeof db,
+  generationId: string,
+  error: unknown,
+  operation: "generate" | "revise",
+): Promise<never> {
+  const failed = await database.aiGeneration.updateMany({
+    where: { id: generationId, status: "PENDING" },
+    data: { status: "FAILED" },
+  }).catch(() => {
+    console.error("Could not mark AI attempt failed", { generationId });
+    return null;
+  });
+
+  if (error instanceof AiError) {
+    if (failed?.count) error.newRequest = true;
+    throw error;
+  }
+  if (failed?.count) {
+    logAiFailure(error, { generationId, operation });
+    throw new AiError(
+      500,
+      "Could not save the course. Your AI attempt was not deducted. Please try again.",
+      undefined,
+      true,
+    );
+  }
+  // If the database did not confirm failure, preserve the request ID so a retry
+  // checks the existing attempt instead of risking a duplicate course.
+  throw error;
+}
 
 export function assertPlanAllows(plan: AiPlan, input: OutlineShape) {
   const limits = AI_LIMITS[plan];
@@ -41,7 +74,7 @@ async function assertWithinAiAllowance(
   });
   if (latest) {
     const elapsed = now.getTime() - latest.createdAt.getTime();
-    const delay = latest.status === "PENDING" ? REQUEST_LIFETIME_MS : 15_000;
+    const delay = latest.status === "PENDING" ? AI_REQUEST_LIFETIME_MS : 15_000;
     if (elapsed < delay) {
       throw new AiError(429, "Please wait before starting another generation.", Math.ceil((delay - elapsed) / 1000));
     }
@@ -102,7 +135,7 @@ export async function createAiCourse(userId: string, input: GenerateCourseInput,
         if (!course) throw new AiError(410, "This generated course was deleted.", undefined, true);
         return { courseId: course.id, generationId: existing.id };
       }
-      if (existing.status === "PENDING" && existing.createdAt.getTime() + REQUEST_LIFETIME_MS > Date.now()) {
+      if (existing.status === "PENDING" && existing.createdAt.getTime() + AI_REQUEST_LIFETIME_MS > Date.now()) {
         throw new AiError(409, "Your course is still generating. Retry shortly to open it.", 10);
       }
       throw new AiError(409, "The previous attempt did not finish. Please start a new attempt.", undefined, true);
@@ -145,10 +178,10 @@ export async function createAiCourse(userId: string, input: GenerateCourseInput,
         throw new AiError(403, `Your ${courseLimit} course slots are full. No AI course was saved.`);
       }
       const generation = await tx.aiGeneration.findUniqueOrThrow({ where: { id: reservation.generationId } });
-      if (generation.status !== "PENDING" || generation.createdAt.getTime() + REQUEST_LIFETIME_MS <= Date.now()) {
+      if (generation.status !== "PENDING" || generation.createdAt.getTime() + AI_REQUEST_LIFETIME_MS <= Date.now()) {
         throw new AiError(409, "This generation expired. Please start a new attempt.");
       }
-      // One nested write: either the entire private outline saves or none does.
+      // Save the parent first, then its modules and lessons in the same transaction.
       const created = await tx.course.create({
         data: {
           userId,
@@ -157,36 +190,19 @@ export async function createAiCourse(userId: string, input: GenerateCourseInput,
           audience: input.audience,
           isPublic: false,
           isPublished: false,
-          Module: {
-            create: course.modules.map((module, moduleIndex) => ({
-              moduleName: module.moduleName,
-              description: module.description,
-              order: moduleIndex + 1,
-              Lesson: {
-                create: module.lessons.map((lesson, lessonIndex) => ({
-                  lessonName: lesson.lessonName,
-                  order: lessonIndex + 1,
-                })),
-              },
-            })),
-          },
         },
         select: { id: true },
       });
+      await createAiModules(tx, created.id, course.modules);
       await tx.aiGeneration.update({
         where: { id: reservation.generationId },
         data: { status: "SUCCEEDED", courseId: created.id },
       });
       return created;
-    });
+    }, AI_SAVE_TRANSACTION_OPTIONS);
     return { courseId: created.id, replayed: false };
   } catch (error) {
-    await database.aiGeneration.updateMany({
-      where: { id: reservation.generationId, status: "PENDING" },
-      data: { status: "FAILED" },
-    }).catch(() => console.error("Could not mark AI attempt failed"));
-    if (error instanceof AiError) error.newRequest = true;
-    throw error;
+    return failAttempt(database, reservation.generationId, error, "generate");
   }
 }
 
@@ -212,7 +228,7 @@ export async function editAiCourse(userId: string, input: ReviseCourseInput, dat
         if (!course) throw new AiError(410, "This course was deleted.", undefined, true);
         return { courseId: course.id, generationId: existing.id };
       }
-      if (existing.status === "PENDING" && existing.createdAt.getTime() + REQUEST_LIFETIME_MS > Date.now()) {
+      if (existing.status === "PENDING" && existing.createdAt.getTime() + AI_REQUEST_LIFETIME_MS > Date.now()) {
         throw new AiError(409, "Your course is still updating. Retry shortly to open it.", 10);
       }
       throw new AiError(409, "The previous attempt did not finish. Please start a new attempt.", undefined, true);
@@ -274,7 +290,7 @@ export async function editAiCourse(userId: string, input: ReviseCourseInput, dat
       });
       if (!owned) throw new AiError(404, "Course not found.");
       const generation = await tx.aiGeneration.findUniqueOrThrow({ where: { id: reservation.generationId } });
-      if (generation.status !== "PENDING" || generation.createdAt.getTime() + REQUEST_LIFETIME_MS <= Date.now()) {
+      if (generation.status !== "PENDING" || generation.createdAt.getTime() + AI_REQUEST_LIFETIME_MS <= Date.now()) {
         throw new AiError(409, "This generation expired. Please start a new attempt.");
       }
       // Replace the outline atomically: the old modules (and their lessons) are
@@ -284,34 +300,18 @@ export async function editAiCourse(userId: string, input: ReviseCourseInput, dat
         where: { id: input.courseId },
         data: {
           ...(input.rewriteMeta ? { courseName: course.courseName, description: course.description } : {}),
-          Module: {
-            create: course.modules.map((module, moduleIndex) => ({
-              moduleName: module.moduleName,
-              description: module.description,
-              order: moduleIndex + 1,
-              Lesson: {
-                create: module.lessons.map((lesson, lessonIndex) => ({
-                  lessonName: lesson.lessonName,
-                  order: lessonIndex + 1,
-                })),
-              },
-            })),
-          },
+          updatedAt: new Date(),
         },
       });
+      await createAiModules(tx, input.courseId, course.modules);
       await tx.aiGeneration.update({
         where: { id: reservation.generationId },
         data: { status: "SUCCEEDED" },
       });
-    });
+    }, AI_SAVE_TRANSACTION_OPTIONS);
 
     return { courseId: input.courseId, replayed: false };
   } catch (error) {
-    await database.aiGeneration.updateMany({
-      where: { id: reservation.generationId, status: "PENDING" },
-      data: { status: "FAILED" },
-    }).catch(() => console.error("Could not mark AI edit failed"));
-    if (error instanceof AiError) error.newRequest = true;
-    throw error;
+    return failAttempt(database, reservation.generationId, error, "revise");
   }
 }

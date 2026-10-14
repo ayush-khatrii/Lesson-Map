@@ -23,7 +23,7 @@ export async function POST(request: Request) {
     const body = await readLimitedJson(request.body, 4096);
     const parsed = generateCourseSchema.safeParse(body);
     if (!parsed.success) {
-      throw new AiError(400, "Enter a topic, audience, and valid module and lesson counts.");
+      throw new AiError(400, parsed.error.issues[0].message);
     }
     const result = await createAiCourse(userId, parsed.data);
     return NextResponse.json(result, {

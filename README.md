@@ -108,6 +108,31 @@ npm run build
 npm start
 ```
 
+### AI generation checks
+
+Paid AI generation and revision support 150 combined modules and lessons per
+request, including 25 modules with 5 lessons each. Larger outlines generate
+lesson titles in batches. Generation has a four-minute deadline, with additional
+time reserved for saving and returning the result within the route's five-minute
+window. Free AI remains limited to one module and one lesson.
+
+`npm run test:ai` checks outline limits and error responses without service credentials.
+To also test saving, replaying, and rolling back AI courses, initialize a disposable
+PostgreSQL database from `prisma/schema.prisma`, then run:
+
+```bash
+export AI_TEST_DATABASE_URL="postgresql://.../lessonmap_test"
+DATABASE_URL="$AI_TEST_DATABASE_URL" npx prisma db push
+npm run test:ai
+```
+
+These integration tests use fixture AI responses and clean up their own records.
+They never call DeepSeek. A database foreign-key error is a save failure, not proof
+of an expired login. Server logs labeled `AI database failure` include the Prisma
+code, model, constraint name, and (for confirmed failed attempts) generation ID;
+use those identifiers to diagnose a deployment-specific failure without logging
+prompts, generated content, or credentials.
+
 ## Payment configuration (local and Vercel)
 
 Use the same variable names in `.env` and Vercel Project Settings > Environment Variables.

@@ -8,6 +8,7 @@ import { Loader2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { useSession } from "@/lib/auth-client";
 import { generateCourseSchema, MAX_AI_OUTLINE_ITEMS, type AiPlan } from "@/lib/ai/schema";
+import { AI_CLIENT_TIMEOUT_MS } from "@/lib/ai/timing";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -109,7 +110,7 @@ export function AiCourseGenerator({ disabled, onGeneratingChange }: {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(parsed.data),
-        signal: AbortSignal.timeout(200_000),
+        signal: AbortSignal.timeout(AI_CLIENT_TIMEOUT_MS),
       });
       const result = await response.json();
       if (!response.ok) {
@@ -177,7 +178,7 @@ export function AiCourseGenerator({ disabled, onGeneratingChange }: {
                     </div>
                   </div>
                   {isFree && <p className="text-sm text-muted-foreground">Free generates 1 course, 1 module, and 1 lesson. <Link href="/pricing" className="text-primary underline">Upgrade to Creator</Link> to choose a larger outline.</p>}
-                  {allowance && !isFree && <p className="text-xs text-muted-foreground">Your course has no module or lesson cap. For reliable output, one AI attempt can create up to {MAX_AI_OUTLINE_ITEMS} total modules and lessons; add as many as you want manually afterward.</p>}
+                  {allowance && !isFree && <p className="text-xs text-muted-foreground">One AI attempt can create up to {MAX_AI_OUTLINE_ITEMS} total modules and lessons — for example, 25 modules with 5 lessons each. You can add more manually afterward.</p>}
                   <p className="text-sm">1 course · {moduleCount || 0} modules · {(Number(moduleCount) || 0) * (Number(lessonsPerModule) || 0)} lessons total</p>
                   <p className="text-xs text-muted-foreground">Your topic and audience are sent to DeepSeek. Review the generated outline before publishing.</p>
                   <Button type="submit" disabled={!allowance?.enabled || !allowance || (!canRetry && allowance.remaining === 0)} className="gap-2">
@@ -185,7 +186,7 @@ export function AiCourseGenerator({ disabled, onGeneratingChange }: {
                     {generating ? "Creating your course…" : canRetry ? "Retry / check course" : "Generate & create private course"}
                   </Button>
                 </fieldset>
-                {generating && <p role="status" className="text-sm text-muted-foreground">Building your outline and saving the draft. Large courses are generated in batches, so this can take up to a couple of minutes.</p>}
+                {generating && <p role="status" className="text-sm text-muted-foreground">Building your outline and saving the draft. Large courses can take up to five minutes.</p>}
                 {allowance && <p className="text-xs text-muted-foreground">{allowance.remaining} of {allowance.limits.monthlyAttempts} AI attempts left this month. Resets {new Date(allowance.resetsAt).toLocaleDateString()}. Only successful generations count — failed attempts are never deducted.</p>}
                 {allowance && !allowance.enabled && <p className="text-sm text-muted-foreground">AI generation is not available yet. You can still create a course manually below.</p>}
               </form>}
