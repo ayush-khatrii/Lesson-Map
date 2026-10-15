@@ -19,6 +19,9 @@ export const metadata: Metadata = {
   category: "education",
   creator: "LessonMap",
   publisher: "LessonMap",
+  verification: {
+    google: "TvoYaGo4ad-6OCsLB9Xxh8tk0-idp16IjRR_RFv3-qc",
+  },
   formatDetection: {
     email: false,
     address: false,
