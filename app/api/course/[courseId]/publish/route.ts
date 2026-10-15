@@ -5,6 +5,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { generateUniqueShareSlug } from "@/lib/slug";
+import { PUBLIC_SITEMAP_TAG } from "@/lib/site";
 
 interface Context {
   params: Promise<{ courseId: string }>;
@@ -86,6 +87,7 @@ export async function POST(_: Request, context: Context) {
     });
 
     revalidateTag(userCoursesTag(userId), { expire: 0 });
+    revalidateTag(PUBLIC_SITEMAP_TAG, { expire: 0 });
     return publishResponse(updated.shareSlug!, updated.isPublic);
   } catch (error) {
     return NextResponse.json(
@@ -130,6 +132,7 @@ export async function DELETE(_: Request, context: Context) {
     });
 
     revalidateTag(userCoursesTag(userId), { expire: 0 });
+    revalidateTag(PUBLIC_SITEMAP_TAG, { expire: 0 });
     return NextResponse.json(
       {
         shareSlug: updated.shareSlug,

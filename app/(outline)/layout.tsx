@@ -3,6 +3,10 @@ import type { Metadata } from "next";
 import "@/app/globals.css";
 import Navbar from "@/components/Nav/Navbar";
 
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
+
 export default function OutlineLayout({
   children,
 }: Readonly<{

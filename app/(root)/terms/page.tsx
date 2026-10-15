@@ -12,6 +12,7 @@ export const metadata: Metadata = {
   title: "Terms of Service",
   description:
     "The rules for using LessonMap, including accounts, plans and billing, your content, and acceptable use.",
+  alternates: { canonical: "/terms" },
 };
 
 export default function TermsPage() {

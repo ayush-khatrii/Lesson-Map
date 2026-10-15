@@ -7,6 +7,7 @@ export const metadata: Metadata = {
   title: "Privacy Policy",
   description:
     "What LessonMap collects, why we collect it, who processes it, and how you can access or delete your data.",
+  alternates: { canonical: "/privacy" },
 };
 
 export default function PrivacyPage() {

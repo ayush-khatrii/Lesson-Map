@@ -6,6 +6,7 @@ import Reveal from "@/components/marketing/Reveal";
 export const metadata: Metadata = {
   title: "About LessonMap",
   description: "LessonMap is a simple workspace for organizing and sharing courses, built by Ayush Khatri.",
+  alternates: { canonical: "/about" },
 };
 
 export default function AboutPage() {

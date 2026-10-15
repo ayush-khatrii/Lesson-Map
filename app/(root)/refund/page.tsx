@@ -11,6 +11,7 @@ export const metadata: Metadata = {
   title: "Refund Policy",
   description:
     "How to request a refund or cancel a LessonMap subscription, and what happens to your access when you do.",
+  alternates: { canonical: "/refund" },
 };
 
 export default function RefundPage() {
