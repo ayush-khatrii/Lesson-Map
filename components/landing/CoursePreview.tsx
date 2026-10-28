@@ -4,6 +4,7 @@ import { useEffect, useId, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { ChevronDown, FileText, GripVertical, Layers3 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { TextAnimate } from "@/components/ui/text-animate";
 
 type CourseModule = {
   title: string;
@@ -18,7 +19,7 @@ type CourseExample = {
   modules: [CourseModule, CourseModule, CourseModule];
 };
 
-const COURSE_INTERVAL = 3000;
+const COURSE_INTERVAL = 7000;
 
 const courses: CourseExample[] = [
   {
@@ -183,11 +184,6 @@ const courses: CourseExample[] = [
   },
 ];
 
-const textTransition = {
-  duration: 0.32,
-  ease: [0.22, 1, 0.36, 1] as const,
-};
-
 type RotatingTextProps = {
   values: string[];
   activeIndex: number;
@@ -198,7 +194,7 @@ type RotatingTextProps = {
 /**
  * Only the visible text animates.
  *
- * Invisible copies reserve enough space for every example,
+ * Invisible copies match TextAnimate's character layout for every example,
  * preventing the surrounding card from jumping during rotation.
  */
 function RotatingText({
@@ -218,47 +214,44 @@ function RotatingText({
           className="invisible pointer-events-none select-none"
           style={{ gridArea: "1 / 1" }}
         >
-          {value}
+          {value.split("").map((character, characterIndex) => (
+            <span key={characterIndex} className="inline-block whitespace-pre">
+              {character}
+            </span>
+          ))}
         </span>
       ))}
 
-      <AnimatePresence initial={false} mode="sync">
-        <motion.span
-          key={activeIndex}
-          className="relative block min-w-0"
-          style={{ gridArea: "1 / 1" }}
-          initial={
-            reducedMotion
-              ? false
-              : {
-                opacity: 0,
-                filter: "blur(5px)",
-                y: 5,
-              }
-          }
-          animate={{
-            opacity: 1,
-            filter: "blur(0px)",
-            y: 0,
-          }}
-          exit={
-            reducedMotion
-              ? { opacity: 0 }
-              : {
-                opacity: 0,
-                filter: "blur(4px)",
-                y: -4,
-              }
-          }
-          transition={
-            reducedMotion
-              ? { duration: 0 }
-              : textTransition
-          }
-        >
-          {values[activeIndex]}
-        </motion.span>
-      </AnimatePresence>
+      <span className="relative block min-w-0" style={{ gridArea: "1 / 1" }}>
+        {reducedMotion ? (
+          <span>
+            <span className="sr-only">{values[activeIndex]}</span>
+            {values[activeIndex].split("").map((character, index) => (
+              <span
+                key={index}
+                aria-hidden="true"
+                className="inline-block whitespace-pre"
+              >
+                {character}
+              </span>
+            ))}
+          </span>
+        ) : (
+          <TextAnimate
+            key={activeIndex}
+            as="span"
+            style={{ whiteSpace: "inherit" }}
+            animation="blurInUp"
+            by="character"
+            duration={0.85}
+            delay={0}
+            startOnView={false}
+            once
+          >
+            {values[activeIndex]}
+          </TextAnimate>
+        )}
+      </span>
     </span>
   );
 }
@@ -266,12 +259,15 @@ function RotatingText({
 export default function CoursePreview() {
   const [open, setOpen] = useState(0);
   const [courseIndex, setCourseIndex] = useState(0);
+  const [mounted, setMounted] = useState(false);
 
   const reduceMotion = useReducedMotion();
-  const shouldReduce = Boolean(reduceMotion);
+  // Render the same static text on the server and during hydration.
+  const shouldReduce = !mounted || Boolean(reduceMotion);
   const instanceId = useId();
 
   useEffect(() => {
+    setMounted(true);
     const interval = window.setInterval(() => {
       // Avoid cycling through examples while the tab is hidden.
       if (document.visibilityState !== "visible") return;
