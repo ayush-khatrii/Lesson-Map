@@ -15,7 +15,7 @@ import { generateCourse, reviseCourse } from "./deepseek";
 import { logAiFailure } from "./failure";
 import { AI_SAVE_TRANSACTION_OPTIONS, createAiModules } from "./persistence";
 import { AI_REQUEST_LIFETIME_MS } from "./timing";
-import { COURSE_LIMITS } from "@/lib/plans";
+import { COURSE_LIMITS, hasReachedCourseLimit } from "@/lib/plans";
 import type { Prisma } from "@/app/generated/prisma/client";
 
 async function failAttempt(
@@ -147,7 +147,8 @@ export async function createAiCourse(userId: string, input: GenerateCourseInput,
       throw new AiError(503, "AI generation is not configured yet.");
     }
     const courseLimit = COURSE_LIMITS[plan];
-    if (await tx.course.count({ where: { userId } }) >= courseLimit) {
+    const courseCount = await tx.course.count({ where: { userId } });
+    if (hasReachedCourseLimit(courseCount, courseLimit)) {
       throw new AiError(403, `You have reached your plan limit of ${courseLimit} courses.`);
     }
     await assertWithinAiAllowance(tx, userId, plan);
@@ -174,7 +175,8 @@ export async function createAiCourse(userId: string, input: GenerateCourseInput,
       const plan = effectiveAiPlan(user);
       assertPlanAllows(plan, input);
       const courseLimit = COURSE_LIMITS[plan];
-      if (await tx.course.count({ where: { userId } }) >= courseLimit) {
+      const courseCount = await tx.course.count({ where: { userId } });
+      if (hasReachedCourseLimit(courseCount, courseLimit)) {
         throw new AiError(403, `Your ${courseLimit} course slots are full. No AI course was saved.`);
       }
       const generation = await tx.aiGeneration.findUniqueOrThrow({ where: { id: reservation.generationId } });

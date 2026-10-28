@@ -149,7 +149,7 @@ export const plans = [
     name: "Creator Plan",
     type: "CREATOR",
     description:
-      "More courses, full AI outlines, visual maps, and clean exports.",
+      "Unlimited courses, full AI outlines, visual maps, and clean exports.",
     price: "$12",
     period: "/month",
     isPopular: true,
@@ -172,7 +172,9 @@ export const comparisonRows = [
   {
     label: "Course maps",
     free: `Up to ${COURSE_LIMITS.FREE}`,
-    creator: `Up to ${COURSE_LIMITS.CREATOR}`,
+    creator: COURSE_LIMITS.CREATOR === "Unlimited"
+      ? COURSE_LIMITS.CREATOR
+      : `Up to ${COURSE_LIMITS.CREATOR}`,
   },
   {
     label: "AI outline generation",

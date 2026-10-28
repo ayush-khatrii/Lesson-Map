@@ -7,6 +7,7 @@ import { ArrowRight, Play } from "lucide-react";
 import CoursePreview from "./CoursePreview";
 import { primaryCta, secondaryCta, shell } from "./styles";
 
+
 export default function Hero() {
   const reduceMotion = useReducedMotion();
   const [mounted, setMounted] = useState(false);

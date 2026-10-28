@@ -18,7 +18,7 @@ import { userCoursesTag } from "@/lib/course-cache";
 import z from "zod";
 import { lockCourseOwner } from "@/lib/course-access";
 import { effectiveAiPlan } from "@/lib/ai/schema";
-import { COURSE_LIMITS } from "@/lib/plans";
+import { COURSE_LIMITS, hasReachedCourseLimit } from "@/lib/plans";
 
 async function createCourseAction(data: unknown) {
   const session = await auth.api.getSession({
@@ -46,7 +46,7 @@ async function createCourseAction(data: unknown) {
     const plan = effectiveAiPlan(user);
     const courseLimit = COURSE_LIMITS[plan];
     const count = await tx.course.count({ where: { userId } });
-    if (count >= courseLimit) return { course: null, courseLimit };
+    if (hasReachedCourseLimit(count, courseLimit)) return { course: null, courseLimit };
     const course = await tx.course.create({ data: { ...result.data, userId } });
     return { course, courseLimit };
   });
@@ -98,7 +98,7 @@ async function createCourseWithOutlineAction(data: unknown) {
 
       const courseLimit = COURSE_LIMITS[effectiveAiPlan(user)];
       const count = await tx.course.count({ where: { userId } });
-      if (count >= courseLimit) return { course: null, courseLimit };
+      if (hasReachedCourseLimit(count, courseLimit)) return { course: null, courseLimit };
 
       const course = await tx.course.create({
         data: {
