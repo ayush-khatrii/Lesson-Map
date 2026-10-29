@@ -41,7 +41,7 @@ Built for independent educators, bootcamp instructors, and creators who want a c
 | **Code previews**       | Read code resources with syntax highlighting in a scrollable preview.                                                       |
 | **Public course pages** | Publish a stable share link with the original creator's name, course details, and curriculum. Turn sharing off when needed. |
 | **Learner progress**    | Mark lessons complete and follow the overall progress bar. Progress is saved locally in the current browser.                |
-| **Markdown export**     | Paid subscribers can download their own saved course outline as a `.md` file from the builder's Settings tab.               |
+| **PDF & Markdown export**     | Paid subscribers can download their own saved course outline as a `.md` file or `pdf` from the builder's Settings tab.               |
 
 <br />
 <br />
@@ -65,140 +65,11 @@ Built for independent educators, bootcamp instructors, and creators who want a c
 | Application    | Next.js 16 App Router, React 19, TypeScript       |
 | Interface      | Tailwind CSS 4, shadcn/ui, Radix UI, Lucide icons |
 | Data           | PostgreSQL, Prisma 7                              |
-| Authentication | Better Auth with GitHub OAuth                     |
+| Authentication | Better Auth with GitHub/Google OAuth                     |
 | AI             | DeepSeek with Zod-validated outline responses     |
 | Payments       | Dodo Payments and signed webhooks                 |
 | File storage   | Cloudflare R2 through the AWS S3 SDK              |
 
-## Run locally
-
-Use Node.js 22 LTS, npm, and a PostgreSQL development database. GitHub OAuth is required for sign-in. AI, uploads, and payments need their corresponding service credentials.
-
-### 1. Clone and configure
-
-```bash
-git clone https://github.com/ayush-khatrii/Lesson-Map.git
-cd Lesson-Map
-cp .env.example .env
-```
-
-The current `.env.example` contains payment settings but is not a complete environment template. Add the required variables to your local `.env` with your own values.
-
-### 2. Install and prepare the database
-
-```bash
-npm ci
-npx prisma db push
-npx prisma generate
-```
-
-### 3. Start the app
-
-```bash
-npm run dev
-```
-
-Open [localhost:3000](http://localhost:3000), sign in, and create a course or try a template.
-
-### Useful commands
-
-```bash
-npm run typecheck
-npm run build
-npm start
-```
-
-### AI generation checks
-
-Paid AI generation and revision support 150 combined modules and lessons per
-request, including 25 modules with 5 lessons each. Larger outlines generate
-lesson titles in batches. Generation has a four-minute deadline, with additional
-time reserved for saving and returning the result within the route's five-minute
-window. Free AI remains limited to one module and one lesson.
-
-`npm run test:ai` checks outline limits and error responses without service credentials.
-To also test saving, replaying, and rolling back AI courses, initialize a disposable
-PostgreSQL database from `prisma/schema.prisma`, then run:
-
-```bash
-export AI_TEST_DATABASE_URL="postgresql://.../lessonmap_test"
-DATABASE_URL="$AI_TEST_DATABASE_URL" npx prisma db push
-npm run test:ai
-```
-
-These integration tests use fixture AI responses and clean up their own records.
-They never call DeepSeek. A database foreign-key error is a save failure, not proof
-of an expired login. Server logs labeled `AI database failure` include the Prisma
-code, model, constraint name, and (for confirmed failed attempts) generation ID;
-use those identifiers to diagnose a deployment-specific failure without logging
-prompts, generated content, or credentials.
-
-## Payment configuration (local and Vercel)
-
-Use the same variable names in `.env` and Vercel Project Settings > Environment Variables.
-`.env.example` is a template; it does not configure a deployed app.
-
-| Variable | Value |
-| --- | --- |
-| `DODO_PAYMENTS_API_KEY` | API key from Dodo Developer > API Keys. This is the only API key variable the app reads. |
-| `DODO_PAYMENTS_ENVIRONMENT` | `test_mode` for testing, `live_mode` for real purchases. Required explicitly. |
-| `DODO_PRODUCT_CREATOR` | Product ID for the Creator $12/month subscription. |
-| `DODO_PRODUCT_PROFESSIONAL` | Product ID for Professional, required when checking out that plan. |
-| `DODO_PAYMENTS_WEBHOOK_SECRET` | Signing secret for the Dodo webhook endpoint, distinct from the API key. |
-| `NEXT_PUBLIC_BASE_URL` | Your application origin, e.g. `https://lessonmap.vercel.app`. |
-
-Find each Product ID under **Dodo Dashboard > Products > View Details**.
-These are product IDs, not plan names, prices, API keys, or subscription IDs.
-The Dodo product controls the amount and billing interval: configure Creator as a recurring
-USD $12 monthly product. The price displayed on the pricing page does not set the checkout price.
-Use API keys, products and webhook settings from the same Dodo mode.
-See the [Dodo checkout guide](https://docs.dodopayments.com/developer-resources/checkout-session).
-
-For existing deployments, copy the value of `DODO_PAYMENTS_KEY` (or `DODOPAYMENTS_KEY`)
-into `DODO_PAYMENTS_API_KEY`, then remove the old API key variables.
-Copy `DODOPAYMENTS_WEBHOOK_SECRET` (or `DODO_PAYMENTS_WEBHOOK_SIGNING_SECRET`)
-into `DODO_PAYMENTS_WEBHOOK_SECRET`, then remove the old webhook variables.
-Do not replace the webhook secret with the API key.
-
-Configure the Dodo webhook URL as `https://YOUR_DOMAIN/api/webhooks/dodopayments`
-and subscribe to `subscription.active`, `subscription.renewed`, `subscription.plan_changed`,
-`subscription.updated`, `subscription.cancelled`, `subscription.on_hold`,
-`subscription.failed`, and `subscription.expired` so payment updates account access.
-
-Apply the variables to the intended Vercel environment (Production or Preview),
-then redeploy. Restart `npm run dev` after editing local variables.
-If checkout returns `CHECKOUT_NOT_CONFIGURED`, inspect the `/api/checkout` function logs:
-they identify the missing or invalid variable without printing its value.
-Run `npm run test:payments` to check checkout behavior without charging a card.
-
-Run `npm run check:payments` before testing checkout. It loads the same local environment
-files as Next.js and reports missing configuration without exposing secrets or calling
-Dodo. Add `-- --all` to check Professional too. Both a product ID and a webhook signing
-secret are required in addition to the API key. Product IDs cannot be derived from an
-API key: create the recurring product in Dodo and copy its ID into the matching variable.
-
-Checkout reads server environment variables on each request. After adding or rotating
-credentials in `.env.local`, restart the local server; on Vercel, update environment
-variables and redeploy. Never pass the API key from the browser or prefix it with
-`NEXT_PUBLIC_`.
-
-The flow is pricing → sign-in if needed → hosted Dodo checkout → `/checkout/return`.
-The return page checks the authenticated subscription status for up to one minute and
-offers a retry while confirmation is pending. Signed subscription webhooks update
-paid access; the return page can also recover a missed activation by retrieving the
-subscription directly from Dodo and verifying its user metadata, product, and active
-status on the server. Redirect query parameters alone do not grant access. A cancelled or unsuccessful
-checkout leaves the user's plan unchanged.
-
-Signed-in users with a linked Dodo customer can manage payment methods, invoices, and
-cancellation from **Settings > Billing**. The portal URL is created on the server for
-the customer ID stored on that user's account; checkout, confirmation, and portal
-requests also reject cross-origin browser submissions.
-
-For local end-to-end testing, expose `/api/webhooks/dodopayments` through a public HTTPS
-tunnel and register that URL in the Dodo test-mode dashboard. Complete a test checkout,
-confirm that `subscription.active` is delivered successfully, and check that the return
-page shows the active plan. A localhost URL alone cannot receive provider webhooks.
 
 ## Feedback and contributions
 
