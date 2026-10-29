@@ -79,4 +79,4 @@ For contributions, keep changes focused and run the relevant checks before openi
 
 Created by [Ayush Khatri](https://github.com/ayush-khatrii), with contributions from [Vrut07](https://github.com/vrut07).
 
-Licensed under the [MIT License](LICENSE).
+Copyright © 2026 Ayush Khatri. All rights reserved.
