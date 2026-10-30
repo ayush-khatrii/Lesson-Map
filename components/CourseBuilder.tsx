@@ -615,12 +615,12 @@ function AddResourceDialog({
           {/* ── Type selector ── */}
           <div className="space-y-1.5">
             <Label>Type</Label>
-            <div className="rounded-lg border bg-muted/30 p-1">
+            <div className="min-w-0 max-w-full rounded-lg border bg-muted/30 p-1">
               <ToggleGroup
                 type="single"
                 value={type}
                 onValueChange={(v: string) => v && setType(v as ResourceType)}
-                className="flex flex-wrap items-center gap-1 justify-start"
+                className="flex w-full min-w-0 flex-wrap items-center gap-1 justify-start"
               >
                 {RESOURCE_TYPES.map((t) => {
                   const TIcon = t.icon;
@@ -629,7 +629,7 @@ function AddResourceDialog({
                       key={t.value}
                       value={t.value}
                       size="sm"
-                      className="gap-1.5 text-xs rounded-md h-7 px-2.5 data-[state=on]:bg-background data-[state=on]:border data-[state=on]:border-border data-[state=on]:shadow-sm"
+                      className="gap-1 text-[10px] sm:text-xs rounded-md h-7 px-2 data-[state=on]:bg-background data-[state=on]:border data-[state=on]:border-border data-[state=on]:shadow-sm"
                     >
                       <TIcon className="w-3 h-3" />
                       {t.value}
@@ -837,19 +837,26 @@ function ResourceRow({
   }
   const resourceLabel = (
     <>
-      <span className="flex-shrink-0 w-9 h-9 rounded-md bg-muted flex items-center justify-center">
-        <Icon className="w-4 h-4 text-muted-foreground" />
+      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-muted sm:h-8 sm:w-8">
+        <Icon className="h-3.5 w-3.5 text-muted-foreground" />
       </span>
-      <span className="min-w-0 text-sm font-semibold leading-snug truncate group-hover:underline">
-        {resource.name}
+      <span className="min-w-0 flex-1 space-y-0.5">
+        <span className="block text-xs font-semibold leading-snug [overflow-wrap:anywhere] group-hover:underline sm:text-sm">
+          {resource.name}
+        </span>
+        <span className="block text-[10px] font-normal leading-relaxed text-muted-foreground [overflow-wrap:anywhere] sm:text-xs">
+          {resource.meta}
+          {linkedToLabel && <span> · Linked to {linkedToLabel}</span>}
+        </span>
       </span>
     </>
   );
-  const actionClass = "group flex min-w-0 items-center gap-3 rounded-md text-left hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
+  const actionClass = "group flex w-full min-w-0 items-start gap-2 rounded-md text-left hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
   return (
-    <div className="flex flex-wrap sm:flex-nowrap items-center gap-3 px-4 py-3 border-b border-border last:border-b-0 hover:bg-muted/30 transition-colors">
-      <div className="flex-1 min-w-0">
+    <div className="@container/resource min-w-0 border-b border-border last:border-b-0 hover:bg-muted/30 transition-colors">
+      <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] gap-2 p-2.5 @min-[32rem]/resource:grid-cols-[minmax(0,1fr)_auto_auto] @min-[32rem]/resource:items-center sm:p-3">
+      <div className="min-w-0">
         {isText ? (
           <button type="button" className={actionClass} onClick={() => setPreviewOpen(true)} aria-label={`Open ${resource.name}`}>
             {resourceLabel}
@@ -861,14 +868,11 @@ function ResourceRow({
         ) : (
           <span className={actionClass} title="No valid resource URL available">{resourceLabel}</span>
         )}
-        <p className="pl-12 text-xs text-muted-foreground truncate">
-          {resource.meta}
-          {linkedToLabel && <span> · Linked to {linkedToLabel}</span>}
-        </p>
       </div>
+      <div className="col-span-2 row-start-2 flex min-w-0 flex-wrap items-center gap-1.5 @min-[32rem]/resource:col-span-1 @min-[32rem]/resource:col-start-2 @min-[32rem]/resource:row-start-1">
       {(resource.type === "Document" || resource.type === "Spreadsheet") && href && (
-        <Button asChild variant="outline" size="sm" className="h-8 gap-1.5 text-xs">
-          <a href={href} aria-label={`Download ${resource.name}`}><Download className="h-3.5 w-3.5" />Download</a>
+        <Button asChild variant="outline" size="sm" className="h-7 shrink-0 gap-1 rounded-md px-2 text-[10px] has-[>svg]:px-1.5 [&_svg]:size-3 sm:text-[11px]">
+          <a href={href} aria-label={`Download ${resource.name}`}><Download className="size-3" />Download</a>
         </Button>
       )}
       {isText && (
@@ -894,11 +898,12 @@ function ResourceRow({
           <Button
             variant="outline"
             size="sm"
-            className="h-8 px-2.5 text-xs gap-1.5"
+            className="h-7 max-w-full shrink-0 gap-1 rounded-md px-2 text-[10px] has-[>svg]:px-1.5 [&_svg]:size-3 sm:text-[11px]"
+            aria-label={`Resource type: ${resource.type}`}
           >
-            <Icon className="w-3 h-3" />
-            {resource.type}
-            <ChevronDown className="w-3 h-3 opacity-60" />
+            <Icon className="size-3" />
+            <span className="min-w-0 truncate">{resource.type}</span>
+            <ChevronDown className="size-3 opacity-60" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
@@ -921,16 +926,19 @@ function ResourceRow({
           })}
         </DropdownMenuContent>
       </DropdownMenu>
+      </div>
 
       <Button
         variant="ghost"
         size="icon"
-        className="h-8 w-8 flex-shrink-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-        title="Delete"
+        className="col-start-2 row-start-1 h-7 w-7 shrink-0 self-start @min-[32rem]/resource:col-start-3 @min-[32rem]/resource:self-center text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+        title="Delete resource"
+        aria-label={`Delete ${resource.name}`}
         onClick={() => onDelete(resource.id)}
       >
         <Trash2 className="w-3.5 h-3.5" />
       </Button>
+      </div>
     </div>
   );
 }
@@ -1519,8 +1527,8 @@ function OutlineTab({
                                               <ChevronDown className="w-3.5 h-3.5 text-muted-foreground ml-auto transition-transform duration-200 group-data-[state=open]:rotate-180" />
                                             </div>
                                           </AccordionTrigger>
-                                          <AccordionContent className="px-3.5 pb-3">
-                                            <div className="rounded-lg border overflow-hidden">
+                                          <AccordionContent className="min-w-0 px-2 pb-2 sm:px-3.5 sm:pb-3">
+                                            <div className="min-w-0 rounded-lg border overflow-hidden">
                                               {lessonResources.map((res) => (
                                                 <ResourceRow
                                                   key={res.id}
@@ -1639,14 +1647,14 @@ function ResourcesTab({
           </p>
         </div>
         {/* ── Filter toggle with border ── */}
-        <div className="rounded-lg border bg-muted/30 p-1">
+        <div className="min-w-0 max-w-full rounded-lg border bg-muted/30 p-1">
           <ToggleGroup
             type="single"
             value={filter}
             onValueChange={(v: string) =>
               v && setFilter(v as ResourceType | "All")
             }
-            className="flex flex-wrap gap-1 justify-start"
+            className="flex w-full min-w-0 flex-wrap gap-1 justify-start"
           >
             <ToggleGroupItem
               value="All"

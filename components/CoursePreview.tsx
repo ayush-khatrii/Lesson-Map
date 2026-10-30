@@ -464,25 +464,26 @@ function ResourceRow({
         }
         onPreview(resource);
       }}
-      className="group flex min-w-0 w-full select-text items-center gap-3 rounded-xl border border-border bg-card/60 px-3 py-3 text-left transition-colors hover:border-primary/25 hover:bg-primary/5 sm:px-4"
+      className="group grid min-w-0 w-full grid-cols-[1.75rem_minmax(0,1fr)] select-text items-start gap-x-2 gap-y-1.5 rounded-xl border border-border bg-card/60 p-2.5 text-left transition-colors hover:border-primary/25 hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:grid-cols-[2rem_minmax(0,1fr)_auto] sm:gap-x-3 sm:p-3"
+      aria-label={`${resource.type === "Document" || resource.type === "Spreadsheet" ? "Download" : "View"} ${resource.title}`}
     >
       <div
         className={cn(
-          "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border bg-secondary/80",
+          "flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-border bg-secondary/80 sm:h-8 sm:w-8",
           meta.color,
         )}
       >
         <Icon className="h-4 w-4" />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-xs font-medium text-foreground group-hover:text-foreground">
+        <p className="text-[11px] font-semibold leading-snug text-foreground [overflow-wrap:anywhere] sm:text-xs">
           {resource.title}
         </p>
-        <p className="truncate text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+        <p className="mt-0.5 text-[10px] leading-relaxed text-muted-foreground [overflow-wrap:anywhere]">
           {resource.meta || meta.label}
         </p>
       </div>
-      <span className="flex shrink-0 items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground transition-colors group-hover:text-primary">
+      <span className="col-start-2 inline-flex min-h-7 max-w-full w-fit items-center gap-1 rounded-md border border-border bg-background/60 px-2 text-[10px] font-medium text-muted-foreground transition-colors group-hover:text-primary sm:col-start-3 sm:row-start-1 sm:self-center">
         {resource.type === "Document" || resource.type === "Spreadsheet" ? "Download" : "View"}
         {resource.url && <ExternalLink className="h-3.5 w-3.5" />}
       </span>
@@ -808,7 +809,7 @@ function LessonContentPanel({
           onValueChange={(value) => setTab(value as "lesson" | "resources")}
           className="flex flex-1 flex-col gap-0"
         >
-          <div className="px-6 pt-4">
+          <div className="min-w-0 px-3 pt-4 sm:px-6">
             <TabsList>
               <TabsTrigger value="lesson">Lesson</TabsTrigger>
               <TabsTrigger value="resources">
@@ -822,7 +823,7 @@ function LessonContentPanel({
             </TabsList>
           </div>
 
-          <TabsContent value="lesson" className="px-6 py-5">
+          <TabsContent value="lesson" className="min-w-0 px-3 py-4 sm:px-6 sm:py-5">
             {paragraphs.length > 0 ? (
               <div className="space-y-3">
                 {paragraphs.map((paragraph, index) => (
@@ -847,7 +848,7 @@ function LessonContentPanel({
             )}
           </TabsContent>
 
-          <TabsContent value="resources" className="px-6 py-5">
+          <TabsContent value="resources" className="min-w-0 px-3 py-4 sm:px-6 sm:py-5">
             {resources.length > 0 ? (
               <div className="grid grid-cols-1 gap-2">
                 {resources.map((r) => (
