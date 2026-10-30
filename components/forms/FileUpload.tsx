@@ -153,7 +153,7 @@ const FileUpload = ({
 
   return (
     <div
-      className={`relative flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed px-4 py-6 transition-colors ${
+      className={`relative flex min-w-0 max-w-full flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed px-2.5 py-4 sm:gap-3 sm:px-4 sm:py-6 transition-colors ${
         disabled || isUploading ? "cursor-not-allowed opacity-70" : "cursor-pointer"
       } ${
         dragOver
@@ -191,7 +191,7 @@ const FileUpload = ({
       />
 
       {selectedFile ? (
-        <div className="flex items-center gap-3 w-full">
+        <div className="flex w-full min-w-0 items-center gap-2 sm:gap-3">
           <div className="flex-shrink-0 w-10 h-10 rounded-lg border bg-background flex items-center justify-center">
             {isUploading ? (
               <Loader2 className="w-5 h-5 text-primary animate-spin" />
@@ -200,7 +200,7 @@ const FileUpload = ({
             )}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold truncate">
+            <p className="text-xs font-semibold [overflow-wrap:anywhere] sm:text-sm">
               {selectedFile.name}
             </p>
             <p className="text-xs text-muted-foreground">
@@ -223,12 +223,12 @@ const FileUpload = ({
           <div className="flex-shrink-0 w-10 h-10 rounded-xl border bg-background flex items-center justify-center">
             <Upload className="w-4.5 h-4.5 text-muted-foreground" />
           </div>
-          <div className="text-center">
+          <div className="min-w-0 text-center [overflow-wrap:anywhere]">
             <p className="text-sm font-medium text-foreground">
               Drop your {label} here
             </p>
             <p className="text-xs text-muted-foreground mt-0.5">
-              {hint} · Maximum 25 MB
+              {hint}
             </p>
           </div>
           <Button
