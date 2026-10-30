@@ -11,6 +11,7 @@
     "test:payments": "node --test tests/checkout.test.cjs tests/payment-webhooks.test.cjs tests/subscription-confirm.test.cjs tests/subscription-status.test.cjs tests/billing-portal.test.cjs",
     "check:payments": "node --import tsx scripts/check-payments.ts",
     "test:flow": "node --import tsx --test tests/flow*.test.ts",
+    "test:uploads": "node --test tests/resource-uploads.test.cjs",
     "test:auth": "node --import tsx --test tests/auth.test.ts",
     "typecheck": "tsc --noEmit --incremental false",
     "postinstall": "prisma generate"

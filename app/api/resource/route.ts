@@ -1,3 +1,4 @@
+import { isFileResourceType } from "@/lib/r2/upload-policy";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/prisma";
 import { userCoursesTag } from "@/lib/course-cache";
@@ -68,7 +69,7 @@ export async function POST(request: Request) {
       );
     }
 
-    if (result.data.key || ["PDF", "Image"].includes(result.data.type)) {
+    if (result.data.key || isFileResourceType(result.data.type)) {
       return NextResponse.json({ error: "Use the file upload flow for file resources." }, { status: 400 });
     }
 

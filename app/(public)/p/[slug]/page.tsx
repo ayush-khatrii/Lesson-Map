@@ -185,7 +185,7 @@ export default async function CoursePreviewPage({ params, searchParams }: Course
           type: r.type,
           meta: r.meta,
           url:
-            r.type === "PDF" || r.type === "Image"
+            ["PDF", "Image", "Document", "Spreadsheet"].includes(r.type)
               ? `/api/resource/${encodeURIComponent(r.id)}/open`
               : (r.url ?? undefined),
           content: r.content,

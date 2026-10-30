@@ -3,14 +3,14 @@
 import { useRef, useState, type ElementType } from "react";
 import { Button } from "@/components/ui/button";
 import { Loader2, Upload, X } from "lucide-react";
-import { MAX_UPLOAD_BYTES, ALLOWED_UPLOAD_TYPES } from "@/lib/r2/upload-policy";
+import { MAX_UPLOAD_BYTES, normalizeUploadContentType, matchesUploadResource, type FileResourceType } from "@/lib/r2/upload-policy";
 import { toast } from "sonner";
 
 export type UploadedResource = {
   id: string;
   name: string;
   meta: string | null;
-  type: "PDF" | "Image";
+  type: FileResourceType;
   lessonId: string;
   url: string | null;
   key: string | null;
@@ -22,7 +22,7 @@ export type UploadedResource = {
 type FileUploadProps = {
   lessonId: string;
   resourceName: string;
-  type: "PDF" | "Image";
+  type: FileResourceType;
   accept: string;
   label: string;
   hint: string;
@@ -54,7 +54,7 @@ const FileUpload = ({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
 
-  const uploadFile = async (file: File) => {
+  const uploadFile = async (file: File, contentType: string) => {
     setIsUploading(true);
     try {
       const uploadResponse = await fetch("/api/upload", {
@@ -64,7 +64,7 @@ const FileUpload = ({
           lessonId,
           size: file.size,
           filename: file.name,
-          contentType: file.type,
+          contentType,
         }),
       });
 
@@ -99,7 +99,7 @@ const FileUpload = ({
           meta: `${formatFileSize(file.size)} · ${file.name}`,
           key,
           filename: file.name,
-          contentType: file.type,
+          contentType,
           size: file.size,
         }),
       });
@@ -128,21 +128,20 @@ const FileUpload = ({
   };
 
   const handleFile = (file: File) => {
+    const contentType = normalizeUploadContentType(file.name, file.type);
     if (
       file.size < 1 ||
       file.size > MAX_UPLOAD_BYTES ||
-      !ALLOWED_UPLOAD_TYPES.some((allowed) => allowed === file.type) ||
-      (type === "PDF"
-        ? file.type !== "application/pdf"
-        : !file.type.startsWith("image/"))
+      !contentType ||
+      !matchesUploadResource(type, file.name, contentType)
     ) {
-      toast.error("Choose a matching image or PDF between 1 byte and 25 MB.");
+      toast.error("Choose a matching supported file between 1 byte and 25 MB.");
       if (inputRef.current) inputRef.current.value = "";
       return;
     }
     setSelectedFile(file);
     onSelected?.(file);
-    void uploadFile(file);
+    void uploadFile(file, contentType);
   };
 
   const clearFile = (event: React.MouseEvent) => {

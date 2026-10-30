@@ -60,6 +60,8 @@ import {
   Paperclip,
   Code2,
   FileText,
+  FileSpreadsheet,
+  FileType,
   Link2,
   StickyNote,
   Image as ImageIcon,
@@ -84,6 +86,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useSession } from "@/lib/auth-client";
+import { isFileResourceType } from "@/lib/r2/upload-policy";
 import FileUpload, {
   type UploadedResource,
 } from "@/components/forms/FileUpload";
@@ -120,7 +123,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 // ── Types ──────────────────────────────────────────────────────────────
-export type ResourceType = "Code" | "PDF" | "Link" | "Note" | "Image";
+export type ResourceType = "Code" | "PDF" | "Link" | "Note" | "Image" | "Document" | "Spreadsheet";
 
 export interface Resource {
   id: string;
@@ -172,6 +175,8 @@ const RESOURCE_TYPES: {
   { value: "Link", icon: Link2 },
   { value: "Note", icon: StickyNote },
   { value: "Image", icon: ImageIcon },
+  { value: "Document", icon: FileType },
+  { value: "Spreadsheet", icon: FileSpreadsheet },
 ];
 
 function getTypeConfig(type: ResourceType) {
@@ -537,7 +542,7 @@ function AddResourceDialog({
 
   const handleSubmit = async () => {
     if (!name.trim()) return;
-    if (type === "PDF" || type === "Image") {
+    if (isFileResourceType(type)) {
       toast.error("Select a file to upload first.");
       return;
     }
@@ -643,6 +648,10 @@ function AddResourceDialog({
               placeholder={
                 type === "PDF"
                   ? "e.g. Week 1 Reading.pdf"
+                  : type === "Document"
+                    ? "e.g. Lesson Workbook.docx"
+                    : type === "Spreadsheet"
+                      ? "e.g. Practice Exercises.xlsx"
                   : type === "Image"
                     ? "e.g. Architecture Diagram.png"
                     : type === "Note"
@@ -669,7 +678,7 @@ function AddResourceDialog({
                 accept=".pdf,application/pdf"
                 label="PDF"
                 icon={FileText}
-                hint="PDF up to 50 MB"
+                hint="PDF up to 25 MB"
                 onSelected={(f) =>
                   setMeta(
                     f ? `${(f.size / 1024).toFixed(1)} KB · ${f.name}` : "",
@@ -691,7 +700,7 @@ function AddResourceDialog({
                 accept="image/*"
                 label="image"
                 icon={FileImage}
-                hint="PNG, JPG, GIF, SVG up to 10 MB"
+                hint="PNG, JPG, GIF, SVG, WEBP up to 25 MB"
                 onSelected={(f) =>
                   setMeta(
                     f ? `${(f.size / 1024).toFixed(1)} KB · ${f.name}` : "",
@@ -700,6 +709,25 @@ function AddResourceDialog({
                 onUploaded={handleUploaded}
                 disabled={!name.trim()}
               />
+            </div>
+          )}
+
+          {(type === "Document" || type === "Spreadsheet") && (
+            <div className="space-y-1.5">
+              <Label>{type === "Document" ? "Word document" : "Spreadsheet file"}</Label>
+              <FileUpload
+                key={type}
+                lessonId={lessonId}
+                resourceName={name}
+                type={type}
+                accept={type === "Document" ? ".doc,.docx" : ".xls,.xlsx,.csv"}
+                label={type === "Document" ? "document" : "spreadsheet"}
+                icon={type === "Document" ? FileType : FileSpreadsheet}
+                hint={type === "Document" ? "DOC, DOCX up to 25 MB" : "XLS, XLSX, CSV up to 25 MB"}
+                onUploaded={handleUploaded}
+                disabled={!name.trim()}
+              />
+              <p className="text-xs text-muted-foreground">Learners can download this file from the shared course.</p>
             </div>
           )}
 
@@ -765,13 +793,13 @@ function AddResourceDialog({
           <Button
             onClick={handleSubmit}
             disabled={
-              !name.trim() || isSaving || type === "PDF" || type === "Image"
+              !name.trim() || isSaving || isFileResourceType(type)
             }
           >
             {isSaving && (
               <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />
             )}
-            {type === "PDF" || type === "Image"
+            {isFileResourceType(type)
               ? "Upload file"
               : "Add resource"}
           </Button>
@@ -799,7 +827,7 @@ function ResourceRow({
   const isText = resource.type === "Note" || resource.type === "Code";
   const rawUrl = resource.url || (resource.type === "Link" ? resource.meta : null);
   let href: string | undefined;
-  if (resource.type === "PDF" || resource.type === "Image") {
+  if (isFileResourceType(resource.type)) {
     href = `/api/resource/${encodeURIComponent(resource.id)}/open`;
   } else if (rawUrl) {
     try {
@@ -838,6 +866,11 @@ function ResourceRow({
           {linkedToLabel && <span> · Linked to {linkedToLabel}</span>}
         </p>
       </div>
+      {(resource.type === "Document" || resource.type === "Spreadsheet") && href && (
+        <Button asChild variant="outline" size="sm" className="h-8 gap-1.5 text-xs">
+          <a href={href} aria-label={`Download ${resource.name}`}><Download className="h-3.5 w-3.5" />Download</a>
+        </Button>
+      )}
       {isText && (
         <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
           <DialogContent className="flex max-h-[90dvh] min-w-0 flex-col overflow-hidden sm:max-w-3xl">
@@ -874,6 +907,7 @@ function ResourceRow({
             return (
               <DropdownMenuItem
                 key={t.value}
+                disabled={t.value !== resource.type && (Boolean(resource.key) || isFileResourceType(resource.type) || isFileResourceType(t.value))}
                 onClick={() => onTypeChange(resource.id, t.value)}
                 className="gap-2"
               >
