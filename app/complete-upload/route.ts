@@ -4,7 +4,8 @@ import { revalidateTag } from "next/cache";
 import { auth } from "@/lib/auth";
 import { createResourceSchema } from "@/lib/validation";
 import {
-  ALLOWED_UPLOAD_TYPES,
+  isFileResourceType,
+  matchesUploadResource,
   MAX_UPLOAD_BYTES,
   UPLOAD_SAVE_WINDOW_MS,
 } from "@/lib/r2/upload-policy";
@@ -40,7 +41,7 @@ export async function POST(request: Request) {
     if (
       !key ||
       !key.startsWith(`lesson-resources/${userId}/`) ||
-      !["PDF", "Image"].includes(data.type)
+      !isFileResourceType(data.type)
     ) {
       return NextResponse.json(
         { error: "Invalid upload. Select the file again." },
@@ -90,11 +91,8 @@ export async function POST(request: Request) {
       size !== data.size ||
       object.Metadata?.size !== String(size) ||
       !contentType ||
-      !ALLOWED_UPLOAD_TYPES.some((allowed) => allowed === contentType) ||
       contentType !== data.contentType ||
-      (data.type === "PDF"
-        ? contentType !== "application/pdf"
-        : !contentType.startsWith("image/"))
+      !matchesUploadResource(data.type, data.filename || "", contentType)
     ) {
       return NextResponse.json(
         {

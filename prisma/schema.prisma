@@ -208,6 +208,8 @@ enum ResourceType {
   Link
   Note
   Image
+  Document
+  Spreadsheet
 }
 
 // Shared authentication throttling across serverless instances.

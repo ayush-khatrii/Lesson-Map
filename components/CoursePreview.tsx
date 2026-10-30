@@ -20,6 +20,8 @@ import {
   Trophy,
   BookOpen,
   FileText,
+  FileType,
+  FileSpreadsheet,
   Link2,
   Newspaper,
   ExternalLink,
@@ -61,7 +63,7 @@ import {
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-export type ResourceType = "Code" | "PDF" | "Link" | "Note" | "Image";
+export type ResourceType = "Code" | "PDF" | "Link" | "Note" | "Image" | "Document" | "Spreadsheet";
 
 export interface Resource {
   id: string;
@@ -295,6 +297,8 @@ const RESOURCE_META: Record<
   Link: { icon: Link2, label: "Link", color: "text-chart-2" },
   Note: { icon: Newspaper, label: "Note", color: "text-primary" },
   Image: { icon: FileText, label: "Image", color: "text-chart-4" },
+  Document: { icon: FileType, label: "Document", color: "text-chart-2" },
+  Spreadsheet: { icon: FileSpreadsheet, label: "Spreadsheet", color: "text-chart-4" },
 };
 
 function getSeedIds(modules: Module[]): string[] {
@@ -447,7 +451,7 @@ function ResourceRow({
     <button
       type="button"
       onClick={() => {
-        if (["Image", "PDF", "Link"].includes(resource.type) && resource.url) {
+        if (["Image", "PDF", "Link", "Document", "Spreadsheet"].includes(resource.type) && resource.url) {
           try {
             const url = new URL(resource.url, window.location.origin);
             if (url.protocol === "https:" || url.protocol === "http:") {
@@ -479,7 +483,7 @@ function ResourceRow({
         </p>
       </div>
       <span className="flex shrink-0 items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground transition-colors group-hover:text-primary">
-        View
+        {resource.type === "Document" || resource.type === "Spreadsheet" ? "Download" : "View"}
         {resource.url && <ExternalLink className="h-3.5 w-3.5" />}
       </span>
     </button>

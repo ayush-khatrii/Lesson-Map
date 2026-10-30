@@ -6,13 +6,13 @@ import { headers } from "next/headers";
 import { db } from "@/lib/prisma";
 import { z } from "zod";
 import {
-  ALLOWED_UPLOAD_TYPES,
+  normalizeUploadContentType,
   MAX_UPLOAD_BYTES,
 } from "@/lib/r2/upload-policy";
 
 const uploadSchema = z.object({
   filename: z.string().trim().min(1).max(255),
-  contentType: z.enum(ALLOWED_UPLOAD_TYPES),
+  contentType: z.string().max(255),
   lessonId: z.string().min(1),
   size: z.number().int().positive().max(MAX_UPLOAD_BYTES),
 });
@@ -34,12 +34,16 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           error:
-            "Choose a supported image or PDF between 1 byte and 25 MB.",
+            "Choose a supported image, PDF, Word document, or spreadsheet between 1 byte and 25 MB.",
         },
         { status: 400 },
       );
     }
-    const { filename, contentType, lessonId, size } = parsed.data;
+    const { filename, lessonId, size } = parsed.data;
+    const contentType = normalizeUploadContentType(filename, parsed.data.contentType);
+    if (!contentType) {
+      return NextResponse.json({ error: "Unsupported file type or extension." }, { status: 400 });
+    }
     const lesson = await db.lesson.findFirst({
       where: { id: lessonId, module: { course: { userId } } },
       select: { id: true },

@@ -1,3 +1,4 @@
+import { isFileResourceType } from "@/lib/r2/upload-policy";
 import { deleteUnreferencedFile } from "@/lib/r2/cleanup";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/prisma";
@@ -93,13 +94,17 @@ export async function PUT(request: Request, context: Context) {
           },
         },
       },
-      select: { id: true, key: true },
+      select: { id: true, key: true, type: true },
     });
 
     if (!resource) {
       return NextResponse.json({ error: "Resource not found" }, { status: 404 });
     }
 
+    if (result.data.type && result.data.type !== resource.type &&
+      (resource.key || isFileResourceType(resource.type) || isFileResourceType(result.data.type))) {
+      return NextResponse.json({ error: "Upload a new file to change this resource type." }, { status: 400 });
+    }
     if (resource.key && Object.hasOwn(body, "url")) {
       return NextResponse.json({ error: "An uploaded file's URL cannot be changed." }, { status: 400 });
     }
@@ -143,7 +148,7 @@ export async function DELETE(_: Request, context: Context) {
           },
         },
       },
-      select: { id: true, key: true },
+      select: { id: true, key: true, type: true },
     });
 
     if (!resource) {

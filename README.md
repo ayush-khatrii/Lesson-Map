@@ -37,7 +37,7 @@ Built for independent educators, bootcamp instructors, and creators who want a c
 | **Course builder**      | Create, edit, delete, and reorder modules and lessons in an accordion layout.                                               |
 | **AI course outlines**  | Describe a topic and audience, choose an outline size, and generate an editable draft with AI.                              |
 | **Starter templates**   | Preview DSA and Web Development courses. **Use Template** pre-fills a new course with its modules and lessons.              |
-| **Lesson resources**    | Attach code, notes, links, PDFs, and images. Browse resources with their lesson context and preview supported content.      |
+| **Lesson resources**    | Attach code, notes, links, PDFs, images, Word documents (.doc/.docx), and spreadsheets (.xls/.xlsx/.csv), up to 25 MB per upload. Browse resources with their lesson context and preview supported content.      |
 | **Code previews**       | Read code resources with syntax highlighting in a scrollable preview.                                                       |
 | **Public course pages** | Publish a stable share link with the original creator's name, course details, and curriculum. Turn sharing off when needed. |
 | **Learner progress**    | Mark lessons complete and follow the overall progress bar. Progress is saved locally in the current browser.                |

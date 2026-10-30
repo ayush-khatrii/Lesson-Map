@@ -1,3 +1,4 @@
+import { resourceDownloadDisposition } from "@/lib/r2/upload-policy";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/prisma";
 import { GetObjectCommand } from "@aws-sdk/client-s3";
@@ -37,7 +38,9 @@ export async function GET(
       url = await getSignedUrl(getR2(), new GetObjectCommand({
         Bucket: getR2Bucket(),
         Key: resource.key,
-        ResponseContentDisposition: "inline",
+        ResponseContentDisposition: resource.type === "Document" || resource.type === "Spreadsheet"
+          ? resourceDownloadDisposition(resource.filename || resource.name)
+          : "inline",
       }), { expiresIn: 300 });
     }
     if (!url || !/^https?:\/\//i.test(url)) {

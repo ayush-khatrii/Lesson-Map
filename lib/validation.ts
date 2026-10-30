@@ -137,13 +137,13 @@ export const updateSocialLinksSchema = z.object({
 export type SocialLinkField = keyof z.infer<typeof updateSocialLinksSchema>;
 
 // Resource types — must match the Prisma ResourceType enum
-const resourceTypes = ["Code", "PDF", "Link", "Note", "Image"] as const;
+const resourceTypes = ["Code", "PDF", "Link", "Note", "Image", "Document", "Spreadsheet"] as const;
 
 // Schema for creating a resource attached to a lesson
 export const createResourceSchema = z.object({
   name: z.string().min(1, "Name is required"),
   type: z.enum(resourceTypes, {
-    error: "Type must be one of: Code, PDF, Link, Note, Image",
+    error: "Type must be one of: Code, PDF, Link, Note, Image, Document, Spreadsheet",
   }),
   meta: z.string().nullable().optional(),
   content: z.string().nullable().optional(),
