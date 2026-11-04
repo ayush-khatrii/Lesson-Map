@@ -34,12 +34,10 @@ export async function POST(req: NextRequest) {
     if (subscription.metadata?.userId !== userId || subscription.product_id !== config.productId) {
       return NextResponse.json({ error: "This checkout does not match your account and plan." }, { status: 403 });
     }
-    if (subscription.status !== "active" || subscription.cancel_at_next_billing_date) {
+    if (subscription.status !== "active") {
       return NextResponse.json(
         {
-          subscriptionStatus: subscription.cancel_at_next_billing_date
-            ? "cancelled"
-            : subscription.status,
+          subscriptionStatus: subscription.status,
         },
         { headers: { "Cache-Control": "no-store" } },
       );
@@ -48,6 +46,11 @@ export async function POST(req: NextRequest) {
     const periodEnd = new Date(subscription.next_billing_date);
     if (!subscription.customer.customer_id || Number.isNaN(periodEnd.getTime())) {
       throw new Error("Incomplete subscription response");
+    }
+    if (subscription.cancel_at_next_billing_date && periodEnd.getTime() <= Date.now()) {
+      return NextResponse.json({ subscriptionStatus: "cancelled" }, {
+        headers: { "Cache-Control": "no-store" },
+      });
     }
     // Do not overwrite a different subscription already attached to this account.
     const updated = await db.user.updateMany({

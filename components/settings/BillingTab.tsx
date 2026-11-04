@@ -76,12 +76,14 @@ export default function BillingTab({
   canManageBilling,
   subscriptionStatus,
   renewsOn,
+  cancelAtPeriodEnd = false,
 }: {
   plan: PlanName;
   canManageBilling: boolean;
   subscriptionStatus: string | null;
   /** Formatted current-period-end date, or null when there is none. */
   renewsOn: string | null;
+  cancelAtPeriodEnd?: boolean;
 }) {
   const [opening, setOpening] = useState(false);
   const isPaid = plan !== "FREE";
@@ -128,7 +130,7 @@ export default function BillingTab({
               <div className="flex flex-wrap items-center gap-2">
                 <h2 className="text-xl font-semibold tracking-tight">{meta.name} plan</h2>
                 <Badge variant="secondary" className={status.className}>
-                  {status.label}
+                  {isPaid && cancelAtPeriodEnd ? "Cancellation scheduled" : status.label}
                 </Badge>
               </div>
               <p className="mt-2 text-sm text-muted-foreground">
@@ -140,7 +142,7 @@ export default function BillingTab({
               {renewsOn && isPaid && (
                 <p className="mt-1.5 flex items-center gap-2 text-xs text-muted-foreground">
                   <CalendarDays className="size-3.5 shrink-0" />
-                  Renews on {renewsOn}
+                  {cancelAtPeriodEnd ? "Paid access ends on" : "Renews on"} {renewsOn}
                 </p>
               )}
             </div>
@@ -240,8 +242,8 @@ export default function BillingTab({
         <div className="mt-6 flex items-start gap-3 rounded-xl border border-border bg-muted/20 px-4 py-3">
           <ShieldCheck className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
           <p className="text-xs leading-5 text-muted-foreground">
-            Cancelling immediately returns your account to the Free plan and stops future renewal
-            charges.
+            Cancelling stops future renewal charges. You keep your paid features until the end
+            of your current billing period, then your account returns to the Free plan.
           </p>
         </div>
       </section>

@@ -29,9 +29,7 @@ function harness(overrides = {}, options = {}) {
         if (id === "@/lib/payments/config") return load("lib/payments/config.ts");
         if (id === "@/lib/payments/dodopayments") return load("lib/payments/dodopayments.ts");
         if (id === "@/lib/payments/request-security") return { isSameOriginRequest: () => true };
-        if (id === "@/lib/ai/schema") return { effectiveAiPlan: (user) =>
-          user.plan !== "FREE" && user.subscriptionStatus === "active" &&
-            !user.subscriptionCancelAtPeriodEnd ? user.plan : "FREE" };
+        if (id === "@/lib/ai/schema") return require("./helpers/ai-schema.cjs");
         if (id === "dodopayments") return { DodoPayments: class {
           constructor(config) { calls.push({ config }); }
           checkoutSessions = { create: async (request) => {
@@ -43,7 +41,9 @@ function harness(overrides = {}, options = {}) {
           session: { userId: "user-1" }, user: { name: "Test", email: "test@example.com" },
         } } } };
         if (id === "@/lib/prisma") return { db: { user: { findUnique: async () => options.active ?
-          { plan: "CREATOR", subscriptionStatus: "active" } : { plan: "FREE" } } } };
+          { plan: "CREATOR", subscriptionStatus: "active",
+            subscriptionCancelAtPeriodEnd: options.scheduled ?? false,
+            subscriptionCurrentPeriodEnd: new Date(Date.now() + 86400000) } : { plan: "FREE" } } } };
         if (id === "next/headers") return { headers: async () => new Headers() };
         if (id === "next/server") return { NextResponse: { json: (body, init) => Response.json(body, init) } };
         throw new Error(`Unexpected import ${id}`);
@@ -114,4 +114,11 @@ test("setup diagnostics are available locally, but hidden in production", async 
   assert.match((await local.json()).detail, /DODO_PRODUCT_CREATOR/);
   const production = await harness({ DODO_PRODUCT_CREATOR: "" }).post();
   assert.equal((await production.json()).detail, undefined);
+});
+
+
+test("scheduled cancellation cannot start a duplicate checkout during the paid period", async () => {
+  const h = harness({}, { active: true, scheduled: true });
+  assert.equal((await h.post()).status, 409);
+  assert.equal(h.calls.length, 0);
 });

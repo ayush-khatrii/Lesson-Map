@@ -25,7 +25,7 @@ function fixture(options = {}) {
         if (options.providerError) throw new Error("Provider unavailable");
         return {
           metadata: { userId: "user-1" }, product_id: "pdt_creator", status: "active",
-          customer: { customer_id: "customer-1" }, next_billing_date: "2026-11-01T00:00:00Z",
+          customer: { customer_id: "customer-1" }, next_billing_date: "2099-01-01T00:00:00Z",
           cancel_at_next_billing_date: false, ...options.subscription,
         };
       } } }) };
@@ -71,15 +71,16 @@ test("browser status cannot activate a provider-pending subscription", async () 
   assert.equal(h.writes.length, 0);
 });
 
-test("checkout recovery cannot restore a subscription scheduled for cancellation", async () => {
+test("checkout recovery preserves an active subscription scheduled for cancellation", async () => {
   const h = fixture({ subscription: {
     status: "active",
     cancel_at_next_billing_date: true,
   } });
   const response = await h.post();
   assert.equal(response.status, 200);
-  assert.equal((await response.json()).subscriptionStatus, "cancelled");
-  assert.equal(h.writes.length, 0);
+  assert.equal((await response.json()).subscriptionStatus, "active");
+  assert.equal(h.writes[0].data.plan, "CREATOR");
+  assert.equal(h.writes[0].data.subscriptionCancelAtPeriodEnd, true);
 });
 
 test("requires authentication and a valid checkout reference before contacting Dodo", async () => {
@@ -94,4 +95,11 @@ test("requires authentication and a valid checkout reference before contacting D
 test("provider errors and an existing different subscription return recoverable errors", async () => {
   assert.equal((await fixture({ providerError: true }).post()).status, 502);
   assert.equal((await fixture({ conflict: true }).post()).status, 409);
+});
+
+test("checkout recovery cannot extend a scheduled cancellation past period end", async () => {
+  const h = fixture({ subscription: { cancel_at_next_billing_date: true,
+    next_billing_date: "2000-01-01T00:00:00Z" } });
+  assert.equal((await (await h.post()).json()).subscriptionStatus, "cancelled");
+  assert.equal(h.writes.length, 0);
 });

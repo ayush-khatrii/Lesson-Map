@@ -236,9 +236,7 @@ export async function POST(req: NextRequest) {
         await tx.user.update({
           where: { id: userId },
           data: {
-            // A cancellation request revokes LessonMap entitlements immediately,
-            // even if the provider keeps the subscription active until period end.
-            plan: data.cancel_at_next_billing_date === true ? "FREE" : plan,
+            plan,
             subscriptionId,
             customerId,
             subscriptionProductId: data.product_id,
@@ -260,7 +258,7 @@ export async function POST(req: NextRequest) {
         }
 
         const shouldRevoke =
-          data.status !== "active" || data.cancel_at_next_billing_date === true;
+          (data.status ?? matchedUser?.subscriptionStatus) !== "active";
 
         await tx.user.update({
           where: { id: userId },
@@ -273,8 +271,9 @@ export async function POST(req: NextRequest) {
               ? { subscriptionProductId: data.product_id }
               : {}),
             ...(data.status ? { subscriptionStatus: data.status } : {}),
-            subscriptionCurrentPeriodEnd: periodEnd,
-            subscriptionCancelAtPeriodEnd: data.cancel_at_next_billing_date ?? false,
+            subscriptionCurrentPeriodEnd: periodEnd ?? matchedUser?.subscriptionCurrentPeriodEnd,
+            subscriptionCancelAtPeriodEnd:
+              data.cancel_at_next_billing_date ?? matchedUser?.subscriptionCancelAtPeriodEnd ?? false,
           },
         });
       } else if (eventType === "subscription.cancelled") {
