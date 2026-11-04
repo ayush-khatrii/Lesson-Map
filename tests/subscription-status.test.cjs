@@ -19,26 +19,49 @@ function getStatus(user) {
       if (id === "@/lib/prisma") return { db: { user: { findUnique: async () => user } } };
       if (id === "next/headers") return { headers: async () => new Headers() };
       if (id === "next/server") return { NextResponse: { json: (body, init) => Response.json(body, init) } };
-      if (id === "@/lib/ai/schema") return { effectiveAiPlan: (account) =>
-        account.plan !== "FREE" && account.subscriptionStatus === "active" &&
-          !account.subscriptionCancelAtPeriodEnd ? account.plan : "FREE" };
+      if (id === "@/lib/ai/schema") return require("./helpers/ai-schema.cjs");
       throw new Error(`Unexpected import ${id}`);
     },
   });
   return module.exports.GET();
 }
 
-test("subscription status never exposes paid access after cancellation is requested", async () => {
+test("subscription status preserves paid access while cancellation is scheduled", async () => {
   const account = {
     plan: "CREATOR",
     subscriptionId: "sub-1",
     subscriptionStatus: "active",
-    subscriptionCurrentPeriodEnd: new Date("2027-01-01T00:00:00.000Z"),
+    subscriptionCurrentPeriodEnd: new Date(Date.now() + 86400000),
     subscriptionCancelAtPeriodEnd: true,
   };
   const response = await getStatus(account);
   assert.equal(response.status, 200);
   const body = await response.json();
-  assert.equal(body.plan, "FREE");
+  assert.equal(body.plan, "CREATOR");
   assert.equal(body.subscriptionCancelAtPeriodEnd, true);
+});
+
+for (const periodEnd of [null, new Date(0), new Date("invalid")]) {
+  test(`scheduled cancellation without a future paid period exposes Free: ${periodEnd}`, async () => {
+    const response = await getStatus({ plan: "CREATOR", subscriptionStatus: "active",
+      subscriptionCancelAtPeriodEnd: true, subscriptionCurrentPeriodEnd: periodEnd });
+    assert.equal((await response.json()).plan, "FREE");
+  });
+}
+
+const { effectiveAiPlan } = require("./helpers/ai-schema.cjs");
+
+test("scheduled cancellation ends exactly at the billing boundary without a webhook", (t) => {
+  const now = new Date("2030-01-01T00:00:00Z");
+  t.mock.method(Date, "now", () => now.getTime());
+  for (const offset of [-1, 0, 1]) {
+    assert.equal(effectiveAiPlan({ plan: "CREATOR", subscriptionStatus: "active",
+      subscriptionCancelAtPeriodEnd: true,
+      subscriptionCurrentPeriodEnd: new Date(now.getTime() + offset),
+    }), offset > 0 ? "CREATOR" : "FREE");
+  }
+  assert.equal(effectiveAiPlan({ plan: "FREE", subscriptionStatus: "active",
+    subscriptionCancelAtPeriodEnd: true,
+    subscriptionCurrentPeriodEnd: new Date(now.getTime() + 1000),
+  }), "FREE");
 });

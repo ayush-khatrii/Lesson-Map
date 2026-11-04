@@ -23,9 +23,9 @@ export default function RefundPage() {
     >
       <LegalSection title="1. Your cancellation options">
         <p>
-          You can cancel at any time from your account settings. When you cancel, your account returns
-          to the free plan immediately and your paid features are revoked. You will not be charged
-          again.
+          You can cancel at any time from your account settings. You keep your paid features until
+          the end of your current billing period, then your account returns to the free plan.
+          Your subscription will not renew.
         </p>
         <p>
           Cancelling does not automatically refund your current payment. If you would also like to

@@ -37,9 +37,7 @@ function fixture() {
       if (id === "standardwebhooks") return { Webhook };
       if (id === "next/server") return { NextResponse: { json: (body, init) => Response.json(body, init) } };
       if (id === "@/lib/payments/config") return { productIdForPlan: (plan) => plan === "CREATOR" ? "pdt_creator" : "pdt_pro" };
-      if (id === "@/lib/ai/schema") return { effectiveAiPlan: (user) =>
-        user.plan !== "FREE" && user.subscriptionStatus === "active" &&
-          !user.subscriptionCancelAtPeriodEnd ? user.plan : "FREE" };
+      if (id === "@/lib/ai/schema") return require("./helpers/ai-schema.cjs");
       if (id === "@/lib/prisma") return { db: { $transaction: async (callback) => callback(tx) } };
       throw new Error(`Unexpected import ${id}`);
     },
@@ -92,7 +90,7 @@ test("a signed subscription failure revokes paid access", async () => {
   assert.equal(user.subscriptionStatus, "failed");
 });
 
-test("cancelling immediately revokes paid access even before the billing period ends", async () => {
+test("a terminal cancellation revokes paid access even with a future billing date", async () => {
   const { deliver, user } = fixture();
   await deliver();
   const futurePeriodEnd = "2026-12-01T00:00:00.000Z";
@@ -107,7 +105,7 @@ test("cancelling immediately revokes paid access even before the billing period 
   assert.equal(user.subscriptionCurrentPeriodEnd.toISOString(), futurePeriodEnd);
 });
 
-test("scheduling cancellation through a subscription update immediately revokes paid access", async () => {
+test("scheduling cancellation through a subscription update preserves paid access", async () => {
   const { deliver, user } = fixture();
   await deliver();
   assert.equal((await deliver("subscription.updated", "event-2", false, {
@@ -115,7 +113,7 @@ test("scheduling cancellation through a subscription update immediately revokes 
     cancel_at_next_billing_date: true,
     next_billing_date: "2026-12-01T00:00:00.000Z",
   })).status, 200);
-  assert.equal(user.plan, "FREE");
+  assert.equal(user.plan, "CREATOR");
   assert.equal(user.subscriptionStatus, "active");
   assert.equal(user.subscriptionCancelAtPeriodEnd, true);
 });
@@ -143,4 +141,33 @@ test("a second active subscription cannot replace the account's current one", as
   })).status, 500);
   assert.equal(user.plan, "CREATOR");
   assert.equal(user.subscriptionId, "sub-existing");
+});
+
+test("cancellation scheduling, partial updates, reversal and expiry preserve the correct access", async () => {
+  const { deliver, user } = fixture();
+  const next_billing_date = new Date(Date.now() + 86400000).toISOString();
+  await deliver("subscription.active", "active", false, { next_billing_date });
+  const scheduled = { cancel_at_next_billing_date: true, next_billing_date };
+  await deliver("subscription.updated", "schedule", false, scheduled);
+  assert.equal(user.plan, "CREATOR");
+  assert.equal((await (await deliver("subscription.updated", "schedule", false, scheduled)).json()).processed, false);
+  await deliver("subscription.updated", "partial", false, { status: undefined });
+  assert.equal(user.subscriptionCancelAtPeriodEnd, true);
+  assert.equal(user.subscriptionCurrentPeriodEnd.toISOString(), next_billing_date);
+  assert.equal(user.plan, "CREATOR");
+  await deliver("subscription.updated", "reverse", false, { cancel_at_next_billing_date: false });
+  assert.equal(user.plan, "CREATOR");
+  assert.equal(user.subscriptionCancelAtPeriodEnd, false);
+  await deliver("subscription.expired", "expired", false, { status: "expired" });
+  assert.equal(user.plan, "FREE");
+});
+
+test("activation with scheduled cancellation keeps the purchased plan", async () => {
+  const { deliver, user } = fixture();
+  await deliver("subscription.active", "active", false, {
+    cancel_at_next_billing_date: true,
+    next_billing_date: new Date(Date.now() + 86400000).toISOString(),
+  });
+  assert.equal(user.plan, "CREATOR");
+  assert.equal(require("./helpers/ai-schema.cjs").effectiveAiPlan(user), "CREATOR");
 });

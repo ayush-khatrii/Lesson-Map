@@ -55,15 +55,15 @@ test("larger paid outlines do not bypass the Free plan restriction", () => {
   });
 });
 
-test("paid access ends immediately when cancellation is requested", () => {
+test("scheduled cancellation keeps paid access until the billing boundary", () => {
   const active = {
     plan: "CREATOR" as const,
     subscriptionStatus: "active",
     subscriptionCancelAtPeriodEnd: false,
-    subscriptionCurrentPeriodEnd: new Date("2027-01-01T00:00:00.000Z"),
+    subscriptionCurrentPeriodEnd: new Date(Date.now() + 86400000),
   };
   assert.equal(effectiveAiPlan(active), "CREATOR");
-  assert.equal(effectiveAiPlan({ ...active, subscriptionCancelAtPeriodEnd: true }), "FREE");
+  assert.equal(effectiveAiPlan({ ...active, subscriptionCancelAtPeriodEnd: true }), "CREATOR");
   assert.equal(effectiveAiPlan({
     ...active,
     subscriptionStatus: "cancelled",
