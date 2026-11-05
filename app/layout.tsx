@@ -41,10 +41,12 @@ export const metadata: Metadata = {
     siteName: "LessonMap",
     type: "website",
     locale: "en_US",
+    images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: "LessonMap — Visual course planning for creators" }],
   },
 
   twitter: {
     card: "summary_large_image",
+    images: [{ url: "/opengraph-image", alt: "LessonMap — Visual course planning for creators" }],
     title: "LessonMap — Visual Course & Lesson Planner",
     description:
       "Organize lessons, modules, and learning paths visually with LessonMap.",

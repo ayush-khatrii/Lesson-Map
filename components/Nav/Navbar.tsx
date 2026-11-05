@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Brand from "@/components/Brand";
 import { usePathname } from "next/navigation";
 import { ChevronDown, LayoutDashboard, LogOut, Menu, Settings } from "lucide-react";
 import { toast } from "sonner";
@@ -13,12 +14,6 @@ import { Sheet, SheetClose, SheetContent, SheetHeader, SheetTitle, SheetTrigger 
 import { cn } from "@/lib/utils";
 
 const publicLinks = [{ label: "Home", href: "/" }, { label: "About", href: "/about" }, { label: "Examples", href: "/examples" }, { label: "Pricing", href: "/pricing" }];
-
-function Brand() {
-  return <Link href="/" className="inline-flex items-center gap-2 font-bold tracking-[-0.02em] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary">
-    <span className="text-xl ">LessonMap</span>
-  </Link>;
-}
 
 export default function Navbar({ className }: { className?: string }) {
   const pathname = usePathname();
@@ -47,7 +42,7 @@ export default function Navbar({ className }: { className?: string }) {
   return (
     <header className={cn("fixed inset-x-0 top-0 z-50 transition-all duration-200", scrolled ? "border-b border-border/70 bg-background/80 shadow-sm backdrop-blur-xl" : "border-b border-transparent bg-background/50 backdrop-blur-md", className)}>
       <nav aria-label="Main navigation" className="mx-auto flex h-16 max-w-7xl items-center px-5 sm:px-8 lg:px-10">
-        <Brand />
+        <Brand preload />
         <div className="mx-auto hidden items-center gap-1 rounded-xl border border-border/70 bg-background/70 p-1 shadow-sm md:flex">
           {links.map((link) => <Link key={link.href} href={link.href} aria-current={pathname === link.href ? "page" : undefined} className={cn("rounded-lg px-3 py-1.5 text-xs font-medium text-muted-foreground transition duration-200 hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-primary", pathname === link.href && "bg-muted text-foreground")}>{link.label}</Link>)}
         </div>

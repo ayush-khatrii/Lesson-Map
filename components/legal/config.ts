@@ -1,3 +1,5 @@
+import { SUPPORT_EMAIL } from "@/constants/email";
+
 /**
  * Single source of truth for the legal pages. Update these values once and
  * every policy page picks them up.
@@ -9,8 +11,7 @@
 
 export const LEGAL_EFFECTIVE_DATE = "September 24, 2026";
 
-/** TODO: point this at a real support inbox you actually monitor. */
-export const LEGAL_CONTACT_EMAIL = "support@lessonmap.vercel.app";
+export const LEGAL_CONTACT_EMAIL = SUPPORT_EMAIL;
 
 /** TODO: your registered business or trading name. */
 export const LEGAL_ENTITY = "LessonMap";

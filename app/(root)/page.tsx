@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import LandingPage from "@/components/marketing/LandingPage";
+import { SUPPORT_EMAIL } from "@/constants/email";
 import { absoluteUrl, jsonLd, SITE_DESCRIPTION, SITE_NAME } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -10,6 +11,13 @@ export const metadata: Metadata = {
     title: "LessonMap — Build and Share Online Courses",
     description: SITE_DESCRIPTION,
     url: "/",
+    images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: "LessonMap — Visual course planning for creators" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "LessonMap — Build and Share Online Courses",
+    description: SITE_DESCRIPTION,
+    images: [{ url: "/opengraph-image", alt: "LessonMap — Visual course planning for creators" }],
   },
 };
 
@@ -22,6 +30,13 @@ export default function Page() {
         "@id": `${absoluteUrl()}#organization`,
         name: SITE_NAME,
         url: absoluteUrl(),
+        logo: absoluteUrl("/lm-logo.png"),
+        email: SUPPORT_EMAIL,
+        contactPoint: {
+          "@type": "ContactPoint",
+          contactType: "customer support",
+          email: SUPPORT_EMAIL,
+        },
       },
       {
         "@type": "WebSite",

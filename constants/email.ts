@@ -29,4 +29,5 @@ export const EMAIL_ACTIONS = {
 } satisfies Record<string, { enabled: boolean; from: string; subject: string }>;
 
 export type EmailAction = keyof typeof EMAIL_ACTIONS;
-export const EMAIL_REPLY_TO = "support@lessonmap.org";
+export const SUPPORT_EMAIL = "support@lessonmap.org";
+export const EMAIL_REPLY_TO = SUPPORT_EMAIL;
