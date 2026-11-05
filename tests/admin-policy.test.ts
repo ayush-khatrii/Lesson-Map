@@ -14,11 +14,7 @@ import {
   newRecoveryCodes,
   hashRecoveryCode,
 } from "../lib/admin/crypto";
-import {
-  couponInput,
-  couponState,
-  financialTermsMatch,
-} from "../lib/admin/coupon-policy";
+
 import {
   dateKey,
   reportRange,
@@ -92,60 +88,6 @@ test("TOTP encryption binds secrets to the user; accepted counters reject replay
   assert.equal(
     hashRecoveryCode(codes[0].toLowerCase(), "a"),
     hashRecoveryCode(codes[0], "a"),
-  );
-});
-
-test("coupon validation converts precision safely and preserves redeemed financial terms", () => {
-  const value = couponInput.parse({
-    name: "Offer",
-    code: "save20",
-    percentage: 5.4,
-    plans: ["CREATOR"],
-  });
-  assert.equal(value.code, "SAVE20");
-  assert.equal(Math.round(value.percentage * 100), 540);
-  assert.equal(value.cycles, 1);
-  assert.equal(value.perCustomerLimit, 1);
-  assert.equal(value.preserveOnPlanChange, false);
-  for (const patch of [
-    { percentage: 0 },
-    { percentage: 100.01 },
-    { percentage: 5.123 },
-    { plans: [] },
-    { cycles: 0 },
-    { usageLimit: 1, perCustomerLimit: 2 },
-    { startsAt: "2026-12-05T00:00:00Z", expiresAt: "2026-12-01T00:00:00Z" },
-  ]) {
-    assert.equal(couponInput.safeParse({ ...value, ...patch }).success, false);
-  }
-  assert.equal(financialTermsMatch(value, value), true);
-  assert.equal(financialTermsMatch(value, { ...value, percentage: 6 }), false);
-  assert.equal(financialTermsMatch(value, { ...value, cycles: null }), false);
-  assert.equal(
-    financialTermsMatch(value, { ...value, plans: ["PROFESSIONAL"] }),
-    false,
-  );
-  const coupon = {
-    startsAt: null,
-    expiresAt: null,
-    usageLimit: 10,
-    timesUsed: 0,
-  };
-  assert.equal(couponState(coupon, now.getTime()), "active");
-  assert.equal(
-    couponState({ ...coupon, timesUsed: 10 }, now.getTime()),
-    "exhausted",
-  );
-  assert.equal(
-    couponState({ ...coupon, expiresAt: now.toISOString() }, now.getTime()),
-    "expired",
-  );
-  assert.equal(
-    couponState(
-      { ...coupon, startsAt: new Date(now.getTime() + 1).toISOString() },
-      now.getTime(),
-    ),
-    "scheduled",
   );
 });
 

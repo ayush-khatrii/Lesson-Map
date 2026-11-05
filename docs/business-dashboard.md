@@ -49,9 +49,9 @@ WHERE access.role = 'SUPER_ADMIN'
 
 This password is shared with the regular LessonMap account. Use the setup script to store a compatible hash and revoke existing sessions when changing it; entering a plain-text password directly in `account.password` will not work.
 
-## Billing and coupons
+## Billing
 
-Configure the existing `DODO_PAYMENTS_API_KEY`, `DODO_PAYMENTS_ENVIRONMENT`, `DODO_PRODUCT_CREATOR`, `DODO_PRODUCT_PROFESSIONAL`, and webhook secret. Use product IDs and an API key from the same environment. Reporting requires Payments, Refunds, and Subscriptions read access; coupon management requires Discounts write access. Both plans must be configured to offer a coupon for both.
+Configure the existing `DODO_PAYMENTS_API_KEY`, `DODO_PAYMENTS_ENVIRONMENT`, `DODO_PRODUCT_CREATOR`, `DODO_PRODUCT_PROFESSIONAL`, and webhook secret. Use product IDs and an API key from the same environment. Reporting requires Payments, Refunds, and Subscriptions read access. LessonMap does not call Dodo discount-management APIs.
 
 Reports use Dodo's official SDK, paginate completely, and restrict payments to the configured plan products. Refunds outside the original purchase period are attributed using the parent payment/subscription. Incomplete or ambiguous mixed-product data is unavailable rather than included in totals. Complete billing results are cached for one minute; Refresh requests a new read. Cached snapshots expire after seven days. Failed reads never become zero revenue.
 
@@ -59,11 +59,11 @@ Gross collections include customer-paid tax. Net collections subtract successful
 
 Current plan/user/content totals are current records, not historical snapshots. Deleted content is absent from inventory. Paid status uses the application's effective-plan rules, including access retained during scheduled cancellation. Payment success is succeeded attempts divided by succeeded plus failed attempts; pending and cancelled attempts are excluded.
 
-Coupons support percentage discounts, explicit plan products, activation/expiry times, redemption limits, customer eligibility, and recurring billing duration. Defaults are the first billing cycle, one redemption per customer, and removal on plan changes. Once redeemed, financial terms are locked; create a replacement code to change them. Hosted checkout accepts codes and Dodo enforces redemption. Existing subscription discounts remain under Dodo's billing rules. Other Dodo products and unrestricted coupons are not managed here.
+Create and manage coupons directly in the Dodo Payments dashboard under Sales → Discounts, using the same environment and plan products as checkout. LessonMap has no coupon-management page, sidebar item, API routes, or SDK calls for creating, listing, updating, or ending coupons. Previously created Dodo coupons remain intact. Hosted checkout still allows customers to enter discount codes; Dodo validates eligibility and calculates the amount before payment. Existing subscription discounts continue under Dodo's billing rules.
 
 ## Security and recovery
 
-Admin sessions last eight hours and lock after 30 minutes without foreground activity. Coupon/access writes require authenticator verification within five minutes. TOTP verification is throttled and consumes each accepted time counter transactionally to reject replay. Code prompts use one field without code-length hints.
+Admin sessions last eight hours and lock after 30 minutes without foreground activity. Access changes require authenticator verification within five minutes. TOTP verification is throttled and consumes each accepted time counter transactionally to reject replay. Code prompts use one field without code-length hints.
 
 Authenticator secrets use authenticated encryption with user-bound associated data; recovery codes are random, hashed, single-use, and shown only at issuance. Recovery revokes every admin session for that user and clears enrollment. Sign in again, enroll a new authenticator, and save replacement recovery codes. Revoking an administrator invalidates access and sessions immediately. The super admin cannot be revoked through Settings.
 
@@ -81,7 +81,7 @@ Overview's database totals and the existing revenue report load independently, s
 
 Previously visited or prefetched screens can render immediately from memory. A first uncached visit still requires authentication and database/network work; caching does not guarantee zero latency.
 
-Run `npm run test:admin`, `npm run test:auth`, `npm run test:payments`, `npm run typecheck`, and `npm run build`. Admin tests use an embedded PostgreSQL instance for migration and reporting queries and mocked Dodo responses for failure cases. They never create live payments or coupons.
+Run `npm run test:admin`, `npm run test:auth`, `npm run test:payments`, `npm run typecheck`, and `npm run build`. Admin tests use an embedded PostgreSQL instance for migration and reporting queries and mocked Dodo responses for failure cases. They never create live payments.
 
 The existing Alan Sans font is bundled locally, so building does not download fonts from Google. If the execution environment blocks Turbopack's internal process port, use `npm run build:webpack` to produce the same Next.js application with Webpack.
 

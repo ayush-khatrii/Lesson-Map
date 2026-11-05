@@ -92,20 +92,3 @@ export type OverviewReport = {
     trend: { date: string; users: number }[];
   };
 };
-export type DiscountRow = {
-  id: string;
-  name: string;
-  code: string;
-  percentage: number;
-  plans: string[];
-  startsAt: string | null;
-  expiresAt: string | null;
-  timesUsed: number;
-  usageLimit: number | null;
-  perCustomerLimit: number | null;
-  cycles: number | null;
-  eligibility: "any" | "first_time" | "existing";
-  preserveOnPlanChange: boolean;
-  state: "scheduled" | "active" | "expired" | "exhausted";
-  editable: boolean;
-};

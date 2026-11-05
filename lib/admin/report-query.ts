@@ -37,7 +37,6 @@ const parameters: Record<string, readonly string[]> = {
     "status",
     "plan",
   ],
-  discounts: [],
   access: [],
 };
 

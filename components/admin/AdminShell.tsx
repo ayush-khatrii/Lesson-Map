@@ -27,7 +27,6 @@ import {
   PanelLeftOpen,
   Settings2,
   ShieldCheck,
-  Tag,
   Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -59,7 +58,6 @@ const navigation = [
     href: "/dashboard/admin/revenue",
     icon: CircleDollarSign,
   },
-  { label: "Discounts", href: "/dashboard/admin/discounts", icon: Tag },
   { label: "Settings", href: "/dashboard/admin/settings", icon: Settings2 },
 ];
 
@@ -188,9 +186,11 @@ function AdminShellContent({
   }
   const links = (compact = false) => (
     <nav aria-label="Business dashboard" className="space-y-1 px-2">
-      {navigation.map(({ label, href, icon: Icon }, index) => (
+      {navigation.map(({ label, href, icon: Icon }) => (
         <div key={href}>
-          {index === 5 && <div className="mx-2 my-4 border-t" />}
+          {href === "/dashboard/admin/settings" && (
+            <div className="mx-2 my-4 border-t" />
+          )}
           <Link
             prefetch={false}
             onPointerEnter={() => prefetch(href)}

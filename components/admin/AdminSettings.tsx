@@ -250,9 +250,9 @@ export function AdminSettings() {
                         </Button>
                       </div>
                       <p className="text-[11px] leading-relaxed text-muted-foreground">
-                        Administrators can view customer and revenue data and
-                        manage discounts. They must already have a LessonMap
-                        account and complete authenticator setup.
+                        Administrators can view customer and revenue data. They
+                        must already have a LessonMap account and complete
+                        authenticator setup.
                       </p>
                       {error && !revoke && !recoveryOpen && (
                         <p role="alert" className="text-xs text-destructive">
@@ -319,7 +319,7 @@ export function AdminSettings() {
             <Panel
               borderless
               title="Recent administrative activity"
-              description="Access changes, security verification, and coupon management"
+              description="Access changes and security verification"
             >
               {query.data.logs.length ? (
                 <TableFrame>

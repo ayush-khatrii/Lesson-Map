@@ -66,6 +66,7 @@ for (const plan of ["CREATOR", "PROFESSIONAL"]) {
     assert.equal(h.calls[0].config.bearerToken, "test-secret");
     assert.equal(h.calls[0].config.environment, "live_mode");
     const request = h.calls[1].request;
+    assert.equal(request.feature_flags.allow_discount_code, true);
     assert.equal(request.product_cart[0].product_id, `pdt_${plan.toLowerCase()}`);
     assert.equal(request.metadata.userId, "user-1");
     assert.equal(request.metadata.plan, plan);
