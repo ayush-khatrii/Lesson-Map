@@ -79,6 +79,9 @@ Found a problem or have an idea? [Open an issue](https://github.com/ayush-khatri
 
 For contributions, keep changes focused and run the relevant checks before opening a pull request.
 
+Transactional email uses Resend for welcome, subscription activation/renewal, and
+password-reset events. See [email setup and action controls](docs/email.md).
+
 Created by [Ayush Khatri](https://github.com/ayush-khatrii), with contributions from [Vrut07](https://github.com/vrut07).
 
 Copyright © 2026 Ayush Khatri. All rights reserved.

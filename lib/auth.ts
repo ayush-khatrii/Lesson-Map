@@ -2,6 +2,7 @@ import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { db } from "@/lib/prisma";
 import { emailAuthOptions } from "@/lib/auth-email";
+import { sendEmailAction } from "@/lib/email/send";
 
 export const auth = betterAuth({
   baseURL: {
@@ -19,10 +20,14 @@ export const auth = betterAuth({
     // Persist the user and password account together, or roll both back.
     transaction: true,
   }),
-  ...emailAuthOptions((email) => db.user.findFirst({
-    where: { email: { equals: email, mode: "insensitive" } },
-    select: { id: true },
-  })),
+  ...emailAuthOptions(
+    (email) =>
+      db.user.findFirst({
+        where: { email: { equals: email, mode: "insensitive" } },
+        select: { id: true },
+      }),
+    sendEmailAction,
+  ),
   rateLimit: {
     enabled: true,
     storage: "database",
@@ -30,6 +35,8 @@ export const auth = betterAuth({
       "/sign-in/email": { window: 60, max: 5 },
       "/sign-up/email": { window: 60, max: 3 },
       "/change-password": { window: 60, max: 5 },
+      "/request-password-reset": { window: 60, max: 3 },
+      "/reset-password": { window: 60, max: 5 },
     },
   },
   account: {

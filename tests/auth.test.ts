@@ -4,15 +4,20 @@ import { betterAuth } from "better-auth";
 import { memoryAdapter } from "better-auth/adapters/memory";
 import { emailAuthOptions } from "../lib/auth-email";
 
-function fixture() {
+function fixture(options: { emailThrows?: boolean } = {}) {
   const database: Record<string, any[]> = { user: [], account: [], session: [], verification: [] };
+  const emails: import("../lib/email/types").EmailEvent[] = [];
   const auth = betterAuth({
     baseURL: "http://localhost:3000",
     secret: "test-only-auth-secret-with-at-least-32-characters",
     database: memoryAdapter(database),
     ...emailAuthOptions(async (email) => database.user.find(
       (user) => user.email.toLowerCase() === email,
-    ) ?? null),
+    ) ?? null, async (event) => {
+      emails.push(event);
+      if (options.emailThrows) throw new Error("Transport unavailable");
+      return { status: "sent", id: "test-email-id" };
+    }),
     rateLimit: { enabled: false },
     logger: { disabled: true },
   });
@@ -20,7 +25,7 @@ function fixture() {
     `http://localhost:3000/api/auth/${path}`,
     { method: "POST", headers: { "Content-Type": "application/json", Origin: "http://localhost:3000", ...headers }, body: JSON.stringify(body) },
   ));
-  return { auth, database, post };
+  return { auth, database, post, emails };
 }
 
 const password = "a long test password 123!";
@@ -171,4 +176,98 @@ test("Better Auth's own duplicate check also rejects instead of returning synthe
     assert.equal(error.body.code, "USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL");
     return true;
   });
+});
+
+test("welcome sends only for persisted new users, including OAuth creation", async () => {
+  const { auth, database, post, emails } = fixture();
+  const body = { name: "Email Test", email: "delivered@resend.dev", password };
+  assert.equal((await post("sign-up/email", body)).status, 200);
+  assert.equal(emails.length, 1);
+  assert.equal(emails[0].action, "WELCOME");
+  assert.equal(emails[0].eventId, database.user[0].id);
+  assert.equal((await post("sign-in/email", body)).status, 200);
+  assert.equal((await post("sign-up/email", body)).status, 422);
+  assert.equal(emails.length, 1);
+
+  const context = await auth.$context;
+  const oauth = await context.internalAdapter.createOAuthUser({
+    name: "OAuth User", email: "bounced@resend.dev", emailVerified: true,
+  }, { providerId: "google", accountId: "google-test-user" });
+  assert.equal(emails.length, 2);
+  assert.equal(emails[1].action, "WELCOME");
+  assert.equal(emails[1].eventId, oauth.user.id);
+});
+
+test("welcome hooks skip users absent after rollback or replaced by a different account", async () => {
+  let deliveries = 0;
+  for (const persisted of [null, { id: "different-user" }]) {
+    const options = emailAuthOptions(async () => persisted, async () => {
+      deliveries++;
+      return { status: "sent", id: "test-email" };
+    });
+    await options.databaseHooks.user.create.after({
+      id: "rolled-back-user", email: "delivered@resend.dev", name: "Rollback Test",
+      emailVerified: false, createdAt: new Date(), updatedAt: new Date(),
+    });
+  }
+  assert.equal(deliveries, 0);
+});
+
+test("reset emails use Better Auth tokens and completion happens only after a valid reset", async () => {
+  const { post, database, emails } = fixture();
+  const email = "delivered@resend.dev";
+  await post("sign-up/email", { name: "Reset Test", email, password });
+  emails.length = 0;
+  const before = database.account[0].password;
+  const unknown = await post("request-password-reset", {
+    email: "bounced@resend.dev", redirectTo: "http://localhost:3000/future-reset",
+  });
+  assert.equal(unknown.status, 200);
+  assert.equal(emails.length, 0);
+  const response = await post("request-password-reset", {
+    email, redirectTo: "http://localhost:3000/future-reset",
+  });
+  assert.deepEqual(await response.json(), await unknown.json());
+  assert.equal(emails.length, 1);
+  const event = emails[0];
+  assert.equal(event.action, "PASSWORD_RESET_REQUESTED");
+  if (event.action !== "PASSWORD_RESET_REQUESTED") throw new Error("Expected reset request");
+  assert.equal(new URL(event.resetUrl).pathname, `/api/auth/reset-password/${event.eventId}`);
+  assert.equal(new URL(event.resetUrl).searchParams.get("callbackURL"), "http://localhost:3000/future-reset");
+  assert.equal(database.account[0].password, before);
+  assert.equal((await post("reset-password", { token: "invalid", newPassword: password })).status, 400);
+  assert.equal(emails.length, 1);
+  const newPassword = "a new reset password 456!";
+  assert.equal((await post("reset-password", { token: event.eventId, newPassword })).status, 200);
+  assert.equal(emails.length, 2);
+  assert.equal(emails[1].action, "PASSWORD_RESET_COMPLETED");
+  assert.notEqual(database.account[0].password, before);
+  assert.equal((await post("reset-password", { token: event.eventId, newPassword })).status, 400);
+  assert.equal(emails.length, 2);
+  assert.equal((await post("sign-in/email", { email, password: newPassword })).status, 200);
+});
+
+test("untrusted reset redirects and expired tokens cannot complete a reset", async () => {
+  const { post, database, emails } = fixture();
+  const email = "delivered@resend.dev";
+  await post("sign-up/email", { name: "Reset Test", email, password });
+  emails.length = 0;
+  assert.equal((await post("request-password-reset", { email, redirectTo: "https://untrusted.example/reset" })).status, 403);
+  assert.equal(emails.length, 0);
+  await post("request-password-reset", { email });
+  const token = emails[0].eventId;
+  database.verification.find((value) => value.identifier === `reset-password:${token}`).expiresAt = new Date(0);
+  assert.equal((await post("reset-password", { token, newPassword: password })).status, 400);
+  assert.equal(emails.length, 1);
+});
+
+test("email transport exceptions do not interrupt signup or a completed reset", async () => {
+  const { post, emails } = fixture({ emailThrows: true });
+  const email = "delivered@resend.dev";
+  assert.equal((await post("sign-up/email", { name: "Reset Test", email, password })).status, 200);
+  assert.equal((await post("request-password-reset", { email })).status, 200);
+  const token = emails.find((event) => event.action === "PASSWORD_RESET_REQUESTED")!.eventId;
+  const newPassword = "a new reset password 456!";
+  assert.equal((await post("reset-password", { token, newPassword })).status, 200);
+  assert.equal((await post("sign-in/email", { email, password: newPassword })).status, 200);
 });

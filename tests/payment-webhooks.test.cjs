@@ -6,14 +6,17 @@ const vm = require("node:vm");
 const ts = require("typescript");
 const { Webhook } = require("standardwebhooks");
 
-function fixture() {
+function fixture(options = {}) {
   const secret = Buffer.from("local-test-webhook-signing-secret").toString("base64");
   const user = {
     id: "user-1", plan: "FREE", subscriptionId: null, customerId: null,
+    email: "delivered@resend.dev", name: "Billing Test",
     subscriptionStatus: null, subscriptionCancelAtPeriodEnd: false,
     subscriptionCurrentPeriodEnd: null,
   };
   const events = new Map();
+  const emails = [];
+  let committed = false;
   const tx = {
     user: {
       findFirst: async ({ where }) => where.id === user.id ? { ...user } : null,
@@ -38,7 +41,20 @@ function fixture() {
       if (id === "next/server") return { NextResponse: { json: (body, init) => Response.json(body, init) } };
       if (id === "@/lib/payments/config") return { productIdForPlan: (plan) => plan === "CREATOR" ? "pdt_creator" : "pdt_pro" };
       if (id === "@/lib/ai/schema") return require("./helpers/ai-schema.cjs");
-      if (id === "@/lib/prisma") return { db: { $transaction: async (callback) => callback(tx) } };
+      if (id === "@/lib/email/send") return { sendEmailAction: async (event) => {
+        assert.equal(committed, true, "email must follow commit");
+        assert.ok(events.size > 0, "deduplication must be persisted before email");
+        emails.push(event);
+        if (options.emailThrows) throw new Error("Email transport unavailable");
+        return options.emailFails ? { status: "failed", reason: "provider_error" } : { status: "sent", id: "test-email" };
+      } };
+      if (id === "@/lib/prisma") return { db: { $transaction: async (callback) => {
+        committed = false;
+        const result = await callback(tx);
+        if (options.failCommit) throw new Error("Commit failed");
+        committed = true;
+        return result;
+      } } };
       throw new Error(`Unexpected import ${id}`);
     },
   });
@@ -56,7 +72,61 @@ function fixture() {
     });
     return module.exports.POST({ headers, text: async () => body });
   }
-  return { user, events, deliver };
+  return { user, events, deliver, emails };
+}
+
+test("activation and renewal email the matched database user only after commit", async () => {
+  const { deliver, user, emails } = fixture();
+  await deliver("subscription.active", "activation", false, {
+    customer: { customer_id: "customer-1", email: "bounced@resend.dev" },
+  });
+  assert.equal(emails.length, 1);
+  assert.equal(emails[0].action, "PURCHASE_ACTIVATED");
+  assert.equal(emails[0].to, user.email);
+  assert.equal(emails[0].eventId, "sub-1");
+  await deliver("subscription.active", "activation");
+  assert.equal(emails.length, 1);
+  await deliver("subscription.renewed", "renewal-1");
+  assert.equal(emails[1].action, "PLAN_RENEWED");
+  assert.equal(emails[1].eventId, "renewal-1");
+  await deliver("subscription.renewed", "renewal-1");
+  assert.equal(emails.length, 2);
+  await deliver("subscription.renewed", "renewal-2");
+  assert.equal(emails.length, 3);
+});
+
+test("activation still emails when checkout recovery already linked the subscription", async () => {
+  const { user, deliver, emails } = fixture();
+  Object.assign(user, { plan: "CREATOR", subscriptionId: "sub-1", customerId: "customer-1", subscriptionStatus: "active" });
+  assert.equal((await deliver()).status, 200);
+  assert.equal(emails.length, 1);
+  assert.equal(emails[0].action, "PURCHASE_ACTIVATED");
+});
+
+test("rejected, rolled-back, unrelated and stale events send no emails", async () => {
+  const { deliver, user, emails } = fixture();
+  await deliver("subscription.active", "bad-signature", true);
+  await deliver("subscription.active", "bad-product", false, { product_id: "unknown" });
+  await deliver("payment.succeeded", "payment");
+  await deliver("subscription.plan_changed", "plan-change");
+  await deliver("subscription.updated", "updated");
+  user.subscriptionId = "replacement";
+  await deliver("subscription.cancelled", "stale");
+  assert.equal(emails.length, 0);
+  const failed = fixture({ failCommit: true });
+  assert.equal((await failed.deliver()).status, 500);
+  assert.equal(failed.emails.length, 0);
+});
+
+for (const options of [{ emailFails: true }, { emailThrows: true }]) {
+  test(`email failure does not undo billing or cause webhook redelivery: ${JSON.stringify(options)}`, async () => {
+    const { deliver, user, emails, events } = fixture(options);
+    assert.equal((await deliver()).status, 200);
+    assert.equal(user.plan, "CREATOR");
+    assert.equal(events.size, 1);
+    assert.equal((await deliver()).status, 200);
+    assert.equal(emails.length, 1);
+  });
 }
 
 test("a signed activation grants the purchased plan and a repeated delivery is ignored", async () => {

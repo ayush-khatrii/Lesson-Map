@@ -4,6 +4,8 @@ import { db } from "@/lib/prisma";
 import { productIdForPlan } from "@/lib/payments/config";
 import { effectiveAiPlan } from "@/lib/ai/schema";
 import type { Prisma } from "@/app/generated/prisma/client";
+import { sendEmailAction } from "@/lib/email/send";
+import type { EmailEvent } from "@/lib/email/types";
 
 type PaidPlan = "CREATOR" | "PROFESSIONAL";
 
@@ -100,6 +102,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    let emailEvent: EmailEvent | undefined;
     const processed = await db.$transaction(async (tx) => {
       const existing = await tx.webhookEvent.findUnique({
         where: { id: webhookId },
@@ -145,6 +148,8 @@ export async function POST(req: NextRequest) {
 
       const userSelect = {
         id: true,
+        email: true,
+        name: true,
         plan: true,
         subscriptionId: true,
         customerId: true,
@@ -154,6 +159,8 @@ export async function POST(req: NextRequest) {
       } as const;
       const candidateUsers = new Map<string, {
         id: string;
+        email: string;
+        name: string;
         plan: "FREE" | "CREATOR" | "PROFESSIONAL";
         subscriptionId: string | null;
         customerId: string | null;
@@ -310,9 +317,27 @@ export async function POST(req: NextRequest) {
         data: { id: webhookId, type: eventType },
       });
 
+      if (matchedUser && plan && subscriptionId &&
+          (eventType === "subscription.active" || eventType === "subscription.renewed")) {
+        emailEvent = {
+          action: eventType === "subscription.active" ? "PURCHASE_ACTIVATED" : "PLAN_RENEWED",
+          to: matchedUser.email,
+          name: matchedUser.name,
+          plan,
+          eventId: eventType === "subscription.active" ? subscriptionId : webhookId,
+        };
+      }
       return true;
     });
 
+    // Never send inside the transaction or before durable webhook deduplication.
+    if (processed && emailEvent) {
+      try {
+        await sendEmailAction(emailEvent);
+      } catch {
+        console.error("Billing email action failed", { action: emailEvent.action });
+      }
+    }
     console.info("Dodo webhook handled", { webhookId, eventType, processed });
     return NextResponse.json({ received: true, eventType, processed });
   } catch (error) {
