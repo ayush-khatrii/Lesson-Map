@@ -60,6 +60,56 @@ function load(relative, overrides = {}, cache = {}) {
   return module.exports;
 }
 
+test("admin auth route rejects OAuth, linking, signup and password mutation endpoints", async (t) => {
+  const previousSecret = process.env.ADMIN_AUTH_SECRET;
+  process.env.ADMIN_AUTH_SECRET = "test-only-admin-secret";
+  t.after(() => {
+    if (previousSecret === undefined) delete process.env.ADMIN_AUTH_SECRET;
+    else process.env.ADMIN_AUTH_SECRET = previousSecret;
+  });
+  let handlerCalls = 0;
+  const respond = async () => {
+    handlerCalls++;
+    return Response.json({ ok: true });
+  };
+  const route = load("app/api/admin/auth/[...all]/route.ts", {
+    "better-auth/next-js": {
+      toNextJsHandler: () => ({ GET: respond, POST: respond }),
+    },
+    "@/lib/admin/auth": { getAdminAuth: () => ({ handler: respond }) },
+    "@/lib/admin/http": {
+      privateJson: (body, status) => Response.json(body, { status }),
+      audit: async () => {},
+    },
+  });
+  for (const method of ["GET", "POST"]) {
+    for (const path of [
+      "sign-in/social",
+      "callback/google",
+      "callback/github",
+      "link-social",
+      "sign-up/email",
+      "set-password",
+      "reset-password",
+      "change-password",
+    ]) {
+      const response = await route[method](
+        new Request(`http://localhost:3000/api/admin/auth/${path}`, { method }),
+      );
+      assert.equal(response.status, 404, `${method} ${path}`);
+    }
+  }
+  assert.equal(handlerCalls, 0);
+  const response = await route.POST(
+    new Request("http://localhost:3000/api/admin/auth/sign-in/email", {
+      method: "POST",
+    }),
+  );
+  assert.equal(response.status, 200);
+  assert.equal(handlerCalls, 1);
+  assert.match(response.headers.get("cache-control"), /no-store/);
+});
+
 test("dashboard migration and reporting queries run against PostgreSQL semantics", async () => {
   const sql = new PGlite();
   try {

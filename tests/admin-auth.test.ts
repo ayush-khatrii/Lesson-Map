@@ -64,7 +64,6 @@ async function fixture() {
   const approved = new Set([
     database.user.find((u) => u.email === "owner@example.com").id,
   ]);
-  const googleIdentity = { email: "owner@example.com" };
   const auth = betterAuth({
     baseURL: origin,
     secret: "separate-admin-test-secret-long-enough",
@@ -72,24 +71,8 @@ async function fixture() {
     ...adminAuthOptions(async (id) => approved.has(id)),
     rateLimit: { enabled: false },
     logger: { disabled: true },
-    socialProviders: {
-      google: {
-        clientId: "test-google-client",
-        clientSecret: "test-google-secret",
-        disableSignUp: true,
-        getUserInfo: async () => ({
-          user: {
-            id: `google-${googleIdentity.email}`,
-            name: "Google User",
-            email: googleIdentity.email,
-            emailVerified: true,
-          },
-          data: {},
-        }),
-      },
-    },
   });
-  return { database, publicAuth, auth, approved, post, googleIdentity };
+  return { database, publicAuth, auth, approved, post };
 }
 test("admin email sign-in reuses identities but creates isolated cookies and sessions", async () => {
   const h = await fixture();
@@ -120,57 +103,6 @@ test("admin email sign-in reuses identities but creates isolated cookies and ses
   );
 });
 
-test("Google callback admits an approved existing user and refuses account creation", async () => {
-  const h = await fixture();
-  h.database.user.find((u) => u.email === "owner@example.com").emailVerified =
-    true;
-  const originalFetch = globalThis.fetch;
-  globalThis.fetch = async (input) => {
-    const url = String(input instanceof Request ? input.url : input);
-    assert.ok(url.startsWith("https://oauth2.googleapis.com/token"));
-    return Response.json({
-      access_token: "test-google-token",
-      token_type: "Bearer",
-      expires_in: 3600,
-    });
-  };
-  async function flow() {
-    const start = await h.post(h.auth, "sign-in/social", {
-      provider: "google",
-      callbackURL: "/dashboard/admin/verify",
-      errorCallbackURL: "/dashboard/admin/login",
-    });
-    const { url } = await start.json();
-    const state = new URL(url).searchParams.get("state");
-    return h.auth.handler(
-      new Request(
-        `${origin}/api/admin/auth/callback/google?code=test-code&state=${state}`,
-        { headers: { cookie: cookies(start) } },
-      ),
-    );
-  }
-  try {
-    const success = await flow();
-    assert.equal(success.status, 302);
-    assert.equal(
-      new URL(success.headers.get("location")!, origin).pathname,
-      "/dashboard/admin/verify",
-    );
-    assert.equal(h.database.adminSession.length, 1);
-    assert.ok(cookies(success).includes("lessonmap-admin.session_token="));
-    const usersBefore = h.database.user.length;
-    h.googleIdentity.email = "unknown-google@example.com";
-    const denied = await flow();
-    assert.equal(denied.status, 302);
-    assert.ok(
-      denied.headers.get("location")?.includes("/dashboard/admin/login"),
-    );
-    assert.equal(h.database.user.length, usersBefore);
-    assert.equal(h.database.adminSession.length, 1);
-  } finally {
-    globalThis.fetch = originalFetch;
-  }
-});
 test("ordinary, revoked and unknown accounts cannot create admin sessions or register", async () => {
   const h = await fixture();
   assert.equal(
@@ -215,26 +147,16 @@ test("ordinary, revoked and unknown accounts cannot create admin sessions or reg
   assert.equal(h.database.user.length, before);
   assert.equal(h.database.adminSession.length, 0);
 });
-test("admin OAuth offers Google only and uses the isolated callback and state store", async () => {
+test("admin authentication rejects social sign-in and account linking", async () => {
   const h = await fixture();
-  const google = await h.post(h.auth, "sign-in/social", {
-    provider: "google",
-    callbackURL: "/dashboard/admin/verify",
-  });
-  assert.equal(google.status, 200);
-  const data = await google.json();
-  assert.equal(
-    new URL(data.url).searchParams.get("redirect_uri"),
-    `${origin}/api/admin/auth/callback/google`,
-  );
-  assert.equal(
-    (
-      await h.post(h.auth, "sign-in/social", {
-        provider: "github",
-        callbackURL: "/dashboard/admin",
-      })
-    ).status,
-    404,
-  );
+  const before = structuredClone(h.database.account);
+  for (const path of ["sign-in/social", "link-social"]) {
+    const response = await h.post(h.auth, path, {
+      provider: "google",
+      callbackURL: "/dashboard/admin/verify",
+    });
+    assert.equal(response.status, 404);
+  }
+  assert.deepEqual(h.database.account, before);
   assert.equal(h.database.adminSession.length, 0);
 });

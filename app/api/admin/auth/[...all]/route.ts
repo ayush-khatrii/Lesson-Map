@@ -2,15 +2,8 @@ import { toNextJsHandler } from "better-auth/next-js";
 import { getAdminAuth } from "@/lib/admin/auth";
 import { privateJson, audit } from "@/lib/admin/http";
 
-// Expose only the sign-in/session lifecycle, never signup or account mutation.
-const allowed = new Set([
-  "sign-in/email",
-  "sign-in/social",
-  "callback/google",
-  "get-session",
-  "sign-out",
-  "error",
-]);
+// Only email/password sign-in and the session lifecycle are exposed for admins.
+const allowed = new Set(["sign-in/email", "get-session", "sign-out", "error"]);
 async function handle(request: Request) {
   const path = new URL(request.url).pathname.replace(
     /^\/api\/admin\/auth\//,
@@ -26,7 +19,7 @@ async function handle(request: Request) {
   const response = await (request.method === "GET"
     ? handlers.GET(request)
     : handlers.POST(request));
-  if (path.startsWith("sign-in/") || path === "callback/google") {
+  if (path === "sign-in/email") {
     await audit(
       null,
       response.status >= 400 ? "ADMIN_SIGN_IN_FAILED" : "ADMIN_SIGN_IN_ATTEMPT",

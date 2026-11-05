@@ -2,7 +2,7 @@ import type { BetterAuthOptions } from "better-auth";
 import { APIError, createAuthMiddleware } from "better-auth/api";
 import { ADMIN_SESSION_SECONDS } from "./policy";
 
-// A separate session model, cookie namespace and OAuth state isolate app sessions.
+// Separate session models and a cookie namespace isolate admin sessions.
 export function adminAuthOptions(
   canSignIn: (userId: string) => Promise<boolean>,
   onSignIn?: (userId: string) => Promise<void>,
@@ -29,12 +29,13 @@ export function adminAuthOptions(
       modelName: "adminRateLimit",
       customRules: {
         "/sign-in/email": { window: 60, max: 5 },
-        "/sign-in/social": { window: 60, max: 10 },
       },
     },
-    account: { accountLinking: { enabled: true } },
+    account: { accountLinking: { enabled: false } },
     hooks: {
       before: createAuthMiddleware(async (ctx) => {
+        if (ctx.path === "/sign-in/social" || ctx.path === "/link-social")
+          throw new APIError("NOT_FOUND", { message: "Not found." });
         if (
           ctx.path === "/sign-in/email" &&
           typeof ctx.body?.email === "string"

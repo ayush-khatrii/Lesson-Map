@@ -2,30 +2,21 @@
 import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { BookOpen, Loader2, ShieldCheck } from "lucide-react";
-import { FaGoogle } from "react-icons/fa";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { adminAuthClient } from "@/lib/admin/client";
 
-export function AdminLogin({
-  configured,
-  googleConfigured,
-}: {
-  configured: boolean;
-  googleConfigured: boolean;
-}) {
-  const [pending, setPending] = useState<"email" | "google" | null>(null),
+export function AdminLogin({ configured }: { configured: boolean }) {
+  const [pending, setPending] = useState(false),
     [error, setError] = useState("");
   useEffect(() => {
     if (new URLSearchParams(window.location.search).has("error"))
-      setError(
-        "Unable to sign in. Check your account or try another sign-in method.",
-      );
+      setError("Unable to sign in. Use your LessonMap email and password.");
   }, []);
   async function emailLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setPending("email");
+    setPending(true);
     setError("");
     const form = new FormData(event.currentTarget);
     try {
@@ -47,23 +38,7 @@ export function AdminLogin({
     } catch {
       setError("The sign-in service is unavailable. Please try again.");
     } finally {
-      setPending(null);
-    }
-  }
-  async function googleLogin() {
-    setPending("google");
-    setError("");
-    try {
-      const result = await adminAuthClient.signIn.social({
-        provider: "google",
-        callbackURL: "/dashboard/admin/verify",
-        errorCallbackURL: "/dashboard/admin/login?error=sign-in",
-      });
-      if (result.error) setError("Unable to sign in. Please try again.");
-    } catch {
-      setError("The sign-in service is unavailable.");
-    } finally {
-      setPending(null);
+      setPending(false);
     }
   }
   return (
@@ -99,10 +74,7 @@ export function AdminLogin({
             </p>
           )}
           <form onSubmit={emailLogin} className="space-y-4">
-            <fieldset
-              disabled={pending !== null || !configured}
-              className="space-y-4"
-            >
+            <fieldset disabled={pending || !configured} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="admin-email">Email</Label>
                 <Input
@@ -123,33 +95,21 @@ export function AdminLogin({
                   autoComplete="current-password"
                   required
                 />
+                <p className="text-[11px] leading-relaxed text-muted-foreground">
+                  Use your existing LessonMap password. No separate business
+                  password is created.
+                </p>
               </div>
-              <Button className="w-full" disabled={pending !== null}>
-                {pending === "email" && (
-                  <Loader2 className="size-4 animate-spin" />
-                )}
+              <Button className="w-full" disabled={pending}>
+                {pending && <Loader2 className="size-4 animate-spin" />}
                 Sign in with email
               </Button>
             </fieldset>
           </form>
-          <div className="my-5 flex items-center gap-3 text-[11px] text-muted-foreground">
-            <span className="h-px flex-1 bg-border" />
-            or continue with
-            <span className="h-px flex-1 bg-border" />
-          </div>
-          <Button
-            variant="outline"
-            className="w-full"
-            disabled={pending !== null || !configured || !googleConfigured}
-            onClick={() => void googleLogin()}
-          >
-            {pending === "google" ? (
-              <Loader2 className="size-4 animate-spin" />
-            ) : (
-              <FaGoogle className="size-3.5" />
-            )}
-            Google
-          </Button>
+          <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground">
+            Never set a password? Contact the application owner to set up email
+            sign-in.
+          </p>
           {error && (
             <p role="alert" className="mt-4 text-xs text-destructive">
               {error}

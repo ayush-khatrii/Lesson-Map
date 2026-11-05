@@ -8,10 +8,6 @@ export default async function AdminLoginPage() {
         process.env.ADMIN_AUTH_SECRET?.trim() &&
         process.env.ADMIN_TOTP_ENCRYPTION_KEY?.trim(),
       )}
-      googleConfigured={Boolean(
-        process.env.GOOGLE_CLIENT_ID?.trim() &&
-        process.env.GOOGLE_CLIENT_SECRET?.trim(),
-      )}
     />
   );
 }
