@@ -1,11 +1,16 @@
 import type { Metadata } from "next";
 // @ts-ignore
 import "@/app/globals.css";
-import { Alan_Sans } from "next/font/google";
+import localFont from "next/font/local";
 import { Providers } from "@/components/Providers";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/site";
 
-const alanSans = Alan_Sans({ subsets: ["latin"] });
+const alanSans = localFont({
+  src: "../node_modules/@fontsource-variable/alan-sans/files/alan-sans-latin-wght-normal.woff2",
+  weight: "300 900",
+  display: "swap",
+  fallback: ["Arial", "sans-serif"],
+});
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   applicationName: SITE_NAME,

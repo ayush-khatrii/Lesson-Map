@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
   try {
     const config = checkoutConfiguration(body.plan);
     const client = createDodoPayments(config.apiKey, config.environment);
-    const subscription = await client.subscriptions.retrieve(body.subscriptionId, {
+    const subscription = await client.subscriptions.retrieve(body.subscriptionId, {}, {
       timeout: 10000, maxRetries: 0,
     });
     // The provider's server-side metadata binds the purchase to the signed-in user.

@@ -53,6 +53,17 @@ function isPublicApiRoute(pathname: string): boolean {
 export default async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // Admin authentication uses a separate cookie and backend guard. In particular,
+  // the public app's session cookie must never grant or gate dashboard access.
+  if (pathname === "/dashboard/admin" || pathname.startsWith("/dashboard/admin/") || pathname === "/api/admin" || pathname.startsWith("/api/admin/")) {
+    const response = NextResponse.next();
+    response.headers.set("Cache-Control", "private, no-store");
+    response.headers.set("X-Robots-Tag", "noindex, nofollow");
+    response.headers.set("Referrer-Policy", "same-origin");
+    response.headers.set("X-Frame-Options", "DENY");
+    return response;
+  }
+
   // Optimistic session check via cookie (fast, no DB call)
   // This checks for the existence of the BetterAuth session cookie.
   // Deep validation still happens inside Server Components & API Route Handlers.

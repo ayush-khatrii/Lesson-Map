@@ -67,6 +67,7 @@ export async function POST(req: NextRequest) {
         ? { customer_id: existingSubscription.customerId }
         : { name: username, email },
       metadata: { plan, userId },
+      feature_flags: { allow_discount_code: true, allow_customer_editing_email: false },
       return_url: config.returnUrl,
     }, { timeout: 10000, maxRetries: 0 });
 

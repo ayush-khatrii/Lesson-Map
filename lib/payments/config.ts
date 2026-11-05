@@ -7,7 +7,7 @@ export function productIdForPlan(plan: PaidPlan) {
   return process.env[`DODO_PRODUCT_${plan}`]?.trim();
 }
 
-function paymentCredentials(): { apiKey: string; environment: PaymentEnvironment } {
+export function paymentCredentials(): { apiKey: string; environment: PaymentEnvironment } {
   const apiKey = process.env.DODO_PAYMENTS_API_KEY?.trim();
   if (!apiKey) {
     throw new PaymentConfigurationError("Missing DODO_PAYMENTS_API_KEY.");

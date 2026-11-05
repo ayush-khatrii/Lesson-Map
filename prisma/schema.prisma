@@ -19,6 +19,8 @@ model User {
   accounts      Account[]
   sessions      Session[]
   aiGenerations AiGeneration[]
+  adminAccess   AdminAccess?
+  adminSessions AdminSession[]
 
   plan                          Plan      @default(FREE)
   subscriptionId                String?   @unique
@@ -220,4 +222,92 @@ model RateLimit {
   lastRequest BigInt
 
   @@map("rateLimit")
+}
+
+enum AdminRole {
+  SUPER_ADMIN
+  ADMIN
+}
+
+// Kept separate from User so public authentication never exposes privileges or MFA.
+model AdminAccess {
+  id                 String   @id @default(cuid())
+  userId             String   @unique
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role               AdminRole @default(ADMIN)
+  active             Boolean  @default(true)
+  totpSecret         String?
+  pendingSecret      String?
+  pendingExpiresAt   DateTime?
+  totpEnabledAt      DateTime?
+  lastCounter        BigInt?
+  securityVersion    Int      @default(0)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  recoveryCodes      AdminRecoveryCode[]
+}
+
+model AdminSession {
+  id              String   @id
+  token           String   @unique
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt       DateTime
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  ipAddress       String?
+  userAgent       String?
+  verifiedAt      DateTime?
+  lastActivityAt  DateTime?
+  verifiedVersion Int?
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model AdminVerification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+}
+
+model AdminRateLimit {
+  id          String @id
+  key         String @unique
+  count       Int
+  lastRequest BigInt
+}
+
+model AdminRecoveryCode {
+  id         String   @id @default(cuid())
+  accessId   String
+  access     AdminAccess @relation(fields: [accessId], references: [id], onDelete: Cascade)
+  hash       String   @unique
+  usedAt     DateTime?
+  createdAt  DateTime @default(now())
+
+  @@index([accessId])
+}
+
+model AdminAuditLog {
+  id          String   @id @default(cuid())
+  actorUserId String?
+  action      String
+  targetId    String?
+  details     Json?
+  createdAt   DateTime @default(now())
+
+  @@index([createdAt])
+}
+
+// Only complete Dodo responses are cached; failed reads never replace real totals.
+model AdminReportCache {
+  key       String   @id
+  data      Json
+  fetchedAt DateTime @default(now())
 }

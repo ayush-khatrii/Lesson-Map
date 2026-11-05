@@ -20,7 +20,7 @@ function fixture(options = {}) {
       if (id === "next/server") return { NextResponse: { json: (body, init) => Response.json(body, init) } };
       if (id === "@/lib/payments/request-security") return { isSameOriginRequest: () => true };
       if (id === "@/lib/payments/config") return { PaymentConfigurationError: class extends Error {}, checkoutConfiguration: () => ({ apiKey: "test", environment: "test_mode", productId: "pdt_creator" }) };
-      if (id === "@/lib/payments/dodopayments") return { createDodoPayments: () => ({ subscriptions: { retrieve: async (id, config) => {
+      if (id === "@/lib/payments/dodopayments") return { createDodoPayments: () => ({ subscriptions: { retrieve: async (id, query, config) => {
         reads.push({ id, config });
         if (options.providerError) throw new Error("Provider unavailable");
         return {

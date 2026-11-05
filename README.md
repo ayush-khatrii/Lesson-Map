@@ -73,6 +73,8 @@ Built for independent educators, bootcamp instructors, and creators who want a c
 
 ## Feedback and contributions
 
+The private business dashboard is at `/dashboard/admin`. See [dashboard setup and security](docs/business-dashboard.md) for the super-admin bootstrap, authenticator setup, Google OAuth callback, and Dodo configuration.
+
 Found a problem or have an idea? [Open an issue](https://github.com/ayush-khatrii/Lesson-Map/issues) with the steps to reproduce it, expected behavior, and a screenshot when useful.
 
 For contributions, keep changes focused and run the relevant checks before opening a pull request.
