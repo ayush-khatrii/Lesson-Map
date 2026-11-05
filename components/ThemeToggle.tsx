@@ -12,7 +12,7 @@ const ThemeToggle = () => {
     <Button
       variant={"ghost"}
       onClick={() => setTheme(isDark ? "light" : "dark")}
-      className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-transparent transition-all hover:border-border hover:bg-muted"
+      size="icon"
       aria-label={isDark ? "Switch to light theme" : "Switch to dark theme"}
     >
       {isDark ? (

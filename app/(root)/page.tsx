@@ -30,7 +30,7 @@ export default function Page() {
         "@id": `${absoluteUrl()}#organization`,
         name: SITE_NAME,
         url: absoluteUrl(),
-        logo: absoluteUrl("/lm-logo.png"),
+        logo: absoluteUrl("/logo-2.png"),
         email: SUPPORT_EMAIL,
         contactPoint: {
           "@type": "ContactPoint",

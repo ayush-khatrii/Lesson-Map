@@ -4,7 +4,8 @@ import { SITE_NAME } from "@/lib/site";
 
 export const FOOTER = {
   brand: { name: SITE_NAME, href: "/", logoSrc: "/lm-logo.png" },
-  description: "A clear workspace for planning courses, organizing learning resources, and sharing knowledge.",
+  description:
+    "A clear workspace for planning courses, organizing learning resources, and sharing knowledge.",
   sections: [
     {
       title: "Product",
@@ -19,7 +20,10 @@ export const FOOTER = {
     {
       title: "Socials",
       links: [
-        { label: "GitHub", href: "https://github.com/ayush-khatrii/Lesson-Map" },
+        {
+          label: "GitHub",
+          href: "https://github.com/ayush-khatrii/Lesson-Map",
+        },
         { label: "Personal website", href: "https://ayushkhatri.in/" },
         { label: SUPPORT_EMAIL, href: `mailto:${SUPPORT_EMAIL}` },
       ],

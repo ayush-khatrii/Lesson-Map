@@ -6,7 +6,7 @@ import { Providers } from "@/components/Providers";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/site";
 
 const alanSans = localFont({
-  src: "../node_modules/@fontsource-variable/alan-sans/files/alan-sans-latin-wght-normal.woff2",
+  src: "./fonts/alan-sans-latin-wght-normal.woff2",
   weight: "300 900",
   display: "swap",
   fallback: ["Arial", "sans-serif"],
