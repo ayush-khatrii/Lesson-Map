@@ -18,7 +18,7 @@ export default function Footer() {
               <h2 className="text-xs font-semibold uppercase tracking-widest">{section.title}</h2>
               <nav aria-label={section.title} className="mt-5 flex flex-col gap-3">
                 {section.links.map((link) => (
-                  <Link key={link.href} href={link.href} className="w-fit max-w-full break-words text-sm text-muted-foreground underline-offset-4 transition hover:text-foreground hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary">
+                  <Link key={link.href} href={link.href} prefetch={link.href === "/start" ? false : undefined} className="w-fit max-w-full break-words text-sm text-muted-foreground underline-offset-4 transition hover:text-foreground hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary">
                     {link.label}
                   </Link>
                 ))}

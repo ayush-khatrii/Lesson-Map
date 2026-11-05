@@ -27,44 +27,49 @@ function Lines({ count = 3 }: { count?: number }) {
 
 export function DashboardSkeleton() {
   return (
-    <LoadingRegion label="Loading your dashboard" className="my-20 min-h-screen bg-background text-foreground">
-      <div className={cn(container, "space-y-8 py-8")}>
-        <section className="overflow-hidden px-6 py-8 md:px-10">
-          <div className="flex flex-col items-center gap-4 text-center">
-            <div className="flex w-full flex-col items-center">
-              <p className="mb-1 text-xs font-medium uppercase tracking-widest text-muted-foreground">Welcome back</p>
-              <Skeleton className="mb-1 h-8 w-60 max-w-full md:h-12 md:w-80" />
-              <Skeleton className="h-5 w-full max-w-sm" />
-              <Skeleton className="mt-3 h-4 w-full max-w-md" />
+    <LoadingRegion label="Loading your dashboard" className="min-h-screen bg-background text-foreground">
+      <div className={cn(container, "space-y-8 pb-12 pt-24")}>
+        <section className="mx-auto max-w-2xl py-2 text-center">
+          <div className="flex flex-col items-center gap-5">
+            <div className="flex w-full min-w-0 flex-col items-center">
+              <p className="mb-1 text-xs font-medium uppercase tracking-widest text-muted-foreground">Creator workspace</p>
+              <Skeleton className="h-8 w-80 max-w-full sm:h-10" />
+              <Skeleton className="mt-3 h-5 w-full max-w-md" />
+              <Skeleton className="mt-3 h-4 w-full max-w-lg" />
             </div>
-            <Actions />
+            <div className="shrink-0"><Actions /></div>
           </div>
         </section>
-        <section className="grid grid-cols-2 gap-3 md:grid-cols-4">
-          {["Total Courses", "Total Modules", "Total Lessons", "Avg. Lessons/Module"].map(label => (
-            <div key={label} className="rounded-2xl border border-border bg-card p-4">
+        <section className="grid grid-cols-2 overflow-hidden rounded-xl border border-border bg-card md:grid-cols-4 [&>div:nth-child(odd)]:border-r [&>div:nth-child(-n+2)]:border-b [&>div]:border-border md:[&>div:nth-child(-n+2)]:border-b-0 md:[&>div:nth-child(2)]:border-r">
+          {["Total Courses", "Total Modules", "Total Lessons", "Lessons per module"].map(label => (
+            <div key={label} className="min-w-0 p-4 sm:px-6 sm:py-5">
               <div className="flex items-center gap-3">
-                <Skeleton className="size-9 shrink-0 rounded-xl" />
+                <Skeleton className="size-4 shrink-0" />
                 <div className="min-w-0 flex-1">
-                  <Skeleton className="h-[18px] w-8" />
-                  <p className="mt-1 truncate text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</p>
-                  <Skeleton className="mt-0.5 h-[15px] w-20 max-w-full" />
+                  <Skeleton className="h-7 w-8" />
+                  <p className="mt-0.5 text-xs text-muted-foreground">{label}</p>
                 </div>
               </div>
             </div>
           ))}
         </section>
         <section>
-          <div className="mb-4 flex items-center justify-between">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3"><h2 className="text-lg font-semibold">Your Courses</h2><Skeleton className="h-5 w-6" /></div>
-            <Skeleton className="h-8 w-28" />
           </div>
           <div className="space-y-3">
-            {[0, 1, 2].map(i => (
-              <div key={i} className="flex items-center gap-4 rounded-2xl border border-border px-6 py-5">
-                <Skeleton className="size-11 shrink-0 rounded-xl" />
-                <div className="min-w-0 flex-1 space-y-2"><Skeleton className="h-5 w-full max-w-xs" /><Skeleton className="h-3 w-full max-w-lg" /></div>
-                <div className="hidden items-center gap-4 md:flex"><Skeleton className="w-20" /><Skeleton className="w-20" /><Skeleton className="w-16" /></div>
+            {[0, 1, 2, 3].map(i => (
+              <div key={i} className="rounded-xl border border-border bg-card px-4 py-4 sm:px-5">
+                <div className="flex items-start gap-3 sm:items-center">
+                  <Skeleton className="size-9 shrink-0 rounded-lg" />
+                  <div className="min-w-0 flex-1">
+                    <Skeleton className="h-5 w-3/4 max-w-lg" />
+                    <Skeleton className="mt-1 h-4 w-full max-w-xl" />
+                    <div className="mt-2 flex flex-wrap gap-3 xl:hidden"><Skeleton className="h-4 w-16" /><Skeleton className="h-4 w-16" /><Skeleton className="h-4 w-20" /></div>
+                  </div>
+                  <div className="mr-2 hidden shrink-0 items-center gap-3 xl:flex"><Skeleton className="w-20" /><Skeleton className="w-20" /><Skeleton className="w-16" /></div>
+                  <Skeleton className="size-4 shrink-0" />
+                </div>
               </div>
             ))}
           </div>

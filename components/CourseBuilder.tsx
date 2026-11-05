@@ -1758,7 +1758,7 @@ function SettingsRow({
   destructive?: boolean;
 }) {
   return (
-    <div className="rounded-xl border bg-background overflow-hidden shadow-none">
+    <div className="rounded-xl border border-border bg-card overflow-hidden shadow-none">
       <div className="flex items-center justify-between gap-4 p-4">
         <div className="flex items-start gap-3 min-w-0">
           <div
@@ -1890,7 +1890,7 @@ function ShareTab({
         }
       />
       <div
-        className={`rounded-xl border bg-background overflow-hidden shadow-none transition-opacity ${
+        className={`rounded-xl border border-border bg-card overflow-hidden shadow-none transition-opacity ${
           isPublic ? "" : "opacity-50 pointer-events-none"
         }`}
       >
@@ -1951,7 +1951,7 @@ function PreviewDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-1.5">
+        <Button variant="outline" size="sm" className="h-9 gap-1.5">
           <Eye className="w-3.5 h-3.5" />
           Preview
         </Button>
@@ -2019,11 +2019,11 @@ function StatPill({
   value: number;
 }) {
   return (
-    <div className="flex items-center gap-2 rounded-lg border bg-muted/40 px-3 py-2 min-w-[80px]">
+    <div className="flex min-w-0 flex-col items-center justify-center gap-2 px-2 py-4 text-center sm:flex-row sm:gap-3 sm:px-5 sm:py-5 sm:text-left">
       <Icon className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
       <div>
-        <p className="text-base font-bold leading-none">{value}</p>
-        <p className="text-[10px] text-muted-foreground mt-0.5 leading-none">
+        <p className="text-xl font-semibold leading-none tabular-nums">{value}</p>
+        <p className="mt-1 text-xs text-muted-foreground">
           {label}
         </p>
       </div>
@@ -2053,7 +2053,6 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
   const [resources, setResources] = useState<Resource[]>(initialResources);
   const [isSaving, setIsSaving] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [saved, setSaved] = useState(false);
   const [activeTab, setActiveTab] = useState("outline");
   const [outlineView, setOutlineView] = useState<OutlineView>("accordion");
   const [aiAssistOpen, setAiAssistOpen] = useState(false);
@@ -2131,8 +2130,6 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
           description: description.trim(),
         });
         if (result.success) {
-          setSaved(true);
-          setTimeout(() => setSaved(false), 1800);
           toast.success("Course updated!");
         } else {
           toast.error(
@@ -2171,8 +2168,6 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
               })),
             })),
           );
-          setSaved(true);
-          setTimeout(() => setSaved(false), 1800);
           toast.success(
             modules.length
               ? "Course template created successfully!"
@@ -2301,94 +2296,47 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
 
   return (
     <div className="min-h-screen w-full overflow-x-hidden bg-background text-foreground">
-      <div className="mx-auto w-full min-w-0 max-w-7xl px-4 py-6 sm:px-6 lg:px-8 sm:py-10">
+      <div className="mx-auto w-full min-w-0 max-w-7xl px-4 pt-24 pb-12 sm:px-6 lg:px-8">
         {/* ── Page Header ─────────────────────────────────────────────── */}
-        <div className="mb-6 mt-16 sm:mb-8">
-          <div className="flex items-start justify-between gap-4 flex-wrap">
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-9 h-9 rounded-xl border bg-muted flex items-center justify-center flex-shrink-0">
-                <BookOpen className="w-4 h-4 text-foreground" />
-              </div>
-              <div className="min-w-0">
-                <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-0.5">
-                  <span>Dashboard</span>
-                  <span>/</span>
-                  <span className="text-foreground font-medium">
-                    {initialData?.courseId ? "Edit Course" : "Course Builder"}
-                  </span>
-                </div>
-                <h1 className="break-words text-base font-bold leading-tight [overflow-wrap:anywhere] sm:text-xl">
-                  {courseId ? title || "Untitled Course" : "New Course"}
-                </h1>
-              </div>
+        <header className="mb-8 space-y-6">
+          <nav aria-label="Breadcrumb" className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+            <Link href="/dashboard" className="rounded-sm hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring">Dashboard</Link>
+            <span aria-hidden="true">/</span>
+            <span aria-current="page">{courseId ? "Course editor" : "Course builder"}</span>
+          </nav>
+          <div className="mx-auto max-w-3xl text-center">
+            <div className="mb-3 flex items-center justify-center gap-2">
+              <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">Creator workspace</p>
+              {courseId && <Badge variant="outline" className="gap-1 text-[10px]">{isPublic ? <Globe className="size-3" /> : <Lock className="size-3" />}{isPublic ? "Public" : "Private"}</Badge>}
             </div>
-
-            <div className="flex w-full items-center gap-2 sm:w-auto sm:flex-shrink-0">
-              {courseId && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="gap-1.5"
-                  onClick={() => setAiAssistOpen(true)}
-                  disabled={isGenerating || isSaving}
-                >
-                  <Sparkles className="w-3.5 h-3.5 text-primary" />
-                  AI Assist
-                </Button>
-              )}
-              <PreviewDialog
-                title={title}
-                description={description}
-                modules={modules}
-                resources={resources}
-              />
-              {!courseId ? (
-                <Button
-                  size="sm"
-                  onClick={handleSave}
-                  disabled={isSaving || isGenerating}
-                  className="gap-1.5"
-                >
-                  {isSaving ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  ) : (
-                    <Save className="w-3.5 h-3.5" />
-                  )}
-                  {isSaving ? "Saving…" : "Save draft"}
-                </Button>
-              ) : (
-                <Button
-                  size="sm"
-                  onClick={handleSave}
-                  disabled={isSaving || isGenerating}
-                  variant={saved ? "outline" : "default"}
-                  className="gap-1.5"
-                >
-                  {isSaving ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  ) : saved ? (
-                    <Check className="w-3.5 h-3.5 text-green-500" />
-                  ) : (
-                    <Save className="w-3.5 h-3.5" />
-                  )}
-                  {isSaving ? "Saving…" : saved ? "Saved" : "Save"}
-                </Button>
-              )}
-            </div>
+            <h1 className="text-2xl font-semibold tracking-tight [overflow-wrap:anywhere] sm:text-4xl">
+              {courseId ? title || "Untitled course" : "Create your next course"}
+            </h1>
+            <p className="mx-auto mt-3 max-w-2xl whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground [overflow-wrap:anywhere]">
+              {courseId ? description || "Add a description to help learners understand what this course covers." : "Shape your ideas into a clear learning journey. Start with AI or build your outline below."}
+            </p>
+            {courseId && initialData?.audience && <p className="mt-2 text-xs text-muted-foreground [overflow-wrap:anywhere]">For {initialData.audience}</p>}
           </div>
-
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            {courseId && <Button size="sm" variant="outline" className="h-9 gap-1.5" onClick={() => setAiAssistOpen(true)} disabled={isGenerating || isSaving}><Sparkles className="size-3.5 text-primary" />AI Assist</Button>}
+            <PreviewDialog title={title} description={description} modules={modules} resources={resources} />
+            {courseId ? (
+              <Button size="sm" className="h-9 gap-1.5" onClick={openEditDialog}><PenLine className="size-3.5" />Edit details</Button>
+            ) : (
+              <Button size="sm" className="h-9 gap-1.5" onClick={handleSave} disabled={isSaving || isGenerating}>
+                {isSaving ? <Loader2 className="size-3.5 animate-spin" /> : <Save className="size-3.5" />}
+                {isSaving ? "Saving?" : "Save draft"}
+              </Button>
+            )}
+          </div>
           {courseId && (
-            <div className="flex items-center gap-2 mt-5 flex-wrap">
+            <div className="grid grid-cols-3 divide-x divide-border overflow-hidden rounded-xl border border-border bg-card">
               <StatPill icon={Layers} label="Modules" value={modules.length} />
               <StatPill icon={BookOpen} label="Lessons" value={totalLessons} />
-              <StatPill
-                icon={Paperclip}
-                label="Resources"
-                value={resources.length}
-              />
+              <StatPill icon={Paperclip} label="Resources" value={resources.length} />
             </div>
           )}
-        </div>
+        </header>
 
         {!courseId && (
           <AiCourseGenerator
@@ -2398,52 +2346,7 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
         )}
 
         {/* ── Course Info Card ──────────────────────────────────────── */}
-        {courseId ? (
-          <Card className="mb-6 border shadow-none">
-            <CardContent className="p-4 sm:p-5">
-              <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-start sm:justify-between">
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-1">
-                    Course
-                  </p>
-                  <h2 className="break-words text-lg font-bold leading-snug">
-                    {title}
-                  </h2>
-                  {description && (
-                    <p className="mt-1.5 break-words text-sm leading-relaxed text-muted-foreground">
-                      {description}
-                    </p>
-                  )}
-                  {initialData?.audience && (
-                    <p className="mt-2 text-sm text-muted-foreground">
-                      For: {initialData.audience}
-                    </p>
-                  )}
-                </div>
-                <div className="flex items-center justify-end gap-1 sm:mt-0.5 sm:flex-shrink-0">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    title="Edit course"
-                    onClick={openEditDialog}
-                  >
-                    <PenLine className="w-3.5 h-3.5 text-muted-foreground" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 hover:text-destructive hover:bg-destructive/10"
-                    title="Delete course"
-                    onClick={() => setDeleteOpen(true)}
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ) : (
+        {!courseId && (
           <Card className="mb-6 border shadow-none">
             <CardHeader className="pb-3 pt-5 px-5">
               <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
@@ -2482,46 +2385,53 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
         )}
 
         {/* ── Main Tabs ────────────────────────────────────────────── */}
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <div className="mb-6 flex min-w-0 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-4">
-            <div className="w-full max-w-full overflow-x-auto pb-1 sm:w-auto sm:pb-0">
-              <TabsList className="h-9 w-max min-w-full border bg-muted/50 p-1 sm:min-w-0">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="min-w-0 gap-5">
+          <div className="flex min-w-0 flex-col gap-5">
+            <div className="w-full min-w-0">
+              <TabsList aria-label="Course workspace" className="grid h-auto w-full grid-cols-5 gap-1 rounded-xl border-border bg-muted/30 p-1">
                 <TabsTrigger
                   value="outline"
-                  className="gap-1.5 text-xs h-7 px-3"
+                  className="h-12 min-w-0 flex-col gap-1 px-1 text-[10px] sm:h-10 sm:flex-row sm:gap-2 sm:px-3 sm:text-sm data-[state=active]:bg-card data-[state=active]:text-foreground dark:data-[state=active]:bg-card dark:data-[state=active]:text-foreground"
                 >
                   <LayoutList className="w-3.5 h-3.5" />
                   Outline
                 </TabsTrigger>
                 <TabsTrigger
                   value="resources"
-                  className="gap-1.5 text-xs h-7 px-3"
+                  className="h-12 min-w-0 flex-col gap-1 px-1 text-[10px] sm:h-10 sm:flex-row sm:gap-2 sm:px-3 sm:text-sm data-[state=active]:bg-card data-[state=active]:text-foreground dark:data-[state=active]:bg-card dark:data-[state=active]:text-foreground"
                 >
                   <Paperclip className="w-3.5 h-3.5" />
                   Resources
                 </TabsTrigger>
                 <TabsTrigger
                   value="settings"
-                  className="gap-1.5 text-xs h-7 px-3"
+                  className="h-12 min-w-0 flex-col gap-1 px-1 text-[10px] sm:h-10 sm:flex-row sm:gap-2 sm:px-3 sm:text-sm data-[state=active]:bg-card data-[state=active]:text-foreground dark:data-[state=active]:bg-card dark:data-[state=active]:text-foreground"
                 >
                   <Settings2 className="w-3.5 h-3.5" />
                   Settings
                 </TabsTrigger>
                 <TabsTrigger
                   value="export"
-                  className="gap-1.5 text-xs h-7 px-3"
+                  className="h-12 min-w-0 flex-col gap-1 px-1 text-[10px] sm:h-10 sm:flex-row sm:gap-2 sm:px-3 sm:text-sm data-[state=active]:bg-card data-[state=active]:text-foreground dark:data-[state=active]:bg-card dark:data-[state=active]:text-foreground"
                 >
                   <FileDown className="w-3.5 h-3.5" />
                   Export
                 </TabsTrigger>
-                <TabsTrigger value="share" className="gap-1.5 text-xs h-7 px-3">
+                <TabsTrigger value="share" className="h-12 min-w-0 flex-col gap-1 px-1 text-[10px] sm:h-10 sm:flex-row sm:gap-2 sm:px-3 sm:text-sm data-[state=active]:bg-card data-[state=active]:text-foreground dark:data-[state=active]:bg-card dark:data-[state=active]:text-foreground">
                   <Share2 className="w-3.5 h-3.5" />
                   Share
                 </TabsTrigger>
               </TabsList>
             </div>
 
-            <div hidden={activeTab !== "outline"} className="max-w-full self-start overflow-x-auto sm:flex-shrink-0">
+            <div hidden={activeTab !== "outline"}>
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h2 className="text-lg font-semibold">Course curriculum</h2>
+                  <p className="mt-1 text-xs leading-relaxed text-muted-foreground">Organize modules, edit lessons, and add learning materials.</p>
+                  {courseId && <p className="mt-1 text-xs text-muted-foreground">Each change is saved when you add or update it.</p>}
+                </div>
+                <div className="max-w-full overflow-x-auto">
               <FlowViewSwitcher
                 view={canUseFlow ? outlineView : "accordion"}
                 onChange={setOutlineView}
@@ -2529,6 +2439,8 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
                 isLoading={isPlanLoading}
                 onLocked={() => setFlowAccessOpen(true)}
               />
+                </div>
+              </div>
               <FlowAccessDialog
                 open={flowAccessOpen}
                 onOpenChange={setFlowAccessOpen}
@@ -2583,7 +2495,8 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
             />
           </TabsContent>
 
-          <TabsContent value="settings">
+          <TabsContent value="settings" className="min-w-0 space-y-5">
+            <div><h2 className="text-lg font-semibold">Course settings</h2><p className="mt-1 text-sm text-muted-foreground">Choose who can see your course and how you appear to learners.</p></div>
             <SettingsTab
               courseId={courseId}
               isPublic={isPublic}
@@ -2594,9 +2507,15 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
               isTogglingSocialLinks={isTogglingSocialLinks}
               hasSocialLinks={initialData?.hasSocialLinks ?? false}
             />
+            {courseId && (
+              <div className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
+                <div><h3 className="text-sm font-semibold">Delete course</h3><p className="mt-1 text-xs leading-relaxed text-muted-foreground">Permanently remove this course and all its modules, lessons, and resources.</p></div>
+                <Button variant="outline" size="sm" className="h-9 self-start text-destructive hover:bg-destructive/10 hover:text-destructive sm:self-auto" onClick={() => setDeleteOpen(true)}><Trash2 className="size-3.5" />Delete course</Button>
+              </div>
+            )}
           </TabsContent>
 
-          <TabsContent value="export">
+          <TabsContent value="export" className="min-w-0">
             <CourseExportTab
               courseId={courseId}
               canUseFlow={canUseFlow}
@@ -2620,7 +2539,8 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
             />
           </TabsContent>
 
-          <TabsContent value="share">
+          <TabsContent value="share" className="min-w-0 space-y-5">
+            <div><h2 className="text-lg font-semibold">Share your course</h2><p className="mt-1 text-sm text-muted-foreground">Give learners one link to your complete course outline.</p></div>
             <ShareTab
               isPublic={isPublic}
               shareSlug={shareSlug}

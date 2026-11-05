@@ -34,7 +34,11 @@ function formatDate(date: Date) {
   }).format(new Date(date));
 }
 
-export default async function SettingsPage() {
+export default async function SettingsPage({ searchParams }: {
+  searchParams: Promise<{ tab?: string | string[] }>;
+}) {
+  const { tab } = await searchParams;
+  const initialTab = tab === "settings" || tab === "billing" ? tab : "profile";
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) redirect("/sign-in");
 
@@ -115,6 +119,7 @@ export default async function SettingsPage() {
 
         <div className="mt-5">
           <SettingsTabs
+            initialTab={initialTab}
             profile={
               <>
                 <section aria-label="Account overview" className="overflow-hidden rounded-lg border border-border">

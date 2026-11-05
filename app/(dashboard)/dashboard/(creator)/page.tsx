@@ -29,36 +29,17 @@ function timeAgo(date: Date): string {
   return `${days}d ago`;
 }
 
-function StatCard({
-  label,
-  value,
-  icon: Icon,
-  sub,
-}: {
+function StatCard({ label, value, icon: Icon }: {
   label: string;
   value: string | number;
   icon: React.ElementType;
-  sub?: string;
 }) {
   return (
-    <div className="rounded-2xl border border-border bg-card p-4">
-      <div className="flex items-center gap-3">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10">
-          <Icon className="h-4 w-4 text-primary" />
-        </div>
-        <div className="min-w-0">
-          <p className="text-lg font-bold leading-none text-card-foreground">
-            {value}
-          </p>
-          <p className="mt-1 truncate text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            {label}
-          </p>
-          {sub && (
-            <p className="mt-0.5 truncate text-[10px] text-muted-foreground/60">
-              {sub}
-            </p>
-          )}
-        </div>
+    <div className="flex min-w-0 items-center gap-3 p-4 sm:px-6 sm:py-5">
+      <Icon aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />
+      <div className="min-w-0">
+        <p className="text-xl font-semibold tracking-tight tabular-nums">{value}</p>
+        <p className="mt-0.5 text-xs text-muted-foreground">{label}</p>
       </div>
     </div>
   );
@@ -100,27 +81,27 @@ const Dashboard = async () => {
   const firstName = session.user?.name?.split(" ")[0] ?? "there";
 
   return (
-    <div className="min-h-screen my-20 bg-background text-foreground">
+    <div className="min-h-screen bg-background text-foreground">
       <PostPurchaseHandler />
-      <main className="mx-auto w-full max-w-7xl space-y-8 px-4 py-8 sm:px-6 lg:px-8">
-        <section className="relative rounded-2xl border border-border bg-card px-6 py-6 md:px-8">
-          <div className="relative z-10 flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="mb-1 text-xs font-medium uppercase tracking-widest text-muted-foreground">
-                Welcome back
+      <main className="mx-auto w-full max-w-7xl space-y-8 px-4 pb-12 pt-24 sm:px-6 lg:px-8">
+        <section className="mx-auto max-w-2xl py-2 text-center">
+          <div className="flex flex-col items-center gap-5">
+            <div className="min-w-0 w-full">
+              <p className="mb-2 text-xs font-medium uppercase tracking-widest text-muted-foreground">
+                Creator workspace
               </p>
-              <h1 className="mb-1 text-2xl font-bold tracking-tight text-card-foreground md:text-3xl">
+              <h1 className="text-2xl font-semibold tracking-tight [overflow-wrap:anywhere] sm:text-4xl">
                 Welcome back, {firstName}
               </h1>
-              <p className="max-w-sm text-sm text-muted-foreground">
+              <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-muted-foreground">
                 {initialCourses.length === 0
                   ? "Start mapping your first course and build structured learning journeys."
                   : `You have ${initialCourses.length} ${initialCourses.length === 1 ? "course" : "courses"} in your workspace.`}
               </p>
               {recentCourse && (
-                <div className="mt-3 flex items-center gap-2">
-                  <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-                  <span className="text-xs text-muted-foreground">
+                <div className="mx-auto mt-3 flex max-w-lg items-start justify-center gap-2">
+                  <Clock className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                  <span className="min-w-0 break-words text-xs text-muted-foreground [overflow-wrap:anywhere]">
                     Last edited{" "}
                     <span className="font-medium text-foreground">
                       {recentCourse.courseName}
@@ -131,22 +112,13 @@ const Dashboard = async () => {
               )}
             </div>
 
-            <div className="flex shrink-0 flex-wrap gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-1.5 text-xs"
-                asChild
-              >
+            <div className="flex flex-wrap justify-center gap-2">
+              <Button variant="outline" size="sm" asChild>
                 <Link href="/dashboard/create/new">
                   <Sparkles className="w-3.5 h-3.5 text-primary" /> AI Generate
                 </Link>
               </Button>
-              <Button
-                size="sm"
-                className="gap-1.5 text-xs font-semibold"
-                asChild
-              >
+              <Button size="sm" asChild>
                 <Link href="/dashboard/create/new">
                   <Plus className="w-3.5 h-3.5" /> New Course
                 </Link>
@@ -155,37 +127,33 @@ const Dashboard = async () => {
           </div>
         </section>
 
-        <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <section className="grid grid-cols-2 overflow-hidden rounded-xl border border-border bg-card md:grid-cols-4 [&>div:nth-child(odd)]:border-r [&>div:nth-child(-n+2)]:border-b [&>div]:border-border md:[&>div:nth-child(-n+2)]:border-b-0 md:[&>div:nth-child(2)]:border-r">
           <StatCard
             label="Total Courses"
             value={initialCourses.length}
             icon={GraduationCap}
-            sub="In your workspace"
           />
           <StatCard
             label="Total Modules"
             value={totalModules}
             icon={Layers}
-            sub="Across all courses"
           />
           <StatCard
             label="Total Lessons"
             value={totalLessons}
             icon={BookOpen}
-            sub="Mapped so far"
           />
           <StatCard
-            label="Avg. Lessons/Module"
+            label="Lessons per module"
             value={
               totalModules > 0 ? (totalLessons / totalModules).toFixed(1) : "—"
             }
             icon={BarChart3}
-            sub="Depth indicator"
           />
         </section>
 
         <section>
-          <div className="mb-4 flex items-center justify-between">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <h2 className="text-lg font-semibold text-foreground">
                 Your Courses
@@ -197,19 +165,6 @@ const Dashboard = async () => {
                 {initialCourses.length}
               </Badge>
             </div>
-
-            {initialCourses.length > 0 && (
-              <Button
-                size="sm"
-                variant="outline"
-                className="gap-1.5 text-xs"
-                asChild
-              >
-                <Link href="/dashboard/create/new">
-                  <Plus className="w-3.5 h-3.5" /> New Course
-                </Link>
-              </Button>
-            )}
           </div>
 
           <DashboardCourses

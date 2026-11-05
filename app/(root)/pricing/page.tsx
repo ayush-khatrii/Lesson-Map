@@ -9,71 +9,50 @@ import {
 } from "@/components/ui/card";
 import { comparisonRows, plans } from "@/constants";
 import { cn } from "@/lib/utils";
-import { Check, Sparkles, Workflow, ShieldCheck, Layers3, BrainCircuit, Share2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import {
+  Check,
+  Sparkles,
+  Workflow,
+  ShieldCheck,
+  Layers3,
+  BrainCircuit,
+  Share2,
+} from "lucide-react";
+import { useState } from "react";
 import { FaSpinner } from "react-icons/fa";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { useSession } from "@/lib/auth-client";
 
 const PricingPage = () => {
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const [currentPlan, setCurrentPlan] = useState<string | null>(null);
-  const [isPlanPending, setIsPlanPending] = useState(false);
   const router = useRouter();
-  const { data: session, isPending: isSessionPending } = useSession();
-
-  useEffect(() => {
-    if (isSessionPending) return;
-    if (!session?.user) {
-      setCurrentPlan(null);
-      setIsPlanPending(false);
-      return;
-    }
-
-    const controller = new AbortController();
-    setIsPlanPending(true);
-
-    fetch("/api/subscription/status", {
-      cache: "no-store",
-      signal: controller.signal,
-    })
-      .then(async (response) => {
-        if (!response.ok) throw new Error("Could not load subscription");
-        return response.json() as Promise<{ plan: string }>;
-      })
-      .then((subscription) => setCurrentPlan(subscription.plan))
-      .catch((error) => {
-        if ((error as Error).name !== "AbortError") {
-          toast.error("Could not load your current plan. Please refresh.");
-        }
-      })
-      .finally(() => {
-        if (!controller.signal.aborted) setIsPlanPending(false);
-      });
-
-    return () => controller.abort();
-  }, [isSessionPending, session?.user?.id]);
 
   const handlePurchase = async (plan: string) => {
-    if (loadingPlan || isSessionPending) return;
-    if (!session?.user) {
-      router.push("/sign-in?callbackUrl=%2Fpricing");
-      return;
-    }
+    if (loadingPlan) return;
 
     if (plan === "FREE") {
-      router.push("/dashboard");
-      return;
-    }
-
-    if (currentPlan === plan) {
-      toast.info("You are already subscribed to this plan.");
+      router.push("/start");
       return;
     }
 
     setLoadingPlan(plan);
     try {
+      // Check auth and subscription only when the visitor chooses a paid plan.
+      const status = await fetch("/api/subscription/status", {
+        cache: "no-store",
+      });
+      if (status.status === 401) {
+        router.push("/sign-in?callbackUrl=%2Fpricing");
+        return;
+      }
+      if (!status.ok) throw new Error("Could not load subscription");
+      const subscription = (await status.json()) as { plan: string };
+      setCurrentPlan(subscription.plan);
+      if (subscription.plan !== "FREE") {
+        toast.info("You already have an active paid subscription.");
+        return;
+      }
       const response = await fetch("/api/checkout", {
         method: "POST",
         headers: {
@@ -88,7 +67,8 @@ const PricingPage = () => {
         window.location.href = data.checkoutUrl;
       } else {
         toast.error(data.error || "Failed to create checkout session.", {
-          description: process.env.NODE_ENV !== "production" ? data.detail : undefined,
+          description:
+            process.env.NODE_ENV !== "production" ? data.detail : undefined,
         });
       }
     } catch {
@@ -105,96 +85,107 @@ const PricingPage = () => {
             A plan for your next course
           </h1>
           <p className="mt-2 text-sm leading-6 text-muted-foreground">
-            Start free. Upgrade to Creator for full AI outlines, Markdown &amp; PDF
-            export, and unbranded sharing.
+            Start free. Upgrade to Creator for full AI outlines, Markdown &amp;
+            PDF export, and unbranded sharing.
           </p>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
           {plans.map((plan, index) => {
-            const isCurrentPlan = Boolean(
-              session?.user && currentPlan === plan.type,
-            );
-            const hasPaidPlan = Boolean(
-              session?.user && currentPlan && currentPlan !== "FREE",
-            );
-            const buttonLabel = isPlanPending
-              ? "Checking your plan…"
-              : isCurrentPlan
-                ? plan.type === "FREE"
-                  ? "Current Plan"
-                  : "Already Subscribed"
-                : hasPaidPlan && plan.type === "FREE"
-                  ? "Included in Your Plan"
-                  : plan.cta;
+            const isCurrentPlan = Boolean(currentPlan === plan.type);
+            const hasPaidPlan = Boolean(currentPlan && currentPlan !== "FREE");
+            const buttonLabel = isCurrentPlan
+              ? plan.type === "FREE"
+                ? "Current Plan"
+                : "Already Subscribed"
+              : hasPaidPlan && plan.type === "FREE"
+                ? "Included in Your Plan"
+                : plan.cta;
 
             return (
-            <Card
-              key={index}
-              className={cn(
-                "relative flex h-full flex-col gap-4 rounded-2xl border bg-transparent py-5",
-                plan.isPopular
-                  ? "border-primary"
-                  : "border-border",
-              )}
-            >
-              <CardHeader className="gap-3 px-5 py-0">
-                <div>
-                  <div className="flex min-h-7 flex-wrap items-center justify-between gap-2">
-                    <h2 className="text-xl font-semibold tracking-tight">{plan.name}</h2>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Badge variant={plan.isPopular ? "default" : "outline"} className="rounded-full px-2.5 py-0.5 text-[11px]">
-                        {plan.accent}
-                      </Badge>
-                      {isCurrentPlan && <Badge variant="secondary" className="rounded-full px-2.5 py-0.5 text-[11px]">Current plan</Badge>}
-                    </div>
-                  </div>
-                  <p className="mt-2 text-sm leading-5 text-muted-foreground">{plan.description}</p>
-                </div>
-
-                <div className="flex items-end gap-1">
-                  <span className="text-4xl font-semibold tracking-tight">{plan.price}</span>
-                  <span className="mb-1 text-sm text-muted-foreground">{plan.period}</span>
-                </div>
-              </CardHeader>
-
-              <CardContent className="flex-1 px-5">
-                <ul className="space-y-2 border-t border-border pt-4">
-                  {plan.features.map((feature, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm">
-                      <div className="mt-0.5 flex size-4 shrink-0 items-center justify-center text-primary">
-                        <Check className="h-3.5 w-3.5" />
+              <Card
+                key={index}
+                className={cn(
+                  "relative flex h-full flex-col gap-4 rounded-2xl border bg-transparent py-5",
+                  plan.isPopular ? "border-primary" : "border-border",
+                )}
+              >
+                <CardHeader className="gap-3 px-5 py-0">
+                  <div>
+                    <div className="flex min-h-7 flex-wrap items-center justify-between gap-2">
+                      <h2 className="text-xl font-semibold tracking-tight">
+                        {plan.name}
+                      </h2>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Badge
+                          variant={plan.isPopular ? "default" : "outline"}
+                          className="rounded-full px-2.5 py-0.5 text-[11px]"
+                        >
+                          {plan.accent}
+                        </Badge>
+                        {isCurrentPlan && (
+                          <Badge
+                            variant="secondary"
+                            className="rounded-full px-2.5 py-0.5 text-[11px]"
+                          >
+                            Current plan
+                          </Badge>
+                        )}
                       </div>
-                      <span className="leading-5 text-muted-foreground">{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
+                    </div>
+                    <p className="mt-2 text-sm leading-5 text-muted-foreground">
+                      {plan.description}
+                    </p>
+                  </div>
 
-              <CardFooter className="px-5 pt-0">
-                <Button
-                  onClick={() => handlePurchase(plan.type)}
-                  size="lg"
-                  className={cn(
-                    "h-10 w-full rounded-lg text-sm font-medium",
-                    !plan.isPopular && "bg-secondary text-secondary-foreground hover:bg-secondary/80",
-                  )}
-                  aria-current={isCurrentPlan ? "true" : undefined}
-                  disabled={
-                    isSessionPending ||
-                    isPlanPending ||
-                    isCurrentPlan ||
-                    (hasPaidPlan && plan.type === "FREE") ||
-                    loadingPlan === plan.type
-                  }
-                >
-                  {(loadingPlan === plan.type || isPlanPending) && (
-                    <FaSpinner className="mr-2 h-4 w-4 animate-spin" />
-                  )}
-                  {buttonLabel}
-                </Button>
-              </CardFooter>
-            </Card>
+                  <div className="flex items-end gap-1">
+                    <span className="text-4xl font-semibold tracking-tight">
+                      {plan.price}
+                    </span>
+                    <span className="mb-1 text-sm text-muted-foreground">
+                      {plan.period}
+                    </span>
+                  </div>
+                </CardHeader>
+
+                <CardContent className="flex-1 px-5">
+                  <ul className="space-y-2 border-t border-border pt-4">
+                    {plan.features.map((feature, i) => (
+                      <li key={i} className="flex items-start gap-2 text-sm">
+                        <div className="mt-0.5 flex size-4 shrink-0 items-center justify-center text-primary">
+                          <Check className="h-3.5 w-3.5" />
+                        </div>
+                        <span className="leading-5 text-muted-foreground">
+                          {feature}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+
+                <CardFooter className="px-5 pt-0">
+                  <Button
+                    onClick={() => handlePurchase(plan.type)}
+                    size="lg"
+                    className={cn(
+                      "h-10 w-full rounded-lg text-sm font-medium",
+                      !plan.isPopular &&
+                        "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+                    )}
+                    aria-current={isCurrentPlan ? "true" : undefined}
+                    disabled={
+                      isCurrentPlan ||
+                      (hasPaidPlan && plan.type === "FREE") ||
+                      loadingPlan !== null
+                    }
+                  >
+                    {loadingPlan === plan.type && (
+                      <FaSpinner className="mr-2 h-4 w-4 animate-spin" />
+                    )}
+                    {buttonLabel}
+                  </Button>
+                </CardFooter>
+              </Card>
             );
           })}
         </div>
@@ -202,9 +193,16 @@ const PricingPage = () => {
         <section className="mt-8 rounded-2xl border border-border bg-transparent p-5">
           <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
             <div>
-              <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">Feature comparison</p>
-              <h2 className="mt-2 text-2xl font-semibold tracking-tight">What’s included vs. what’s not</h2>
-              <p className="mt-2 text-sm text-muted-foreground">This comparison makes it clear which plan fits your creator workflow best.</p>
+              <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">
+                Feature comparison
+              </p>
+              <h2 className="mt-2 text-2xl font-semibold tracking-tight">
+                What’s included vs. what’s not
+              </h2>
+              <p className="mt-2 text-sm text-muted-foreground">
+                This comparison makes it clear which plan fits your creator
+                workflow best.
+              </p>
             </div>
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <ShieldCheck className="h-4 w-4 text-primary" /> Included
@@ -245,10 +243,17 @@ const PricingPage = () => {
               </thead>
               <tbody>
                 {comparisonRows.map((row) => (
-                  <tr key={row.label} className="border-t border-border/70 align-top">
+                  <tr
+                    key={row.label}
+                    className="border-t border-border/70 align-top"
+                  >
                     <td className="px-4 py-4 text-foreground">{row.label}</td>
-                    <td className="px-4 py-4 text-muted-foreground">{row.free}</td>
-                    <td className="px-4 py-4 text-muted-foreground">{row.creator}</td>
+                    <td className="px-4 py-4 text-muted-foreground">
+                      {row.free}
+                    </td>
+                    <td className="px-4 py-4 text-muted-foreground">
+                      {row.creator}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -257,12 +262,23 @@ const PricingPage = () => {
 
           <div className="mt-6 grid gap-4 md:grid-cols-2">
             <div className="rounded-2xl border border-border bg-background/70 p-4">
-              <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-foreground"><Workflow className="h-4 w-4 text-primary" /> Free plan</div>
-              <p className="text-sm text-muted-foreground">Best for testing the idea, creating a few public maps, and sharing a simple course outline with your audience.</p>
+              <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-foreground">
+                <Workflow className="h-4 w-4 text-primary" /> Free plan
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Best for testing the idea, creating a few public maps, and
+                sharing a simple course outline with your audience.
+              </p>
             </div>
             <div className="rounded-2xl border border-border bg-background/70 p-4">
-              <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-foreground"><Sparkles className="h-4 w-4 text-violet-500" /> Creator plan</div>
-              <p className="text-sm text-muted-foreground">Best for creators who want full multi-module AI generation, a more visual and branded course experience, and one-click Markdown &amp; PDF export.</p>
+              <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-foreground">
+                <Sparkles className="h-4 w-4 text-violet-500" /> Creator plan
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Best for creators who want full multi-module AI generation, a
+                more visual and branded course experience, and one-click
+                Markdown &amp; PDF export.
+              </p>
             </div>
           </div>
         </section>

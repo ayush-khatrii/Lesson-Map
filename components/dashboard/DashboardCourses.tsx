@@ -110,25 +110,14 @@ async function fetchCourses(): Promise<CourseWithRelations[]> {
 
 function EmptyState() {
   return (
-    <div className="flex flex-col items-center justify-center px-6 py-24 text-center">
-      <div className="relative mb-6">
-        <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10">
-          <GraduationCap className="h-10 w-10 text-primary opacity-80" />
-        </div>
-        <div className="absolute -top-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full border border-border bg-background">
-          <Sparkles className="h-3.5 w-3.5 text-primary" />
-        </div>
+    <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-muted/20 px-6 py-12 text-center">
+      <div className="mb-4 flex size-11 items-center justify-center rounded-xl border border-border bg-background">
+        <GraduationCap aria-hidden="true" className="size-5 text-muted-foreground" />
       </div>
-      <h3 className="mb-2 text-xl font-bold text-foreground">No courses yet</h3>
-      <p className="mb-6 max-w-xs text-sm leading-relaxed text-muted-foreground">
-        Create your first course outline and start mapping lessons with
-        AI-assisted structuring.
+      <h3 className="text-base font-semibold">Your workspace starts here</h3>
+      <p className="mt-2 max-w-xs text-sm leading-relaxed text-muted-foreground">
+        Use New Course or AI Generate above to map your first learning journey.
       </p>
-      <Button className="gap-2" asChild>
-        <Link href="/dashboard/create/new">
-          <Plus className="w-4 h-4" /> Create Your First Course
-        </Link>
-      </Button>
     </div>
   );
 }
@@ -180,10 +169,6 @@ function CourseAccordionItem({
     (acc, m) => acc + m.Lesson.length,
     0,
   );
-  const completionPct =
-    course.Module.length > 0
-      ? Math.round((totalLessons / Math.max(course.Module.length * 3, 1)) * 100)
-      : 0;
   const publicUrl = course.shareSlug ? getPublicUrl(course.shareSlug) : "";
 
   const handleCopy = async () => {
@@ -199,12 +184,12 @@ function CourseAccordionItem({
   return (
     <AccordionItem
       value={course.id}
-      className="group overflow-hidden rounded-2xl border border-border transition-all duration-300 data-[state=open]:border-primary/30"
+      className="group/course overflow-hidden rounded-xl border border-border bg-card transition-colors duration-200 motion-reduce:transition-none last:border-b data-[state=open]:border-primary/30"
       style={{ animationDelay: `${index * 60}ms` }}
     >
-      <AccordionTrigger className="w-full px-3 py-3 text-left transition-colors hover:bg-accent/50 hover:no-underline sm:px-6 sm:py-5 [&>svg]:hidden [&[data-state=open]]:bg-primary/[0.03]">
-        <div className="flex w-full min-w-0 items-start gap-2.5 sm:items-center sm:gap-4">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border bg-muted text-xs font-bold text-muted-foreground sm:h-11 sm:w-11 sm:rounded-xl sm:text-sm">
+      <AccordionTrigger className="px-4 py-4 text-left hover:bg-muted/40 hover:no-underline sm:px-5 [&>svg]:hidden">
+        <div className="flex w-full min-w-0 items-start gap-3 sm:items-center">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border bg-muted/50 text-sm font-medium text-muted-foreground">
             {course.courseName.charAt(0).toUpperCase()}
           </div>
 
@@ -228,20 +213,31 @@ function CourseAccordionItem({
                 </Badge>
               )}
             </div>
-            <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">
+            <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
               {course.description || "No description"}
             </p>
+            <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground xl:hidden">
+              <span>
+                {course.Module.length}{" "}
+                {course.Module.length === 1 ? "module" : "modules"}
+              </span>
+              <span>
+                {totalLessons} {totalLessons === 1 ? "lesson" : "lessons"}
+              </span>
+              <span>Updated {timeAgo(course.updatedAt)}</span>
+            </div>
           </div>
 
-          <div className="hidden sm:flex items-center gap-3 flex-shrink-0 mr-2">
+          <div className="mr-2 hidden shrink-0 items-center gap-3 xl:flex">
             <span className="flex items-center gap-1 text-xs text-muted-foreground">
               <Layers className="w-3.5 h-3.5" />
-              {course.Module.length} modules
+              {course.Module.length}{" "}
+              {course.Module.length === 1 ? "module" : "modules"}
             </span>
             <span className="text-border">·</span>
             <span className="flex items-center gap-1 text-xs text-muted-foreground">
               <BookOpen className="w-3.5 h-3.5" />
-              {totalLessons} lessons
+              {totalLessons} {totalLessons === 1 ? "lesson" : "lessons"}
             </span>
             <span className="text-border">·</span>
             <span className="flex items-center gap-1 text-xs text-muted-foreground">
@@ -250,20 +246,13 @@ function CourseAccordionItem({
             </span>
           </div>
 
-          <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-90" />
+          <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 group-data-[state=open]/course:rotate-90" />
         </div>
       </AccordionTrigger>
 
-      <AccordionContent className="px-6 pb-6">
-        <div className="mb-5 h-1 w-full overflow-hidden rounded-full bg-muted">
-          <div
-            className="h-full rounded-full bg-primary transition-all duration-700"
-            style={{ width: `${Math.min(completionPct, 100)}%` }}
-          />
-        </div>
-
+      <AccordionContent className="border-t border-border bg-muted/20 px-4 pt-4 pb-4 sm:px-5 sm:pt-5 sm:pb-5">
         {isOwner && (
-          <div className="mb-5 rounded-xl border border-border bg-muted/20 px-4 py-3">
+          <div className="mb-4 rounded-lg border border-border bg-background/60 px-3 py-3">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-2">
                 <Globe className="h-3.5 w-3.5 text-muted-foreground" />
@@ -283,6 +272,7 @@ function CourseAccordionItem({
                 <Switch
                   size="sm"
                   checked={course.isPublic}
+                  aria-label={`Public sharing for ${course.courseName}`}
                   disabled={!canPublish || publishPending}
                   onCheckedChange={(checked) => onPublish(course.id, checked)}
                 />
@@ -294,6 +284,7 @@ function CourseAccordionItem({
                 <Input
                   readOnly
                   value={publicUrl}
+                  aria-label="Public course link"
                   className="h-8 min-w-0 flex-1 text-xs text-muted-foreground"
                 />
                 <Button
@@ -364,6 +355,7 @@ function CourseAccordionItem({
                   <Button
                     variant="ghost"
                     size="sm"
+                    aria-label={`Delete ${course.courseName}`}
                     className="h-8 w-8 p-0 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
@@ -430,7 +422,7 @@ function CourseAccordionItem({
                 <AccordionItem
                   key={module.id}
                   value={module.id}
-                  className="overflow-hidden rounded-xl border border-border bg-muted/30"
+                  className="group/module overflow-hidden rounded-lg border border-border bg-card last:border-b"
                 >
                   <AccordionTrigger className="px-4 py-3 transition-colors hover:bg-accent/50 hover:no-underline [&>svg]:hidden">
                     <div className="flex items-center gap-3 w-full">
@@ -439,7 +431,7 @@ function CourseAccordionItem({
                       </div>
 
                       <div className="flex-1 min-w-0 text-left">
-                        <p className="text-sm font-medium leading-snug text-foreground">
+                        <p className="break-words text-sm font-medium leading-snug text-foreground [overflow-wrap:anywhere]">
                           {module.moduleName}
                         </p>
                         {module.description && (
@@ -457,7 +449,7 @@ function CourseAccordionItem({
                           {module.Lesson.length}{" "}
                           {module.Lesson.length === 1 ? "lesson" : "lessons"}
                         </Badge>
-                        <ChevronRight className="h-3.5 w-3.5 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-90" />
+                        <ChevronRight className="h-3.5 w-3.5 text-muted-foreground transition-transform duration-200 group-data-[state=open]/module:rotate-90" />
                       </div>
                     </div>
                   </AccordionTrigger>
@@ -471,13 +463,13 @@ function CourseAccordionItem({
                           .map((lesson, lessonIdx) => (
                             <div
                               key={lesson.id}
-                              className="group/lesson flex items-center gap-3 rounded-lg border border-border/60 bg-background/40 px-3 py-2.5 transition-all hover:border-border"
+                              className="group/lesson flex items-start gap-3 rounded-md px-2 py-2 transition-colors hover:bg-muted/50"
                             >
-                              <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded border border-border text-[10px] font-semibold text-muted-foreground">
+                              <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-[10px] font-medium text-muted-foreground">
                                 {lessonIdx + 1}
                               </div>
 
-                              <p className="flex-1 text-sm font-medium leading-snug text-foreground">
+                              <p className="min-w-0 flex-1 break-words text-sm leading-snug text-foreground [overflow-wrap:anywhere]">
                                 {lesson.lessonName || `Lesson ${lessonIdx + 1}`}
                               </p>
 

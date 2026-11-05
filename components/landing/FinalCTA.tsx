@@ -47,7 +47,7 @@ export default function FinalCTA() {
 
             <div className="mt-9">
               <Button asChild size="lg" className="rounded-full">
-                <Link href="/start">
+                <Link href="/start" prefetch={false}>
                   Create a course
                   <ArrowRight aria-hidden="true" />
                 </Link>
