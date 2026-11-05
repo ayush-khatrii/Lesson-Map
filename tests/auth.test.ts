@@ -16,14 +16,100 @@ function fixture() {
     rateLimit: { enabled: false },
     logger: { disabled: true },
   });
-  const post = (path: string, body: Record<string, string>) => auth.handler(new Request(
+  const post = (path: string, body: Record<string, unknown>, headers: Record<string, string> = {}) => auth.handler(new Request(
     `http://localhost:3000/api/auth/${path}`,
-    { method: "POST", headers: { "Content-Type": "application/json", Origin: "http://localhost:3000" }, body: JSON.stringify(body) },
+    { method: "POST", headers: { "Content-Type": "application/json", Origin: "http://localhost:3000", ...headers }, body: JSON.stringify(body) },
   ));
   return { auth, database, post };
 }
 
 const password = "a long test password 123!";
+
+async function passwordFixture() {
+  const context = fixture();
+  const email = "password-test@example.com";
+  await context.post("sign-up/email", { name: "Password Test", email, password });
+  const login = await context.post("sign-in/email", { email, password });
+  const cookie = login.headers.get("set-cookie")!.split(";")[0];
+  return { ...context, email, cookie };
+}
+
+test("password changes reject unauthenticated and cross-origin requests", async () => {
+  const { database, post, cookie } = await passwordFixture();
+  const before = structuredClone(database.account);
+  const body = { currentPassword: password, newPassword: "another long password 456!" };
+  assert.equal((await post("change-password", body)).status, 401);
+  assert.equal((await post("change-password", body, { cookie, Origin: "https://untrusted.example" })).status, 403);
+  assert.deepEqual(database.account, before);
+});
+
+test("an incorrect current password leaves credentials and sessions unchanged", async () => {
+  const { database, post, cookie } = await passwordFixture();
+  const before = structuredClone({ accounts: database.account, sessions: database.session });
+  const response = await post("change-password", {
+    currentPassword: "incorrect current password",
+    newPassword: "another long password 456!",
+    revokeOtherSessions: true,
+  }, { cookie });
+  assert.equal(response.status, 400);
+  assert.equal((await response.json()).code, "INVALID_PASSWORD");
+  assert.deepEqual({ accounts: database.account, sessions: database.session }, before);
+});
+
+test("the server enforces the existing 12–128 character password policy", async () => {
+  const { database, post, cookie } = await passwordFixture();
+  const before = structuredClone(database.account);
+  for (const [newPassword, code] of [["too short", "PASSWORD_TOO_SHORT"], ["x".repeat(129), "PASSWORD_TOO_LONG"]]) {
+    const response = await post("change-password", { currentPassword: password, newPassword }, { cookie });
+    assert.equal(response.status, 400);
+    assert.equal((await response.json()).code, code);
+  }
+  assert.deepEqual(database.account, before);
+});
+
+test("password updates persist a hash, replace the session, and only affect the signed-in user", async () => {
+  const { auth, database, post, email, cookie } = await passwordFixture();
+  const otherEmail = "another-user@example.com";
+  await post("sign-up/email", { name: "Another User", email: otherEmail, password });
+  const otherLogin = await post("sign-in/email", { email: otherEmail, password });
+  const otherCookie = otherLogin.headers.get("set-cookie")!.split(";")[0];
+  const otherAccount = structuredClone(database.account.find((account) => account.userId !== database.user[0].id));
+  const secondLogin = await post("sign-in/email", { email, password });
+  const secondCookie = secondLogin.headers.get("set-cookie")!.split(";")[0];
+  const oldHash = database.account[0].password;
+  const newPassword = "  a fresh passphrase 456!  ";
+  const response = await post("change-password", {
+    currentPassword: password, newPassword, revokeOtherSessions: true,
+    // The endpoint must use the session, never a caller-supplied user ID.
+    userId: otherAccount.userId,
+  }, { cookie });
+  assert.equal(response.status, 200);
+  assert.notEqual(database.account[0].password, oldHash);
+  assert.notEqual(database.account[0].password, newPassword);
+  assert.deepEqual(database.account.find((account) => account.id === otherAccount.id), otherAccount);
+
+  for (const oldCookie of [cookie, secondCookie]) {
+    assert.equal(await auth.api.getSession({ headers: new Headers({ cookie: oldCookie }) }), null);
+  }
+  const updatedCookie = response.headers.get("set-cookie")!.split(";")[0];
+  assert.ok(await auth.api.getSession({ headers: new Headers({ cookie: updatedCookie }) }));
+  assert.ok(await auth.api.getSession({ headers: new Headers({ cookie: otherCookie }) }));
+  assert.equal((await post("sign-in/email", { email, password })).status, 401);
+  assert.equal((await post("sign-in/email", { email, password: newPassword })).status, 200);
+});
+
+test("provider-only users cannot change a password or create credentials through this endpoint", async () => {
+  const { database, post, cookie } = await passwordFixture();
+  database.account[0].providerId = "google";
+  delete database.account[0].password;
+  const before = structuredClone(database.account);
+  const response = await post("change-password", {
+    currentPassword: password, newPassword: "another long password 456!",
+  }, { cookie });
+  assert.equal(response.status, 400);
+  assert.equal((await response.json()).code, "CREDENTIAL_ACCOUNT_NOT_FOUND");
+  assert.deepEqual(database.account, before);
+});
 
 test("signup persists a hashed password; subsequent login creates a usable session", async () => {
   const { auth, database, post } = fixture();

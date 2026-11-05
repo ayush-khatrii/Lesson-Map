@@ -117,8 +117,8 @@ export default function UpdateSocialLinksForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="space-y-3">
+    <form onSubmit={handleSubmit} className="min-w-0 space-y-4">
+      <div className="grid gap-4 sm:grid-cols-2">
         {SOCIAL_FIELDS.map((field) => {
           const Icon = field.icon;
           const error = errors[field.name];
@@ -127,7 +127,7 @@ export default function UpdateSocialLinksForm({
             <div key={field.name} className="space-y-1.5">
               <Label
                 htmlFor={field.name}
-                className="flex items-center gap-2 text-sm font-medium"
+                className="flex items-center gap-2 text-xs font-medium"
               >
                 <Icon
                   className={
@@ -151,8 +151,8 @@ export default function UpdateSocialLinksForm({
                 aria-invalid={Boolean(error)}
                 className={
                   error
-                    ? "h-11 rounded-xl border-destructive bg-background px-3 shadow-sm"
-                    : "h-11 rounded-xl border-border bg-background px-3 shadow-sm focus-visible:ring-primary/30"
+                    ? "h-10 rounded-md border-destructive bg-transparent px-3 shadow-none dark:bg-transparent"
+                    : "h-10 rounded-md border-border bg-transparent px-3 shadow-none focus-visible:ring-primary/30 dark:bg-transparent"
                 }
               />
               {error && (
@@ -163,11 +163,11 @@ export default function UpdateSocialLinksForm({
         })}
       </div>
 
-      <div className="flex flex-wrap items-center gap-4 border-t border-border/70 pt-5">
+      <div className="flex flex-wrap items-center gap-3">
         <Button
           type="submit"
           disabled={loading}
-          className="h-10 rounded-xl bg-foreground px-4 text-background hover:bg-foreground/85"
+          className="w-full sm:w-auto"
         >
           {loading ? (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />

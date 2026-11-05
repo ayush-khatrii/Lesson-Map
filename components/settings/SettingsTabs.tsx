@@ -17,8 +17,8 @@ export default function SettingsTabs({
   billing: React.ReactNode;
 }) {
   return (
-    <Tabs defaultValue="profile" className="gap-6">
-      <TabsList className="h-11 w-full max-w-md">
+    <Tabs defaultValue="profile" className="min-w-0 gap-4">
+      <TabsList aria-label="Account settings" className="h-10 w-full max-w-sm rounded-lg border-border bg-transparent p-1">
         <TabsTrigger value="profile" className="text-sm">
           Profile
         </TabsTrigger>
@@ -29,13 +29,13 @@ export default function SettingsTabs({
           Billing
         </TabsTrigger>
       </TabsList>
-      <TabsContent value="profile" className="space-y-6">
+      <TabsContent value="profile" className="min-w-0 space-y-4">
         {profile}
       </TabsContent>
-      <TabsContent value="settings" className="space-y-6">
+      <TabsContent value="settings" className="min-w-0 space-y-4">
         {settings}
       </TabsContent>
-      <TabsContent value="billing" className="space-y-6">
+      <TabsContent value="billing" className="min-w-0 space-y-4">
         {billing}
       </TabsContent>
     </Tabs>

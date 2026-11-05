@@ -120,15 +120,15 @@ export default function BillingTab({
 
   return (
     <>
-      <section className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-sm">
-        <div className="flex flex-col gap-6 p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8">
-          <div className="flex min-w-0 items-start gap-4">
-            <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-primary text-primary-foreground shadow-sm">
-              <CreditCard className="size-5" />
+      <section className="overflow-hidden rounded-lg border border-border">
+        <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
+          <div className="flex min-w-0 items-start gap-3">
+            <span className="grid size-10 shrink-0 place-items-center rounded-lg border border-border text-primary">
+              <CreditCard className="size-4" />
             </span>
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
-                <h2 className="text-xl font-semibold tracking-tight">{meta.name} plan</h2>
+                <h2 className="text-lg font-semibold tracking-tight">{meta.name} plan</h2>
                 <Badge variant="secondary" className={status.className}>
                   {isPaid && cancelAtPeriodEnd ? "Cancellation scheduled" : status.label}
                 </Badge>
@@ -154,13 +154,13 @@ export default function BillingTab({
                 onClick={handleManageBilling}
                 disabled={opening}
                 variant="outline"
-                className="h-10 rounded-xl border-border bg-background px-4 shadow-sm"
+                className="border-border shadow-none"
               >
                 {opening ? "Opening…" : "Manage billing"}
                 <ArrowUpRight className="size-4" />
               </Button>
             ) : (
-              <Button className="h-10 rounded-xl px-4" asChild>
+              <Button asChild>
                 <Link href="/pricing">
                   Compare plans <ArrowUpRight className="size-4" />
                 </Link>
@@ -170,19 +170,19 @@ export default function BillingTab({
         </div>
       </section>
 
-      <section className="rounded-2xl border border-border/80 bg-card p-6 shadow-sm sm:p-8">
-        <div className="mb-6">
-          <span className="grid size-10 place-items-center rounded-xl bg-primary/15 text-primary">
+      <section className="rounded-lg border border-border p-4 sm:p-5">
+        <div className="mb-4">
+          <span className="grid size-8 place-items-center rounded-md border border-border text-primary">
             <Sparkles className="size-4" />
           </span>
-          <h2 className="mt-4 text-lg font-semibold tracking-tight">What your plan includes</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <h2 className="mt-3 text-sm font-semibold">What your plan includes</h2>
+          <p className="mt-1 text-xs leading-5 text-muted-foreground">
             Limits apply to your account as a whole and reset as described below.
           </p>
         </div>
-        <ul className="space-y-3">
+        <ul className="grid gap-3 sm:grid-cols-2">
           {entitlements.map((entitlement) => (
-            <li key={entitlement.label} className="flex items-start gap-3 text-sm">
+            <li key={entitlement.label} className="flex items-start gap-2 text-xs leading-5">
               {entitlement.included ? (
                 <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-500" />
               ) : (
@@ -196,7 +196,7 @@ export default function BillingTab({
           ))}
         </ul>
         {!isPaid && (
-          <Button className="mt-6 w-full rounded-xl sm:w-auto" asChild>
+          <Button className="mt-4 w-full sm:w-auto" asChild>
             <Link href="/pricing">
               Upgrade your plan <ArrowUpRight className="size-4" />
             </Link>
@@ -204,13 +204,13 @@ export default function BillingTab({
         )}
       </section>
 
-      <section className="rounded-2xl border border-border/80 bg-card p-6 shadow-sm sm:p-8">
-        <div className="mb-6">
-          <span className="grid size-10 place-items-center rounded-xl bg-primary/15 text-primary">
+      <section className="rounded-lg border border-border p-4 sm:p-5">
+        <div className="mb-4">
+          <span className="grid size-8 place-items-center rounded-md border border-border text-primary">
             <ReceiptText className="size-4" />
           </span>
-          <h2 className="mt-4 text-lg font-semibold tracking-tight">Invoices &amp; payment method</h2>
-          <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
+          <h2 className="mt-3 text-sm font-semibold">Invoices &amp; payment method</h2>
+          <p className="mt-1 max-w-2xl text-xs leading-5 text-muted-foreground">
             Payments are handled by Dodo Payments as merchant of record, so your card details never
             reach LessonMap. Use the billing portal to update your card, download invoices, or cancel
             your subscription.
@@ -222,13 +222,13 @@ export default function BillingTab({
               onClick={handleManageBilling}
               disabled={opening}
               variant="outline"
-              className="h-10 rounded-xl border-border bg-background px-4 shadow-sm"
+              className="border-border shadow-none"
             >
               {opening ? "Opening…" : "Open billing portal"}
               <ArrowUpRight className="size-4" />
             </Button>
           ) : (
-            <Button variant="outline" disabled className="h-10 rounded-xl border-border bg-background px-4 shadow-sm">
+            <Button variant="outline" disabled className="border-border shadow-none">
               No billing history yet
             </Button>
           )}
@@ -239,7 +239,7 @@ export default function BillingTab({
             Refund Policy <ArrowUpRight className="size-3.5" />
           </Link>
         </div>
-        <div className="mt-6 flex items-start gap-3 rounded-xl border border-border bg-muted/20 px-4 py-3">
+        <div className="mt-4 flex items-start gap-2 border-t border-border pt-4">
           <ShieldCheck className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
           <p className="text-xs leading-5 text-muted-foreground">
             Cancelling stops future renewal charges. You keep your paid features until the end

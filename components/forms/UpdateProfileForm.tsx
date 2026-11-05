@@ -46,21 +46,21 @@ export default function UpdateProfileForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="max-w-xl space-y-5">
+    <form onSubmit={handleSubmit} className="min-w-0 space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="name" className="text-sm font-medium">Display name</Label>
+        <Label htmlFor="name" className="text-xs font-medium">Display name</Label>
         <p className="text-xs leading-5 text-muted-foreground">This appears as the author name on your shared courses.</p>
         <Input
           id="name"
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Your name"
-          className="h-11 rounded-xl border-border bg-background px-3 shadow-sm focus-visible:ring-primary/30"
+          className="h-10 rounded-md border-border bg-transparent px-3 shadow-none focus-visible:ring-primary/30 dark:bg-transparent"
         />
       </div>
 
-      <div className="flex flex-wrap items-center gap-4 border-t border-border/70 pt-5">
-      <Button type="submit" disabled={loading} className="h-10 rounded-xl bg-foreground px-4 text-background hover:bg-foreground/85">
+      <div className="flex flex-wrap items-center gap-3">
+      <Button type="submit" disabled={loading} className="w-full sm:w-auto">
         {loading ? (
           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
         ) : (
