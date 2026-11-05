@@ -36,16 +36,21 @@ export function RevenueView() {
     <>
       <PageHeading
         title="Revenue"
-        description="Collections and payment performance, directly from Dodo."
+        description="Collections and payment performance."
       />
       <ReportToolbar
         currencies={data?.currencies}
         fetching={query.isFetching}
         onRefresh={() => void query.refresh().catch(() => {})}
       />
+      {query.isRefetchError && query.data && (
+        <p role="status" className="text-xs text-destructive">
+          Could not refresh. Showing the last loaded results.
+        </p>
+      )}
       {query.isPending ? (
         <LoadingState />
-      ) : query.isError ? (
+      ) : query.isError && !query.data ? (
         <ErrorState error={query.error} retry={() => void query.refetch()} />
       ) : (
         data && (
@@ -151,6 +156,7 @@ export function RevenueView() {
               </Panel>
             </div>
             <Panel
+              borderless
               title="Payments"
               description="Search customers and filter the selected reporting period"
             >
@@ -251,7 +257,7 @@ export function RevenueView() {
                   }
                 />
               )}
-              <Pager {...data.payments} />
+              <Pager {...data.payments} disabled={query.isPlaceholderData} />
             </Panel>
           </>
         )

@@ -39,7 +39,11 @@ export function adminEndpoint(
       });
       const result = await handler(request, admin);
       // Only explicit foreground activity extends the idle window; polling cannot.
-      if (options.touch !== false && options.verified !== false) {
+      if (
+        request.method !== "GET" &&
+        options.touch !== false &&
+        options.verified !== false
+      ) {
         await db.adminSession.updateMany({
           where: { id: admin.session.id },
           data: { lastActivityAt: new Date() },

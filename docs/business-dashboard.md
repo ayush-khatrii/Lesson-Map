@@ -71,6 +71,16 @@ If all authenticators and recovery codes are lost, an operator with database acc
 
 ## Validation
 
+### Report loading and caching
+
+React Query owns the interactive admin screens. Each signed-in admin workspace has its own in-memory QueryClient; results stay fresh for one minute and inactive results are retained for 30 minutes. Navigation hover, focus, and pointer-down prefetch the destination page and its report. Equivalent filters share query keys. Pagination keeps the previous rows visible while fetching the next page, and failed background refreshes keep the last result with an error notice. Lock, sign-out, and leaving the admin workspace clear its cache and cancel in-flight requests; report data is not persisted in browser storage.
+
+Next.js `use cache` additionally caches the expensive Overview, Users, and Content database reads. These admin-wide report snapshots revalidate after one minute and expire after five minutes. Every API request still verifies the current admin session and membership before reading a cached report. Authentication, permissions, authenticator state, and access-management responses are not shared caches; HTTP responses remain private and `no-store`. Refresh expires the matching server report tag and reloads the browser query. Data can lag behind database changes until revalidation or Refresh.
+
+Overview's database totals and the existing revenue report load independently, so Dodo pagination, timeouts, or retries cannot hold up user/course totals. Users and Content use a window count to return rows and their total in one aggregation query; an empty out-of-range page uses a fallback count. Background GETs no longer write session activity; the existing foreground activity heartbeat maintains the idle window.
+
+Previously visited or prefetched screens can render immediately from memory. A first uncached visit still requires authentication and database/network work; caching does not guarantee zero latency.
+
 Run `npm run test:admin`, `npm run test:auth`, `npm run test:payments`, `npm run typecheck`, and `npm run build`. Admin tests use an embedded PostgreSQL instance for migration and reporting queries and mocked Dodo responses for failure cases. They never create live payments or coupons.
 
 The existing Alan Sans font is bundled locally, so building does not download fonts from Google. If the execution environment blocks Turbopack's internal process port, use `npm run build:webpack` to produce the same Next.js application with Webpack.

@@ -91,7 +91,6 @@ export type OverviewReport = {
     previous: number | null;
     trend: { date: string; users: number }[];
   };
-  billing: BillingReport;
 };
 export type DiscountRow = {
   id: string;

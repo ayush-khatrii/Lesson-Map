@@ -1,5 +1,5 @@
 import { adminEndpoint } from "@/lib/admin/http";
-import { usersData } from "@/lib/admin/data";
+import { readAdminReport } from "@/lib/admin/report-cache";
 export const GET = adminEndpoint(async (request) =>
-  usersData(new URL(request.url).searchParams),
+  readAdminReport("users", new URL(request.url).searchParams),
 );

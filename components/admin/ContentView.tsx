@@ -1,6 +1,6 @@
 "use client";
 import type { FormEvent } from "react";
-import { ArrowDownUp, Search } from "lucide-react";
+import { ArrowDownUp, RefreshCw, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { ContentRow, Paged } from "@/lib/admin/contracts";
@@ -40,7 +40,20 @@ export function ContentView() {
         title="Content"
         description="Explore the courses, modules, and lessons your creators are building."
       />
-      <Panel>
+      <div className="flex justify-end">
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={query.isFetching}
+          onClick={() => void query.refresh().catch(() => {})}
+        >
+          <RefreshCw
+            className={`size-3.5 ${query.isFetching ? "animate-spin" : ""}`}
+          />
+          Refresh
+        </Button>
+      </div>
+      <Panel borderless busy={query.isFetching}>
         <div className="flex flex-wrap items-center gap-2 border-b p-3">
           <form
             key={params.get("q") ?? ""}
@@ -87,11 +100,16 @@ export function ContentView() {
             </Button>
           )}
         </div>
+        {query.isRefetchError && query.data && (
+          <p role="status" className="text-xs text-destructive">
+            Could not refresh. Showing the last loaded results.
+          </p>
+        )}
         {query.isPending ? (
           <div className="p-4">
             <LoadingState />
           </div>
-        ) : query.isError ? (
+        ) : query.isError && !query.data ? (
           <ErrorState error={query.error} retry={() => void query.refetch()} />
         ) : (
           query.data && (
@@ -160,7 +178,7 @@ export function ContentView() {
               ) : (
                 <Empty />
               )}
-              <Pager {...query.data} />
+              <Pager {...query.data} disabled={query.isPlaceholderData} />
             </>
           )
         )}

@@ -7,8 +7,13 @@ import {
   type ReactNode,
 } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useQueryClient } from "@tanstack/react-query";
+import { usePathname, useRouter } from "next/navigation";
+import {
+  QueryClient,
+  QueryClientProvider,
+  useQueryClient,
+} from "@tanstack/react-query";
+import { adminReportOptions } from "@/lib/admin/report-options";
 import {
   BookOpen,
   ChevronRight,
@@ -58,7 +63,26 @@ const navigation = [
   { label: "Settings", href: "/dashboard/admin/settings", icon: Settings2 },
 ];
 
-export function AdminShell({
+type ShellProps = {
+  children: ReactNode;
+  user: { id: string; name: string; email: string; role: string };
+};
+
+export function AdminShell(props: ShellProps) {
+  return <AdminQueryScope key={props.user.id} {...props} />;
+}
+
+function AdminQueryScope(props: ShellProps) {
+  const [client] = useState(() => new QueryClient());
+  useEffect(() => () => client.clear(), [client]);
+  return (
+    <QueryClientProvider client={client}>
+      <AdminShellContent {...props} />
+    </QueryClientProvider>
+  );
+}
+
+function AdminShellContent({
   children,
   user,
 }: {
@@ -66,6 +90,7 @@ export function AdminShell({
   user: { id: string; name: string; email: string; role: string };
 }) {
   const path = usePathname(),
+    router = useRouter(),
     queryClient = useQueryClient();
   const [collapsed, setCollapsed] = useState(false),
     [mobile, setMobile] = useState(false),
@@ -151,6 +176,16 @@ export function AdminShell({
       return !value;
     });
   }
+  function prefetch(href: string) {
+    router.prefetch(href);
+    const resource =
+      href === "/dashboard/admin"
+        ? "overview"
+        : href.endsWith("/settings")
+          ? "access"
+          : href.split("/").at(-1)!;
+    void queryClient.prefetchQuery(adminReportOptions(resource));
+  }
   const links = (compact = false) => (
     <nav aria-label="Business dashboard" className="space-y-1 px-2">
       {navigation.map(({ label, href, icon: Icon }, index) => (
@@ -158,6 +193,9 @@ export function AdminShell({
           {index === 5 && <div className="mx-2 my-4 border-t" />}
           <Link
             prefetch={false}
+            onPointerEnter={() => prefetch(href)}
+            onFocus={() => prefetch(href)}
+            onPointerDown={() => prefetch(href)}
             onClick={() => setMobile(false)}
             title={compact ? label : undefined}
             href={href}

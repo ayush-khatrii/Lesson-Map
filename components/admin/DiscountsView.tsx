@@ -185,9 +185,14 @@ export function DiscountsView() {
           Create coupon
         </Button>
       </PageHeading>
+      {query.isRefetchError && query.data && (
+        <p role="status" className="text-xs text-destructive">
+          Could not refresh. Showing the last loaded results.
+        </p>
+      )}
       {query.isPending ? (
         <LoadingState />
-      ) : query.isError ? (
+      ) : query.isError && !query.data ? (
         <ErrorState error={query.error} retry={() => void query.refetch()} />
       ) : (
         <>
@@ -215,6 +220,7 @@ export function DiscountsView() {
             />
           </div>
           <Panel
+            borderless
             title="Coupon library"
             description="Percentage discounts for your paid subscription plans"
           >

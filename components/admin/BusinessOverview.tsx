@@ -20,14 +20,25 @@ import {
   integer,
   money,
   useAdminReport,
+  useAdminParams,
 } from "./Shared";
 import { PlanChart, RevenueChart, SignupChart } from "./Charts";
-import type { OverviewReport } from "@/lib/admin/contracts";
+import type { OverviewReport, BillingReport } from "@/lib/admin/contracts";
 
 export function BusinessOverview() {
+  const { params } = useAdminParams();
+  const billingParams = new URLSearchParams();
+  for (const key of ["period", "from", "to", "currency"]) {
+    const value = params.get(key);
+    if (value) billingParams.set(key, value);
+  }
+  const billingQuery = useAdminReport<BillingReport>(
+    "revenue",
+    billingParams.toString(),
+  );
   const query = useAdminReport<OverviewReport>("overview"),
     data = query.data,
-    billing = data?.billing;
+    billing = billingQuery.data;
   return (
     <>
       <PageHeading
@@ -36,12 +47,19 @@ export function BusinessOverview() {
       />
       <ReportToolbar
         currencies={billing?.currencies}
-        fetching={query.isFetching}
-        onRefresh={() => void query.refresh().catch(() => {})}
+        fetching={query.isFetching || billingQuery.isFetching}
+        onRefresh={() =>
+          void Promise.allSettled([query.refresh(), billingQuery.refresh()])
+        }
       />
+      {query.isRefetchError && query.data && (
+        <p role="status" className="text-xs text-destructive">
+          Could not refresh. Showing the last loaded results.
+        </p>
+      )}
       {query.isPending ? (
         <LoadingState />
-      ) : query.isError ? (
+      ) : query.isError && !query.data ? (
         <ErrorState error={query.error} retry={() => void query.refetch()} />
       ) : (
         data && (
@@ -53,6 +71,12 @@ export function BusinessOverview() {
               >
                 {billing.error}
               </div>
+            )}
+            {billingQuery.isError && (
+              <ErrorState
+                error={billingQuery.error}
+                retry={() => void billingQuery.refetch()}
+              />
             )}
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
               <Metric
@@ -139,7 +163,14 @@ export function BusinessOverview() {
                     </Button>
                   }
                 >
-                  {billing?.available ? (
+                  {billingQuery.isPending ? (
+                    <div
+                      role="status"
+                      className="flex h-64 items-center justify-center text-xs text-muted-foreground"
+                    >
+                      Loading collections…
+                    </div>
+                  ) : billing?.available ? (
                     <RevenueChart
                       data={billing.trend}
                       currency={billing.currency}
@@ -172,10 +203,7 @@ export function BusinessOverview() {
                   </div>
                 </Panel>
               </div>
-              <Panel
-                title="Users by plan"
-                description="Current effective subscription plans"
-              >
+              <Panel title="Users by plan" description="Subscription plans">
                 <PlanChart
                   free={data.totals.free}
                   creator={data.totals.creator}

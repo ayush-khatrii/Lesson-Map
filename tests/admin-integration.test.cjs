@@ -137,8 +137,10 @@ test("dashboard migration and reporting queries run against PostgreSQL semantics
       ),
       /unique/i,
     );
+    let reportQueries = 0;
     const db = {
       $queryRaw: (strings, ...values) => {
+        reportQueries++;
         const query = Prisma.sql(strings, ...values);
         return sql
           .query(
@@ -153,6 +155,11 @@ test("dashboard migration and reporting queries run against PostgreSQL semantics
       "@/lib/prisma": { db },
     });
     const all = await usersData(new URLSearchParams("sort=name&direction=asc"));
+    assert.equal(
+      reportQueries,
+      1,
+      "users page and count share one database query",
+    );
     assert.equal(all.total, 3);
     const owner = all.data.find((row) => row.email === "owner@example.com");
     assert.equal(owner.courses, 2);
@@ -180,10 +187,20 @@ test("dashboard migration and reporting queries run against PostgreSQL semantics
       (await usersData(new URLSearchParams("q=';DROP TABLE user;--"))).total,
       0,
     );
+    const outOfRange = await usersData(new URLSearchParams("page=2"));
+    assert.equal(outOfRange.total, 3);
+    assert.equal(outOfRange.data.length, 0);
+    reportQueries = 0;
     const content = await contentData(
       new URLSearchParams("published=true&sort=lessons"),
     );
     assert.equal(content.total, 1);
+    assert.equal(
+      reportQueries,
+      1,
+      "content page and count share one database query",
+    );
+    assert.equal("resultCount" in content.data[0], false);
     assert.equal(content.data[0].modules, 2);
     assert.equal(content.data[0].lessons, 3);
     assert.equal(
@@ -459,6 +476,100 @@ test("all admin endpoints deny missing sessions, missing membership, revoked and
     body: "{}",
   });
   assert.equal((await endpoint(crossOrigin)).status, 403);
+});
+
+test("cached database reports still authorize every request and GET prefetches do not extend sessions", async () => {
+  let authorized = false,
+    reportReads = 0,
+    touches = 0;
+  class AdminError extends Error {
+    constructor(status, code, message) {
+      super(message);
+      this.status = status;
+      this.code = code;
+    }
+  }
+  const report = { totals: { users: 3 } };
+  const { adminEndpoint } = load("lib/admin/http.ts", {
+    "./guard": {
+      AdminError,
+      requireAdmin: async () => {
+        if (!authorized)
+          throw new AdminError(401, "SIGN_IN_REQUIRED", "Please sign in.");
+        return { user: { id: "u1" }, session: { id: "s1" } };
+      },
+    },
+    "@/lib/prisma": {
+      db: {
+        adminSession: {
+          updateMany: async () => {
+            touches++;
+          },
+        },
+      },
+    },
+    "next/server": {
+      NextResponse: { json: (body, init) => Response.json(body, init) },
+    },
+  });
+  const route = load("app/api/admin/overview/route.ts", {
+    "@/lib/admin/http": { adminEndpoint, throttle: async () => {} },
+    "@/lib/admin/report-cache": {
+      readAdminReport: async () => {
+        reportReads++;
+        return report;
+      },
+    },
+  });
+  const request = () => new Request("http://localhost:3000/api/admin/overview");
+  assert.equal((await route.GET(request())).status, 401);
+  assert.equal(reportReads, 0);
+  authorized = true;
+  const success = await route.GET(request());
+  assert.deepEqual(await success.json(), report);
+  assert.match(success.headers.get("cache-control"), /no-store/);
+  assert.equal(reportReads, 1);
+  assert.equal(touches, 0);
+  authorized = false;
+  assert.equal((await route.GET(request())).status, 401);
+  assert.equal(
+    reportReads,
+    1,
+    "revoked admins cannot reach a warm report cache",
+  );
+});
+
+test("database cache tags use canonical filters and a manual refresh expires the matching report", async () => {
+  const tags = [],
+    invalidated = [],
+    lifetimes = [];
+  const reports = load("lib/admin/report-cache.ts", {
+    "next/cache": {
+      cacheLife: (lifetime) => lifetimes.push(lifetime),
+      cacheTag: (tag) => tags.push(tag),
+      revalidateTag: (...args) => invalidated.push(args),
+    },
+    "./data": {
+      usersData: async () => ({ data: [], total: 0 }),
+      contentData: async () => ({ data: [], total: 0 }),
+      overviewData: async () => ({ totals: {} }),
+    },
+  });
+  await reports.readAdminReport(
+    "users",
+    new URLSearchParams("q=owner&paid=true"),
+  );
+  await reports.readAdminReport(
+    "users",
+    new URLSearchParams("paid=true&q=owner&page=1&refresh=true"),
+  );
+  assert.equal(tags[0], tags[1]);
+  assert.equal(invalidated[0][0], tags[0]);
+  assert.equal(invalidated[0][1].expire, 0);
+  await reports.readAdminReport("users", new URLSearchParams("q=another"));
+  assert.notEqual(tags[0], tags[2]);
+  assert.equal(lifetimes[0].revalidate, 60);
+  assert.equal(lifetimes[0].expire, 300);
 });
 
 test("billing reads all SDK pages, deduplicates payments, attributes older refunds, and never caches partial reads", async () => {

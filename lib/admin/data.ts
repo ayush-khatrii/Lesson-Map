@@ -119,19 +119,25 @@ export async function usersData(params: URLSearchParams) {
   const order = Prisma.raw(
     `"${query.sort}" ${query.direction.toUpperCase()}, id ASC`,
   );
-  const [rows, total] = await db.$transaction([
-    db.$queryRaw<
-      UserRow[]
-    >`${cte} SELECT id,name,email,courses,modules,lessons,"publishedCourses","emailVerified","accountAgeDays",cancelling,"isActive",
+  const rows = await db.$queryRaw<
+    (UserRow & { resultCount: number })[]
+  >`${cte} SELECT COUNT(*) OVER()::int AS "resultCount",id,name,email,courses,modules,lessons,"publishedCourses","emailVerified","accountAgeDays",cancelling,"isActive",
       (plan <> 'FREE') AS "isPaid",(plan='FREE') AS "isFree",(plan='CREATOR') AS "isCreator",(plan='PROFESSIONAL') AS "isProfessional"
-      FROM filtered ORDER BY ${order} LIMIT ${query.pageSize} OFFSET ${(query.page - 1) * query.pageSize}`,
-    db.$queryRaw<
-      { count: number }[]
-    >`${cte} SELECT COUNT(*)::int AS count FROM filtered`,
-  ]);
+      FROM filtered ORDER BY ${order} LIMIT ${query.pageSize} OFFSET ${(query.page - 1) * query.pageSize}`;
+  // A window count shares the aggregation and snapshot with the visible rows.
+  // Only an out-of-range page needs a separate count.
+  const total =
+    rows[0]?.resultCount ??
+    (query.page === 1
+      ? 0
+      : (
+          await db.$queryRaw<
+            { count: number }[]
+          >`${cte} SELECT COUNT(*)::int AS count FROM filtered`
+        )[0].count);
   return {
-    data: rows,
-    total: total[0].count,
+    data: rows.map(({ resultCount: _count, ...row }) => row),
+    total,
     page: query.page,
     pageSize: query.pageSize,
   };
@@ -149,17 +155,24 @@ export async function contentData(params: URLSearchParams) {
       ${query.published !== undefined ? Prisma.sql`AND c."isPublished"=${query.published}` : Prisma.empty}
       ${query.public !== undefined ? Prisma.sql`AND c."isPublic"=${query.public}` : Prisma.empty}
     )`;
-  const [rows, total] = await db.$transaction([
-    db.$queryRaw<
-      (Omit<ContentRow, "createdAt"> & { createdAt: Date })[]
-    >`${cte} SELECT * FROM filtered ORDER BY ${Prisma.raw(`"${query.sort}" ${query.direction.toUpperCase()}, id ASC`)} LIMIT ${query.pageSize} OFFSET ${(query.page - 1) * query.pageSize}`,
-    db.$queryRaw<
-      { count: number }[]
-    >`${cte} SELECT COUNT(*)::int AS count FROM filtered`,
-  ]);
+  const rows = await db.$queryRaw<
+    (Omit<ContentRow, "createdAt"> & { createdAt: Date; resultCount: number })[]
+  >`${cte} SELECT *, COUNT(*) OVER()::int AS "resultCount" FROM filtered ORDER BY ${Prisma.raw(`"${query.sort}" ${query.direction.toUpperCase()}, id ASC`)} LIMIT ${query.pageSize} OFFSET ${(query.page - 1) * query.pageSize}`;
+  const total =
+    rows[0]?.resultCount ??
+    (query.page === 1
+      ? 0
+      : (
+          await db.$queryRaw<
+            { count: number }[]
+          >`${cte} SELECT COUNT(*)::int AS count FROM filtered`
+        )[0].count);
   return {
-    data: rows.map((r) => ({ ...r, createdAt: r.createdAt.toISOString() })),
-    total: total[0].count,
+    data: rows.map(({ resultCount: _count, ...r }) => ({
+      ...r,
+      createdAt: r.createdAt.toISOString(),
+    })),
+    total,
     page: query.page,
     pageSize: query.pageSize,
   };

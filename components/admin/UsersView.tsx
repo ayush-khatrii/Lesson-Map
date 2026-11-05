@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState, type FormEvent } from "react";
 import {
+  RefreshCw,
   ArrowDownUp,
   Columns3,
   Search,
@@ -160,8 +161,8 @@ export function UsersView() {
         className={`${selectClass} w-full`}
       >
         <option value="all">All users</option>
-        <option value="true">True</option>
-        <option value="false">False</option>
+        <option value="true">Yes</option>
+        <option value="false">No</option>
       </select>
     </div>
   );
@@ -171,7 +172,20 @@ export function UsersView() {
         title="Users"
         description="Understand your audience, subscription mix, and creator activity."
       />
-      <Panel>
+      <div className="flex justify-end">
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={query.isFetching}
+          onClick={() => void query.refresh().catch(() => {})}
+        >
+          <RefreshCw
+            className={`size-3.5 ${query.isFetching ? "animate-spin" : ""}`}
+          />
+          Refresh
+        </Button>
+      </div>
+      <Panel borderless busy={query.isFetching}>
         <div className="flex flex-wrap items-center justify-between gap-2 border-b p-3">
           <form
             key={params.get("q") ?? ""}
@@ -316,16 +330,21 @@ export function UsersView() {
           </div>
         </div>
         <div className="flex items-center justify-between border-b px-4 py-2.5 text-[11px] text-muted-foreground">
-          <span>Current users · Numeric and boolean account metrics</span>
+          <span>Users</span>
           <span>
             {query.data ? `${integer(query.data.total)} users` : "Loading…"}
           </span>
         </div>
+        {query.isRefetchError && query.data && (
+          <p role="status" className="text-xs text-destructive">
+            Could not refresh. Showing the last loaded results.
+          </p>
+        )}
         {query.isPending ? (
           <div className="p-4">
             <LoadingState />
           </div>
-        ) : query.isError ? (
+        ) : query.isError && !query.data ? (
           <ErrorState error={query.error} retry={() => void query.refetch()} />
         ) : (
           query.data && (
@@ -393,7 +412,7 @@ export function UsersView() {
               ) : (
                 <Empty />
               )}
-              <Pager {...query.data} />
+              <Pager {...query.data} disabled={query.isPlaceholderData} />
             </>
           )
         )}

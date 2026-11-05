@@ -1,7 +1,12 @@
 "use client";
 import { useRef, useState, type ReactNode, type FormEvent } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  keepPreviousData,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
+import { adminReportOptions } from "@/lib/admin/report-options";
 import {
   ArrowDown,
   ArrowUpRight,
@@ -57,24 +62,26 @@ export function useAdminParams() {
     reset: () => router.replace(pathname, { scroll: false }),
   };
 }
-export function useAdminReport<T>(resource: string) {
+export function useAdminReport<T>(resource: string, search?: string) {
   const { params } = useAdminParams();
   const client = useQueryClient();
-  const key = ["admin", resource, params.toString()];
+  const options = adminReportOptions<T>(resource, search ?? params.toString());
   const query = useQuery({
-    queryKey: key,
-    queryFn: () => adminFetch<T>(`/api/admin/${resource}?${params}`),
-    staleTime: 60000,
-    refetchOnWindowFocus: false,
-    retry: false,
+    ...options,
+    placeholderData: ["users", "content", "revenue"].includes(resource)
+      ? keepPreviousData
+      : undefined,
   });
   return {
     ...query,
     refresh: () =>
       client.fetchQuery({
-        queryKey: key,
-        queryFn: () =>
-          adminFetch<T>(`/api/admin/${resource}?${params}&refresh=true`),
+        ...options,
+        queryFn: ({ signal }) =>
+          adminFetch<T>(
+            `/api/admin/${resource}?${options.queryKey[2]}&refresh=true`,
+            { signal },
+          ),
         staleTime: 0,
       }),
   };
@@ -121,14 +128,21 @@ export function Panel({
   description,
   children,
   action,
+  borderless = false,
+  busy = false,
 }: {
   title?: string;
   description?: string;
   children: ReactNode;
   action?: ReactNode;
+  borderless?: boolean;
+  busy?: boolean;
 }) {
   return (
-    <Card className="gap-0 overflow-hidden rounded-lg py-0 shadow-none">
+    <Card
+      aria-busy={busy}
+      className={`gap-0 overflow-hidden rounded-lg py-0 shadow-none ${borderless ? "border-0" : ""}`}
+    >
       {title && (
         <div className="flex items-center justify-between gap-3 border-b px-4 py-3">
           <div>
@@ -198,7 +212,7 @@ export function Bool({ value }: { value: boolean }) {
       className={`inline-flex items-center gap-1 text-xs ${value ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground"}`}
     >
       {value ? <Check className="size-3.5" /> : <X className="size-3" />}
-      {String(value)}
+      {value ? "Yes" : "No"}
     </span>
   );
 }
@@ -258,10 +272,12 @@ export function Pager({
   total,
   page,
   pageSize,
+  disabled = false,
 }: {
   total: number;
   page: number;
   pageSize: number;
+  disabled?: boolean;
 }) {
   const { set } = useAdminParams();
   const pages = Math.max(1, Math.ceil(total / pageSize));
@@ -278,6 +294,7 @@ export function Pager({
           id="admin-page-size"
           className={`${selectClass} h-8`}
           value={pageSize}
+          disabled={disabled}
           onChange={(e) => set({ pageSize: e.target.value })}
         >
           {[25, 50, 100].map((n) => (
@@ -290,7 +307,7 @@ export function Pager({
           size="icon"
           variant="outline"
           className="size-8"
-          disabled={page <= 1}
+          disabled={disabled || page <= 1}
           aria-label="Previous page"
           onClick={() => set({ page: String(page - 1) }, false)}
         >
@@ -300,7 +317,7 @@ export function Pager({
           size="icon"
           variant="outline"
           className="size-8"
-          disabled={page >= pages}
+          disabled={disabled || page >= pages}
           aria-label="Next page"
           onClick={() => set({ page: String(page + 1) }, false)}
         >

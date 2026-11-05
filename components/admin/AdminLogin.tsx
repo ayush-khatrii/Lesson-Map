@@ -95,10 +95,6 @@ export function AdminLogin({ configured }: { configured: boolean }) {
                   autoComplete="current-password"
                   required
                 />
-                <p className="text-[11px] leading-relaxed text-muted-foreground">
-                  Use your existing LessonMap password. No separate business
-                  password is created.
-                </p>
               </div>
               <Button className="w-full" disabled={pending}>
                 {pending && <Loader2 className="size-4 animate-spin" />}
@@ -106,10 +102,6 @@ export function AdminLogin({ configured }: { configured: boolean }) {
               </Button>
             </fieldset>
           </form>
-          <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground">
-            Never set a password? Contact the application owner to set up email
-            sign-in.
-          </p>
           {error && (
             <p role="alert" className="mt-4 text-xs text-destructive">
               {error}

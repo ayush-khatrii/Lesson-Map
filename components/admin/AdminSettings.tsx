@@ -134,9 +134,14 @@ export function AdminSettings() {
         title="Settings"
         description="Manage dashboard access, authenticator recovery, and administrative activity."
       />
+      {query.isRefetchError && query.data && (
+        <p role="status" className="text-xs text-destructive">
+          Could not refresh. Showing the last loaded results.
+        </p>
+      )}
       {query.isPending ? (
         <LoadingState />
-      ) : query.isError ? (
+      ) : query.isError && !query.data ? (
         <ErrorState error={query.error} retry={() => void query.refetch()} />
       ) : (
         query.data && (
@@ -144,6 +149,7 @@ export function AdminSettings() {
             <div className="grid items-start gap-4 xl:grid-cols-3">
               <div className="space-y-4 xl:col-span-2">
                 <Panel
+                  borderless
                   title="Administrators"
                   description="Approved existing users with access to the business workspace"
                 >
@@ -311,6 +317,7 @@ export function AdminSettings() {
               </Panel>
             </div>
             <Panel
+              borderless
               title="Recent administrative activity"
               description="Access changes, security verification, and coupon management"
             >
