@@ -3,15 +3,16 @@ import { z } from "zod";
 type AiLimits = {
   modules: number | null;
   lessonsPerModule: number | null;
-  monthlyAttempts: number;
+  generations: number;
+  period: "lifetime" | "month";
 };
 
 // null means there is no plan-level module or lesson limit. The server still
 // applies a per-request safety limit so one AI response remains reliable.
 export const AI_LIMITS = {
-  FREE: { modules: 1, lessonsPerModule: 1, monthlyAttempts: 5 },
-  CREATOR: { modules: null, lessonsPerModule: null, monthlyAttempts: 200 },
-  PROFESSIONAL: { modules: null, lessonsPerModule: null, monthlyAttempts: 200 },
+  FREE: { modules: null, lessonsPerModule: null, generations: 1, period: "lifetime" },
+  CREATOR: { modules: null, lessonsPerModule: null, generations: 200, period: "month" },
+  PROFESSIONAL: { modules: null, lessonsPerModule: null, generations: 200, period: "month" },
 } as const satisfies Record<string, AiLimits>;
 
 // Modules count too: 25 modules with 5 lessons each use all 150 items.
@@ -120,5 +121,16 @@ export function monthWindow(now = new Date()) {
   return {
     start: new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)),
     end: new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1)),
+  };
+}
+
+// Lifetime usage survives course deletion and month changes. Failed attempts
+// never consume allowance; pending requests reserve it until they finish.
+export function aiUsageFilter(userId: string, plan: AiPlan, now = new Date()) {
+  const { start, end } = monthWindow(now);
+  return {
+    userId,
+    status: { not: "FAILED" as const },
+    ...(AI_LIMITS[plan].period === "month" ? { createdAt: { gte: start, lt: end } } : {}),
   };
 }

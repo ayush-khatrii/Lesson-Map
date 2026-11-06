@@ -97,7 +97,7 @@ export function FlowAccessDialog({
           </DialogTitle>
           <DialogDescription>
             {isOwner
-              ? "Upgrade to Creator or Professional to explore your outlines as interactive learning paths and share Flow view with your viewers."
+              ? "Upgrade to Creator to explore your outlines as interactive learning paths and share Flow view with your viewers."
               : `Flow view isn’t available for this course because ${creatorName || "the creator"} hasn’t enabled a paid plan.`}
           </DialogDescription>
         </DialogHeader>

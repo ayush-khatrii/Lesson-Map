@@ -23,9 +23,9 @@ import {
 
 type Allowance = {
   plan: AiPlan;
-  limits: { modules: number | null; lessonsPerModule: number | null; monthlyAttempts: number };
+  limits: { modules: number | null; lessonsPerModule: number | null; generations: number };
   remaining: number;
-  resetsAt: string;
+  resetsAt: string | null;
   enabled: boolean;
 };
 
@@ -225,7 +225,7 @@ export function AiCourseEditor({
                 min={1}
                 max={allowance?.limits.modules ?? MAX_AI_OUTLINE_ITEMS}
                 step={1}
-                disabled={isFree || submitting}
+                disabled={submitting}
                 value={moduleCount}
                 onChange={(event) => { setModuleCount(event.target.value); request.current = null; setError(""); }}
               />
@@ -239,14 +239,14 @@ export function AiCourseEditor({
                 min={1}
                 max={allowance?.limits.lessonsPerModule ?? MAX_AI_OUTLINE_ITEMS}
                 step={1}
-                disabled={isFree || submitting}
+                disabled={submitting}
                 value={lessonsPerModule}
                 onChange={(event) => { setLessonsPerModule(event.target.value); request.current = null; setError(""); }}
               />
             </div>
           </div>
 
-          {allowance && !isFree && <p className="text-xs text-muted-foreground">One AI edit can create up to {MAX_AI_OUTLINE_ITEMS} total modules and lessons — for example, 25 modules with 5 lessons each.</p>}
+          {allowance && <p className="text-xs text-muted-foreground">One AI edit can create up to {MAX_AI_OUTLINE_ITEMS} total modules and lessons — for example, 25 modules with 5 lessons each.</p>}
           {submitting && <p role="status" className="text-sm text-muted-foreground">Updating your outline. Large courses can take up to five minutes.</p>}
 
           <div className="flex items-center justify-between gap-4 rounded-xl border bg-background p-3.5">
@@ -275,8 +275,8 @@ export function AiCourseEditor({
 
           {isFree && (
             <p className="text-sm text-muted-foreground">
-              Free AI keeps one module and one lesson per edit.{" "}
-              <Link href="/pricing" className="text-primary underline">Upgrade to Creator</Link> for full courses.
+              Free includes one complete AI outline per account. Using AI here uses that same one-time allowance.{" "}
+              <Link href="/pricing" className="text-primary underline">Upgrade to Creator</Link> for ongoing AI assistance.
             </p>
           )}
 
@@ -287,7 +287,9 @@ export function AiCourseEditor({
               {loading
                 ? "Checking your AI allowance…"
                 : allowance
-                  ? `${allowance.remaining} of ${allowance.limits.monthlyAttempts} AI generations left this month.`
+                  ? isFree
+                    ? `${allowance.remaining} complimentary AI outline remaining. This allowance does not renew.`
+                    : `${allowance.remaining} of ${allowance.limits.generations} AI generations left this month.`
                   : ""}
             </p>
             {allowance && !allowance.enabled && <Badge variant="secondary">AI unavailable</Badge>}

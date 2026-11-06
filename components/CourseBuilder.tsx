@@ -1796,6 +1796,8 @@ function SettingsTab({
   onToggleSocialLinks,
   isTogglingSocialLinks,
   hasSocialLinks,
+  canUseSocialLinks,
+  isPlanLoading,
 }: {
   courseId: string | null;
   isPublic: boolean;
@@ -1805,6 +1807,8 @@ function SettingsTab({
   onToggleSocialLinks: (checked: boolean) => void;
   isTogglingSocialLinks: boolean;
   hasSocialLinks: boolean;
+  canUseSocialLinks: boolean;
+  isPlanLoading: boolean;
 }) {
   return (
     <div className="space-y-3">
@@ -1828,19 +1832,27 @@ function SettingsTab({
         icon={Share2}
         title="Show my social links"
         description={
-          showSocialLinks
+          !canUseSocialLinks
+            ? "Add your social profiles and website to public course pages with a paid plan."
+            : showSocialLinks
             ? "Your Instagram, LinkedIn, YouTube and other links appear under your name at the bottom of this course's public page."
             : "Your social links are hidden on this course. They stay saved in your settings for your other courses."
         }
         control={
           <Switch
-            checked={showSocialLinks}
+            checked={canUseSocialLinks && showSocialLinks}
             onCheckedChange={onToggleSocialLinks}
-            disabled={isTogglingSocialLinks || !courseId}
+            disabled={isTogglingSocialLinks || !courseId || !canUseSocialLinks || isPlanLoading}
           />
         }
       />
-      {!hasSocialLinks && (
+      {!canUseSocialLinks && !isPlanLoading && (
+        <p className="px-1 text-xs text-muted-foreground">
+          Help learners find your channels and website.{" "}
+          <Link href="/pricing" className="font-medium text-primary hover:underline">Unlock social links with Creator</Link>
+        </p>
+      )}
+      {canUseSocialLinks && !hasSocialLinks && (
         <p className="px-1 text-xs text-muted-foreground">
           You have not added any social links yet. Add them under{" "}
           <Link href="/settings" className="font-medium text-primary hover:underline">
@@ -2273,6 +2285,7 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
   };
 
   const handleToggleSocialLinks = async (checked: boolean) => {
+    if (!canUseFlow || isPlanLoading) return;
     if (!courseId) return;
     const previous = showSocialLinks;
     setIsTogglingSocialLinks(true);
@@ -2506,6 +2519,8 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
               onToggleSocialLinks={handleToggleSocialLinks}
               isTogglingSocialLinks={isTogglingSocialLinks}
               hasSocialLinks={initialData?.hasSocialLinks ?? false}
+              canUseSocialLinks={canUseFlow}
+              isPlanLoading={isPlanLoading}
             />
             {courseId && (
               <div className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">

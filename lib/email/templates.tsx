@@ -18,13 +18,13 @@ export function emailContent(event: EmailEvent, origin: string) {
       break;
     case "PURCHASE_ACTIVATED":
       heading = "Your plan is active";
-      message = `Your LessonMap ${event.plan === "CREATOR" ? "Creator" : "Professional"} subscription is active. Your plan features are ready to use.`;
+      message = `Your LessonMap ${event.plan === "CREATOR" ? "Creator" : "paid"} subscription is active. Your plan features are ready to use.`;
       href = new URL("/settings", origin).href;
       button = "Manage your subscription";
       break;
     case "PLAN_RENEWED":
       heading = "Your plan has renewed";
-      message = `Your LessonMap ${event.plan === "CREATOR" ? "Creator" : "Professional"} subscription has renewed. Keep building and sharing your courses.`;
+      message = `Your LessonMap ${event.plan === "CREATOR" ? "Creator" : "paid"} subscription has renewed. Keep building and sharing your courses.`;
       href = new URL("/settings", origin).href;
       button = "Manage your subscription";
       break;

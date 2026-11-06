@@ -57,7 +57,7 @@ function harness(overrides = {}, options = {}) {
   }) };
 }
 
-for (const plan of ["CREATOR", "PROFESSIONAL"]) {
+for (const plan of ["CREATOR"]) {
   test(`${plan} checkout sends the correct product, identity and return URL`, async () => {
     const h = harness({ DODO_PAYMENTS_API_KEY: " test-secret ", DODO_PAYMENTS_ENVIRONMENT: "live_mode" });
     const response = await h.post(plan);
@@ -121,5 +121,13 @@ test("setup diagnostics are available locally, but hidden in production", async 
 test("scheduled cancellation cannot start a duplicate checkout during the paid period", async () => {
   const h = harness({}, { active: true, scheduled: true });
   assert.equal((await h.post()).status, 409);
+  assert.equal(h.calls.length, 0);
+});
+
+// A configured legacy product must never make the plan publicly purchasable.
+test("Professional is retained internally but cannot create a new Dodo checkout", async () => {
+  const h = harness();
+  const response = await h.post("PROFESSIONAL");
+  assert.equal(response.status, 400);
   assert.equal(h.calls.length, 0);
 });

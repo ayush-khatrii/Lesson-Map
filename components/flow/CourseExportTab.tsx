@@ -28,29 +28,22 @@ export function CourseExportTab({
   const [exporting, setExporting] = useState<ExportKind | null>(null);
   const [appearance, setAppearance] = useState<"light" | "dark">("light");
   const download = async (kind: ExportKind) => {
-    if (
-      !courseId ||
-      exporting ||
-      (kind !== "accordion" && (!canUseFlow || isPlanLoading))
-    )
-      return;
+    if (!courseId || exporting || !canUseFlow || isPlanLoading) return;
     setExporting(kind);
     try {
+      // Recheck every export, including after a plan changes in another tab.
+      const response = await fetch("/api/subscription/status", {
+        cache: "no-store",
+      });
+      if (!response.ok)
+        throw new Error("Could not verify your plan. Please try again.");
+      const { plan } = await response.json();
+      if (plan !== "CREATOR" && plan !== "PROFESSIONAL")
+        throw new Error("Exports require an active paid plan.");
       if (kind === "accordion") {
         const { downloadCoursePdf } = await import("@/lib/export/course-pdf");
         await downloadCoursePdf(document);
       } else {
-        // Recheck at the action boundary, including after a plan changes in another tab.
-        const response = await fetch("/api/subscription/status", {
-          cache: "no-store",
-        });
-        if (!response.ok)
-          throw new Error("Could not verify your plan. Please try again.");
-        const { plan } = await response.json();
-        if (plan !== "CREATOR" && plan !== "PROFESSIONAL")
-          throw new Error(
-            "Flow exports require an active Creator or Professional plan.",
-          );
         const { downloadFlowExport } = await import("@/lib/export/flow-export");
         await downloadFlowExport({ outline, creatorName }, kind, appearance);
       }
@@ -74,6 +67,15 @@ export function CourseExportTab({
           lessons, even when modules are collapsed.
         </p>
       </div>
+      {!canUseFlow && !isPlanLoading && (
+        <p className="rounded-xl border border-dashed p-4 text-sm text-muted-foreground">
+          All exports require a paid plan. Upgrade to download accordion PDFs,
+          Markdown outlines, and Flow PDF or PNG maps.{" "}
+          <Link href="/pricing" className="font-medium text-primary underline">
+            View plans
+          </Link>
+        </p>
+      )}
       {!courseId && (
         <p className="rounded-xl border border-dashed p-4 text-sm text-muted-foreground">
           Save your course first to enable exports.
@@ -81,15 +83,18 @@ export function CourseExportTab({
       )}
       <div className="grid gap-4 md:grid-cols-2">
         <section className="rounded-xl border bg-card p-5">
-          <h4 className="font-semibold">Accordion outline</h4>
+          <h4 className="flex items-center gap-2 font-semibold">
+            Accordion outline{" "}
+            {!canUseFlow && <Lock className="h-4 w-4 text-muted-foreground" />}
+          </h4>
           <p className="mt-2 text-sm text-muted-foreground">
             A structured PDF with every module, lesson, description, and
-            resource. Available on all plans.
+            resource. Available on paid plans.
           </p>
           <Button
             variant="outline"
             className="mt-5 gap-2"
-            disabled={!courseId || Boolean(exporting)}
+            disabled={!courseId || Boolean(exporting) || !canUseFlow || isPlanLoading}
             onClick={() => download("accordion")}
           >
             {exporting === "accordion" ? (
@@ -119,7 +124,7 @@ export function CourseExportTab({
                   size="sm"
                   variant={appearance === mode ? "secondary" : "outline"}
                   aria-pressed={appearance === mode}
-                  disabled={Boolean(exporting)}
+                  disabled={Boolean(exporting) || !canUseFlow || isPlanLoading}
                   onClick={() => setAppearance(mode)}
                 >
                   {mode === "light" ? "Light" : "Dark"}
@@ -154,7 +159,7 @@ export function CourseExportTab({
           </div>
           {!canUseFlow && !isPlanLoading && (
             <p className="mt-4 text-xs text-muted-foreground">
-              Available on Creator and Professional.{" "}
+              Available on Creator.{" "}
               <Link
                 href="/pricing"
                 className="font-medium text-primary underline"

@@ -243,3 +243,11 @@ test("SDK error responses and thrown transport errors return failures without le
     assert.equal(f.calls.length, options.renderThrows ? 0 : 1);
   }
 });
+
+test("internal Professional subscriptions use generic paid wording in customer emails", () => {
+  for (const action of ["PURCHASE_ACTIVATED", "PLAN_RENEWED"]) {
+    const content = emailContent({ ...welcome, action, plan: "PROFESSIONAL" }, "https://lessonmap.org");
+    assert.match(content.text, /paid subscription/);
+    assert.doesNotMatch(content.text, /Professional|Custom/);
+  }
+});

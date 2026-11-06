@@ -7,8 +7,9 @@ import { effectiveAiPlan } from "@/lib/ai/schema";
 import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
-function isPaidPlan(plan: unknown): plan is PaidPlan {
-  return plan === "CREATOR" || plan === "PROFESSIONAL";
+// Professional remains supported for existing subscriptions, but is not sold.
+function isPaidPlan(plan: unknown): plan is Extract<PaidPlan, "CREATOR"> {
+  return plan === "CREATOR";
 }
 
 export async function POST(req: NextRequest) {

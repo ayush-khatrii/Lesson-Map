@@ -52,8 +52,9 @@ export default function TermsPage() {
         <LegalList
           items={[
             <>
-              The free plan allows a limited number of courses and AI generation attempts. Paid plans
-              raise those limits. Current limits are shown on our{" "}
+              The free plan includes up to three courses and one complete AI outline per account.
+              The AI-created course counts toward the three-course limit. The Free AI allowance
+              does not renew, and deleting a course does not restore it. Paid plans raise those limits. Current limits are shown on our{" "}
               <Link
                 href="/pricing"
                 className="font-medium text-foreground underline decoration-border underline-offset-4"
@@ -109,7 +110,7 @@ export default function TermsPage() {
             "AI-generated outlines are drafts. They can be inaccurate, incomplete, or unsuitable for your purpose.",
             "You are responsible for reviewing, editing, and verifying anything you generate before you use or publish it.",
             "AI generation uses third-party models and may be unavailable or rate limited from time to time.",
-            "Your plan determines how many generation attempts you receive per month. Attempts that fail may still count toward your allowance.",
+            "Free includes one AI outline generation per account, shared between course creation and AI-assisted revision. Paid plans include a monthly AI generation allowance. Only successful generations count toward that allowance; failed attempts do not. Generations in progress temporarily reserve allowance until they succeed or are marked as failed.",
           ]}
         />
       </LegalSection>

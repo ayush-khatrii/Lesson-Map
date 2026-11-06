@@ -126,7 +126,7 @@ export default async function CoursePreviewPage({ params, searchParams }: Course
   // The creator configures these once in settings; each course decides whether
   // to show them. Empty entries are dropped so no blank buttons render.
   const socials: SocialLink[] = [];
-  if (course.showSocialLinks) {
+  if (course.showSocialLinks && effectiveAiPlan(course.user) !== "FREE") {
     const candidates: SocialLink[] = [
       {
         key: "instagram",

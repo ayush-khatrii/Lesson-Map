@@ -18,7 +18,11 @@ export function useSubscriptionPlan(userId?: string) {
         signal,
       });
       if (!response.ok) throw new Error("Could not load subscription");
-      return (await response.json()) as { plan: string };
+      const data = await response.json();
+      if (!data || !["FREE", "CREATOR", "PROFESSIONAL"].includes(data.plan)) {
+        throw new Error("Invalid subscription status");
+      }
+      return data as { plan: string };
     },
     refetchOnWindowFocus: "always",
     staleTime: 0,
@@ -29,5 +33,8 @@ export function useSubscriptionPlan(userId?: string) {
     plan,
     canUseFlow: hasFlowAccess(plan),
     isLoading: Boolean(userId) && query.isPending,
+    isError: Boolean(userId) && query.isError,
+    isFetching: query.isFetching,
+    refetch: query.refetch,
   };
 }

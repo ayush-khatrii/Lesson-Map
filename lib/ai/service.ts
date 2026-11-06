@@ -3,6 +3,7 @@ import { db } from "@/lib/prisma";
 import { lockCourseOwner } from "@/lib/course-access";
 import {
   AI_LIMITS,
+  aiUsageFilter,
   effectiveAiPlan,
   monthWindow,
   type AiPlan,
@@ -56,7 +57,7 @@ export function assertPlanAllows(plan: AiPlan, input: OutlineShape) {
     (limits.modules !== null && input.moduleCount > limits.modules) ||
     (limits.lessonsPerModule !== null && input.lessonsPerModule > limits.lessonsPerModule)
   ) {
-    throw new AiError(403, "Free AI includes one module and one lesson. Upgrade to Creator for a full course.");
+    throw new AiError(403, "This outline exceeds your plan limits.");
   }
 }
 
@@ -79,14 +80,15 @@ async function assertWithinAiAllowance(
       throw new AiError(429, "Please wait before starting another generation.", Math.ceil((delay - elapsed) / 1000));
     }
   }
-  const { start, end } = monthWindow(now);
   // Failed generations are refunded automatically: only attempts that reached
-  // the user (or are still running) count toward the monthly allowance.
+  // the user (or are still running) count toward the plan allowance.
   const attempts = await tx.aiGeneration.count({
-    where: { userId, createdAt: { gte: start, lt: end }, status: { not: "FAILED" } },
+    where: aiUsageFilter(userId, plan, now),
   });
-  if (attempts >= AI_LIMITS[plan].monthlyAttempts) {
-    throw new AiError(429, "Your monthly AI allowance is used up. It resets next month.");
+  if (attempts >= AI_LIMITS[plan].generations) {
+    throw new AiError(429, plan === "FREE"
+      ? "Your complimentary AI outline has been used. Continue editing manually or upgrade to Creator for more AI generations."
+      : "Your monthly AI allowance is used up. It resets next month.");
   }
 }
 
@@ -95,17 +97,17 @@ export async function getAiAllowance(userId: string) {
   if (!user) throw new AiError(401, "Please sign in again.");
   const plan = effectiveAiPlan(user);
   const limits = AI_LIMITS[plan];
-  const { start, end } = monthWindow();
+  const { end } = monthWindow();
   // Only generations that actually reach the user count against the allowance.
   // Attempts that fail (provider errors, timeouts, invalid output) are free.
   const used = await db.aiGeneration.count({
-    where: { userId, createdAt: { gte: start, lt: end }, status: { not: "FAILED" } },
+    where: aiUsageFilter(userId, plan),
   });
   return {
     plan,
     limits,
-    remaining: Math.max(0, limits.monthlyAttempts - used),
-    resetsAt: end.toISOString(),
+    remaining: Math.max(0, limits.generations - used),
+    resetsAt: limits.period === "month" ? end.toISOString() : null,
     enabled: Boolean(process.env.DEEPSEEK_API_KEY?.trim()),
   };
 }

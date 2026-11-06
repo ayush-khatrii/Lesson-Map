@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -64,8 +65,10 @@ export type SocialFieldName = (typeof SOCIAL_FIELDS)[number]["name"];
 
 export default function UpdateSocialLinksForm({
   initialValues,
+  canUseSocialLinks,
 }: {
   initialValues: Record<SocialFieldName, string>;
+  canUseSocialLinks: boolean;
 }) {
   const [values, setValues] = useState<Record<SocialFieldName, string>>(
     initialValues,
@@ -82,6 +85,7 @@ export default function UpdateSocialLinksForm({
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (!canUseSocialLinks || loading) return;
     setLoading(true);
     setErrors({});
 
@@ -118,7 +122,14 @@ export default function UpdateSocialLinksForm({
 
   return (
     <form onSubmit={handleSubmit} className="min-w-0 space-y-4">
-      <div className="grid gap-4 sm:grid-cols-2">
+      {!canUseSocialLinks && (
+        <div className="rounded-lg border p-4 text-sm">
+          <p className="font-medium">Connect with learners beyond your course</p>
+          <p className="mt-1 text-muted-foreground">Add your social profiles and website to public course pages with Creator. Saved links stay private while you are on Free.</p>
+          <Button asChild className="mt-3"><Link href="/pricing">Unlock social links</Link></Button>
+        </div>
+      )}
+      <fieldset disabled={!canUseSocialLinks || loading} className="grid gap-4 sm:grid-cols-2">
         {SOCIAL_FIELDS.map((field) => {
           const Icon = field.icon;
           const error = errors[field.name];
@@ -161,12 +172,12 @@ export default function UpdateSocialLinksForm({
             </div>
           );
         })}
-      </div>
+      </fieldset>
 
       <div className="flex flex-wrap items-center gap-3">
         <Button
           type="submit"
-          disabled={loading}
+          disabled={loading || !canUseSocialLinks}
           className="w-full sm:w-auto"
         >
           {loading ? (
@@ -177,7 +188,7 @@ export default function UpdateSocialLinksForm({
           Save links
         </Button>
         <p className="text-xs text-muted-foreground">
-          {filledCount > 0
+          {!canUseSocialLinks ? "Social links are available on paid plans." : filledCount > 0
             ? `${filledCount} link${filledCount === 1 ? "" : "s"} set. These appear at the bottom of your public course pages.`
             : "Leave any field blank to hide that link."}
         </p>

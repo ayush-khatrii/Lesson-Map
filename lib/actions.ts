@@ -381,6 +381,21 @@ async function updateProfileAction(data: unknown) {
   }
 }
 
+async function requireSocialLinksAccess(userId: string) {
+  const user = await db.user.findUnique({
+    where: { id: userId },
+    select: {
+      plan: true,
+      subscriptionStatus: true,
+      subscriptionCancelAtPeriodEnd: true,
+      subscriptionCurrentPeriodEnd: true,
+    },
+  });
+  if (!user || effectiveAiPlan(user) === "FREE") {
+    throw new Error("Social links require an active paid plan. Upgrade to Creator to connect with your learners.");
+  }
+}
+
 // updateSocialLinksAction — the creator's public profile links, configured once
 // in global settings and reused on every shared course page.
 async function updateSocialLinksAction(data: unknown) {
@@ -390,6 +405,8 @@ async function updateSocialLinksAction(data: unknown) {
     if (!userId) {
       throw new Error("Unauthorized: Please log in to continue.");
     }
+
+    await requireSocialLinksAccess(userId);
 
     const result = updateSocialLinksSchema.safeParse(data);
     if (!result.success) {
@@ -438,6 +455,8 @@ async function updateCourseSocialLinksAction(
     if (!userId) {
       throw new Error("Unauthorized: Please log in to continue.");
     }
+
+    await requireSocialLinksAccess(userId);
 
     const course = await db.course.findFirst({
       where: { id: courseId, userId },

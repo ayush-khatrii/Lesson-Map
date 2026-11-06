@@ -10,7 +10,7 @@ export default function Footer() {
       <div className={`${shell} py-14 sm:py-20`}>
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-[1.4fr_0.8fr_0.9fr_1.2fr] lg:gap-12">
           <div>
-            <Brand {...FOOTER.brand} />
+            <Brand preload />
             <p className="mt-4 max-w-xs text-sm leading-6 text-muted-foreground">{FOOTER.description}</p>
           </div>
           {FOOTER.sections.map((section) => (

@@ -186,7 +186,7 @@ export default async function SettingsPage({ searchParams }: {
                     <h2 id="social-heading" className="text-sm font-semibold">Social links</h2>
                     <p className="mt-1 text-xs leading-5 text-muted-foreground">Shown at the bottom of your public course pages. You can hide them for individual courses.</p>
                   </div>
-                  <UpdateSocialLinksForm initialValues={socialInitialValues} />
+                  <UpdateSocialLinksForm initialValues={socialInitialValues} canUseSocialLinks={plan !== "FREE"} />
                 </section>
                 <section aria-labelledby="sharing-heading" className="overflow-hidden rounded-lg border border-border">
                   <div className="flex flex-col gap-3 border-b border-border p-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">

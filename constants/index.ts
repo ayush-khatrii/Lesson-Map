@@ -132,17 +132,17 @@ export const plans = [
     name: "Free Plan",
     type: "FREE",
     description:
-      "Create your first courses and share them with learners.",
+      "Start with a complete AI outline and build up to three courses at your own pace.",
     price: "$0",
     period: "/month",
     cta: "Start Free",
     accent: "Starter",
     features: [
-      `${COURSE_LIMITS.FREE} course maps`,
-      `${AI_LIMITS.FREE.monthlyAttempts} AI generations/month · 1 module, 1 lesson per course`,
+      `Up to ${COURSE_LIMITS.FREE} courses`,
+      "One complete AI course outline, included once",
+      "Unlimited manual modules and lessons",
       "Accordion-style course builder",
       "Shareable public link with LessonMap branding",
-      "Basic customization and editing",
     ],
   },
   {
@@ -157,13 +157,12 @@ export const plans = [
     accent: "Most Popular",
     features: [
       `${COURSE_LIMITS.CREATOR} course maps`,
-      `${AI_LIMITS.CREATOR.monthlyAttempts} AI generations/month · full multi-module courses`,
-      "Only successful AI generations count — failed attempts are never charged",
+      `${AI_LIMITS.CREATOR.generations} AI generations/month · full multi-module courses (Only successful AI generations count, failed attempts are never charged)`,
       "Unlimited modules and lessons in every course",
       "Accordion view + Flow / node-like view",
-      "Export any course as Markdown (.md) and print-ready PDF",
+      "Export courses as Markdown, accordion PDF, and Flow PDF or PNG",
       "Shareable links without LessonMap branding",
-      "Advanced customization, themes, and creator-native polish",
+      "Social and website links on your public course pages",
     ],
   },
 ];
@@ -178,8 +177,8 @@ export const comparisonRows = [
   },
   {
     label: "AI outline generation",
-    free: `${AI_LIMITS.FREE.monthlyAttempts} generations/month · 1 module, 1 lesson`,
-    creator: `${AI_LIMITS.CREATOR.monthlyAttempts} generations/month · full multi-module courses`,
+    free: "One complete outline per account · one-time allowance",
+    creator: `${AI_LIMITS.CREATOR.generations} generations/month · full multi-module courses`,
   },
   {
     label: "Failed AI generations",
@@ -189,7 +188,7 @@ export const comparisonRows = [
   {
     label: "Export options",
     free: "Not included",
-    creator: "Markdown (.md) + PDF (.pdf)",
+    creator: "Markdown + accordion PDF + Flow PDF / PNG",
   },
   {
     label: "Builder style",
@@ -202,14 +201,9 @@ export const comparisonRows = [
     creator: "Yes, without branding",
   },
   {
-    label: "Customization",
-    free: "Basic",
-    creator: "Advanced themes & creator-native polish",
-  },
-  {
-    label: "Social / creator branding",
-    free: "Limited",
-    creator: "Full creator-native presentation",
+    label: "Social and website links",
+    free: "Not included",
+    creator: "Instagram, LinkedIn, YouTube, GitHub, X, and your website",
   },
   {
     label: "Best for",

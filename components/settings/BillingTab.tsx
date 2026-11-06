@@ -23,7 +23,7 @@ type PlanName = "FREE" | "CREATOR" | "PROFESSIONAL";
 const PLAN_META: Record<PlanName, { name: string; price: string; period: string }> = {
   FREE: { name: "Free", price: "$0", period: "forever" },
   CREATOR: { name: "Creator", price: "$12", period: "per month" },
-  PROFESSIONAL: { name: "Professional", price: "Custom", period: "per month" },
+  PROFESSIONAL: { name: "Paid", price: "See billing portal", period: "" },
 };
 
 function statusMeta(status: string | null, isPaid: boolean) {
@@ -94,14 +94,15 @@ export default function BillingTab({
     { label: `${COURSE_LIMITS[plan]} course maps`, included: true },
     {
       label:
-        AI_LIMITS[plan].modules === null
-          ? `${AI_LIMITS[plan].monthlyAttempts} AI attempts / month — full course outlines`
-          : `${AI_LIMITS[plan].monthlyAttempts} AI attempts / month — ${AI_LIMITS[plan].modules} module, ${AI_LIMITS[plan].lessonsPerModule} lesson`,
+        plan === "FREE"
+          ? "One complete AI course outline — one-time allowance"
+          : `${AI_LIMITS[plan].generations} AI generations / month — full course outlines`,
       included: true,
     },
     { label: "Unlimited modules and lessons you add yourself", included: true },
     { label: "Public share links without LessonMap branding", included: isPaid },
-    { label: "Markdown export of your course outline", included: isPaid },
+    { label: "Social and website links on public courses", included: isPaid },
+    { label: "Markdown, accordion PDF, and Flow PDF / PNG exports", included: isPaid },
   ];
 
   async function handleManageBilling() {
@@ -177,7 +178,7 @@ export default function BillingTab({
           </span>
           <h2 className="mt-3 text-sm font-semibold">What your plan includes</h2>
           <p className="mt-1 text-xs leading-5 text-muted-foreground">
-            Limits apply to your account as a whole and reset as described below.
+            Your AI-created course counts toward your course limit. Free includes one AI outline per account; paid AI allowances reset monthly.
           </p>
         </div>
         <ul className="grid gap-3 sm:grid-cols-2">

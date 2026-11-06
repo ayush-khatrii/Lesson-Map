@@ -44,15 +44,11 @@ test("real authentication failures and retry instructions retain their status", 
   assert.equal((await failed.json()).newRequest, true);
 });
 
-test("larger paid outlines do not bypass the Free plan restriction", () => {
+test("Free trial and paid plans support complete multi-module outlines", () => {
   const shape = { moduleCount: 25, lessonsPerModule: 5 };
   assert.doesNotThrow(() => assertPlanAllows("CREATOR", shape));
   assert.doesNotThrow(() => assertPlanAllows("PROFESSIONAL", shape));
-  assert.throws(() => assertPlanAllows("FREE", shape), (error) => {
-    assert.ok(error instanceof AiError);
-    assert.equal(error.status, 403);
-    return true;
-  });
+  assert.doesNotThrow(() => assertPlanAllows("FREE", shape));
 });
 
 test("scheduled cancellation keeps paid access until the billing boundary", () => {

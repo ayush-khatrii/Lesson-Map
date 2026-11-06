@@ -9,36 +9,66 @@ import {
 } from "@/components/ui/card";
 import { comparisonRows, plans } from "@/constants";
 import { cn } from "@/lib/utils";
-import {
-  Check,
-  Sparkles,
-  Workflow,
-  ShieldCheck,
-  Layers3,
-  BrainCircuit,
-  Share2,
-} from "lucide-react";
-import { useState } from "react";
+import { Check, Sparkles, Workflow, ShieldCheck, Layers3 } from "lucide-react";
+import { useRef, useState } from "react";
+import { useSession } from "@/lib/auth-client";
+import { useSubscriptionPlan } from "@/lib/flow/useSubscriptionPlan";
 import { FaSpinner } from "react-icons/fa";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
 const PricingPage = () => {
-  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
-  const [currentPlan, setCurrentPlan] = useState<string | null>(null);
   const router = useRouter();
+  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+  const {
+    data: session,
+    isPending: isSessionPending,
+    error: sessionError,
+    refetch: refetchSession,
+  } = useSession();
+  const subscription = useSubscriptionPlan(session?.user.id);
+  const currentPlan = subscription.plan;
+  const isCheckingPlan = isSessionPending || subscription.isLoading;
+  const hasStatusError = Boolean(sessionError) || subscription.isError;
+  const [openingBilling, setOpeningBilling] = useState(false);
+  const actionInProgress = useRef(false);
+  const isBusy = loadingPlan !== null || openingBilling;
+
+  const handleManageBilling = async () => {
+    if (actionInProgress.current || isCheckingPlan || hasStatusError) return;
+    actionInProgress.current = true;
+    setOpeningBilling(true);
+    try {
+      const response = await fetch("/api/billing/portal", { method: "POST" });
+      if (response.status === 401) {
+        router.push("/sign-in?callbackUrl=%2Fpricing");
+        return;
+      }
+      const data = await response.json();
+      if (!response.ok || typeof data.url !== "string") {
+        throw new Error("Could not open billing management");
+      }
+      window.location.assign(data.url);
+    } catch {
+      toast.error("Could not open billing management. Please try again.");
+    } finally {
+      actionInProgress.current = false;
+      setOpeningBilling(false);
+    }
+  };
 
   const handlePurchase = async (plan: string) => {
-    if (loadingPlan) return;
+    if (actionInProgress.current || isCheckingPlan || hasStatusError) return;
 
     if (plan === "FREE") {
       router.push("/start");
       return;
     }
 
+    actionInProgress.current = true;
     setLoadingPlan(plan);
     try {
-      // Check auth and subscription only when the visitor chooses a paid plan.
+      // Recheck before checkout in case access changed since the page loaded.
       const status = await fetch("/api/subscription/status", {
         cache: "no-store",
       });
@@ -47,9 +77,14 @@ const PricingPage = () => {
         return;
       }
       if (!status.ok) throw new Error("Could not load subscription");
-      const subscription = (await status.json()) as { plan: string };
-      setCurrentPlan(subscription.plan);
-      if (subscription.plan !== "FREE") {
+      const latestSubscription = (await status.json()) as { plan: string };
+      if (
+        !["FREE", "CREATOR", "PROFESSIONAL"].includes(latestSubscription?.plan)
+      ) {
+        throw new Error("Invalid subscription status");
+      }
+      if (latestSubscription.plan !== "FREE") {
+        void subscription.refetch();
         toast.info("You already have an active paid subscription.");
         return;
       }
@@ -66,6 +101,7 @@ const PricingPage = () => {
       } else if (response.ok && typeof data.checkoutUrl === "string") {
         window.location.href = data.checkoutUrl;
       } else {
+        if (response.status === 409) void subscription.refetch();
         toast.error(data.error || "Failed to create checkout session.", {
           description:
             process.env.NODE_ENV !== "production" ? data.detail : undefined,
@@ -74,6 +110,7 @@ const PricingPage = () => {
     } catch {
       toast.error("Could not connect to checkout. Please try again.");
     } finally {
+      actionInProgress.current = false;
       setLoadingPlan(null);
     }
   };
@@ -85,22 +122,58 @@ const PricingPage = () => {
             A plan for your next course
           </h1>
           <p className="mt-2 text-sm leading-6 text-muted-foreground">
-            Start free. Upgrade to Creator for full AI outlines, Markdown &amp;
-            PDF export, and unbranded sharing.
+            Start with one complete AI outline, free. Upgrade to Creator for ongoing AI assistance, Markdown &amp;
+            PDF export, social links, and unbranded sharing.
           </p>
         </div>
 
+        {hasStatusError && !isCheckingPlan && (
+          <div
+            role="alert"
+            className="mb-4 flex flex-wrap items-center gap-3 rounded-lg border p-4 text-sm"
+          >
+            <p>
+              We couldn’t verify your current plan. Please retry before choosing
+              a plan.
+            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={subscription.isFetching}
+              onClick={() => {
+                if (sessionError) void refetchSession();
+                else void subscription.refetch();
+              }}
+            >
+              {subscription.isFetching ? "Retrying…" : "Retry"}
+            </Button>
+          </div>
+        )}
+        {currentPlan === "PROFESSIONAL" && (
+          <p role="status" className="mb-4 text-sm text-muted-foreground">
+            You have an active paid subscription. Use Manage billing to manage it.
+          </p>
+        )}
         <div className="grid gap-4 md:grid-cols-2">
           {plans.map((plan, index) => {
             const isCurrentPlan = Boolean(currentPlan === plan.type);
             const hasPaidPlan = Boolean(currentPlan && currentPlan !== "FREE");
-            const buttonLabel = isCurrentPlan
-              ? plan.type === "FREE"
-                ? "Current Plan"
-                : "Already Subscribed"
-              : hasPaidPlan && plan.type === "FREE"
-                ? "Included in Your Plan"
-                : plan.cta;
+            const managesBilling = hasPaidPlan && plan.type !== "FREE";
+            const buttonLabel = isCheckingPlan
+              ? "Checking your plan…"
+              : hasStatusError
+                ? "Plan unavailable"
+                : managesBilling
+                  ? openingBilling
+                    ? "Opening billing…"
+                    : "Manage billing"
+                  : isCurrentPlan
+                    ? "Current plan"
+                    : hasPaidPlan && plan.type === "FREE"
+                      ? "Included in your plan"
+                      : loadingPlan === plan.type
+                        ? "Opening checkout…"
+                        : plan.cta;
 
             return (
               <Card
@@ -165,7 +238,11 @@ const PricingPage = () => {
 
                 <CardFooter className="px-5 pt-0">
                   <Button
-                    onClick={() => handlePurchase(plan.type)}
+                    onClick={() =>
+                      managesBilling
+                        ? handleManageBilling()
+                        : handlePurchase(plan.type)
+                    }
                     size="lg"
                     className={cn(
                       "h-10 w-full rounded-lg text-sm font-medium",
@@ -174,12 +251,16 @@ const PricingPage = () => {
                     )}
                     aria-current={isCurrentPlan ? "true" : undefined}
                     disabled={
-                      isCurrentPlan ||
+                      isCheckingPlan ||
+                      hasStatusError ||
+                      (isCurrentPlan && plan.type === "FREE") ||
                       (hasPaidPlan && plan.type === "FREE") ||
-                      loadingPlan !== null
+                      isBusy
                     }
                   >
-                    {loadingPlan === plan.type && (
+                    {(isCheckingPlan ||
+                      loadingPlan === plan.type ||
+                      (managesBilling && openingBilling)) && (
                       <FaSpinner className="mr-2 h-4 w-4 animate-spin" />
                     )}
                     {buttonLabel}
@@ -275,8 +356,8 @@ const PricingPage = () => {
                 <Sparkles className="h-4 w-4 text-violet-500" /> Creator plan
               </div>
               <p className="text-sm text-muted-foreground">
-                Best for creators who want full multi-module AI generation, a
-                more visual and branded course experience, and one-click
+                Best for creators who want full multi-module AI generation, Flow maps,
+                social and website links, and one-click
                 Markdown &amp; PDF export.
               </p>
             </div>
