@@ -1,110 +1,61 @@
 # LessonMap
 
-LessonMap is a visual course planning and sharing platform for educators, creators, trainers, and learners.
-
-Create courses from scratch, start from templates, or generate an initial course outline with AI. Organize modules and lessons using drag-and-drop editing, attach learning resources, and publish courses through a simple shareable link.
-
-<img width="1903" height="767" alt="image" src="https://github.com/user-attachments/assets/972b64e4-38c3-4b45-80d5-6239341ecdfd" />
-
 ### Turn your knowledge into a course people can follow.
 
-Create a course outline, organize modules and lessons, attach learning resources, and share a public learning page—all in one workspace.
+LessonMap helps educators, creators, and trainers build structured courses and share them with learners. Start with an idea, shape it into modules and lessons, add your learning materials, and publish a course page from one workspace.
 
-[Try LessonMap](https://lessonmap.org) · [Explore templates](https://lessonmap.org/examples) · [View plans](https://lessonmap.org/pricing) · [Report an issue](https://github.com/ayush-khatrii/Lesson-Map/issues)
+[Start creating](https://lessonmap.org) · [Explore templates](https://lessonmap.org/examples) · [View plans](https://lessonmap.org/pricing)
 
-Built for independent educators, bootcamp instructors, and creators who want a clear structure for their next course.
+<img width="1903" height="767" alt="LessonMap course planning workspace" src="https://github.com/user-attachments/assets/972b64e4-38c3-4b45-80d5-6239341ecdfd" />
 
 ## From idea to shared course
 
-1. **Start your outline.** Create a course manually, choose a ready-made template, or generate a draft with AI.
-2. **Make it yours.** Edit course details, add modules and lessons, and drag them into the right order.
-3. **Add useful material.** Attach code, notes, links, PDFs, or images to individual lessons.
-4. **Share and learn.** Enable public sharing and send the link to learners. They can browse lessons and track completion in their browser.
+1. **Start your outline.** Build from scratch, choose a template, or describe your topic and audience to generate an AI draft.
+2. **Shape the learning path.** Create modules, add lessons, and drag them into the order you want.
+3. **Bring your materials together.** Add notes, links, code, documents, and images to the lessons where they belong.
+4. **Publish and share.** Give learners a course link they can open and follow. Turn sharing off whenever you need to.
 
-<br />
-<br />
+## Everything your course needs
 
-# Features
+| Feature | What you can do |
+| --- | --- |
+| **Course dashboard** | Keep your courses, lessons, and sharing status organized in one place. |
+| **Visual course builder** | Edit and reorder modules and lessons as your course takes shape. |
+| **AI course outlines** | Turn a topic and audience into an editable starting point for your course. |
+| **Starter templates** | Begin with a ready-made course structure and make it your own. |
+| **Lesson resources** | Keep notes, links, code, PDFs, images, documents, and spreadsheets alongside each lesson. |
+| **Resource previews** | Read supported materials and syntax-highlighted code without losing your lesson context. |
+| **Public course pages** | Share your curriculum on a focused page with your name and course details. |
+| **Learner progress** | Sign in to save completed lessons and keep track of your learning. |
+| **Course exports** | Export your saved outlines as PDF or Markdown with a paid plan. |
 
-<img width="1565" height="781" alt="image" src="https://github.com/user-attachments/assets/251b39c6-c1b0-46f9-999d-595a0bc6cec7" />
+<img width="1565" height="781" alt="LessonMap course builder with modules and lessons" src="https://github.com/user-attachments/assets/251b39c6-c1b0-46f9-999d-595a0bc6cec7" />
 
-<br />
-<br />
+## Start with a template
 
-| Feature                 | What you can do                                                                                                             |
-| ----------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| **Course dashboard**    | See your courses, module and lesson counts, and sharing status in one place.                                                |
-| **Course builder**      | Create, edit, delete, and reorder modules and lessons in an accordion layout.                                               |
-| **AI course outlines**  | Describe a topic and audience, choose an outline size, and generate an editable draft with AI.                              |
-| **Starter templates**   | Preview DSA and Web Development courses. **Use Template** pre-fills a new course with its modules and lessons.              |
-| **Lesson resources**    | Attach code, notes, links, PDFs, images, Word documents (.doc/.docx), and spreadsheets (.xls/.xlsx/.csv), up to 25 MB per upload. Browse resources with their lesson context and preview supported content.      |
-| **Code previews**       | Read code resources with syntax highlighting in a scrollable preview.                                                       |
-| **Public course pages** | Publish a stable share link with the original creator's name, course details, and curriculum. Turn sharing off when needed. |
-| **Learner progress**    | Mark lessons complete and follow the overall progress bar. Progress is saved locally in the current browser.                |
-| **PDF & Markdown export**     | Paid subscribers can download their own saved course outline as a `.md` file or `pdf` from the builder's Settings tab.               |
+Skip the blank page. Explore course templates, preview their lessons, and use one as the starting point for your own course. Adjust the structure and add materials to suit your audience.
 
-<br />
-<br />
+<img width="1464" height="764" alt="Course templates available in LessonMap" src="https://github.com/user-attachments/assets/1832f577-2299-4419-ba3b-764df2698a23" />
 
-# Start with a Template
+## Give learners a clear path
 
-<img width="1464" height="764" alt="image" src="https://github.com/user-attachments/assets/1832f577-2299-4419-ba3b-764df2698a23" />
+Share a page that brings your course description, modules, lessons, and resources together. Learners can browse the curriculum and sign in to record their progress as they work through it.
 
-<br />
-<br />
+<img width="1448" height="1086" alt="Public course page for learners" src="https://github.com/user-attachments/assets/32445a97-8b64-4b4f-b5c9-d14bb9603d66" />
 
-# Give learners a focused page
+## Built for the way you teach
 
-<img width="1448" height="1086" alt="image" src="https://github.com/user-attachments/assets/32445a97-8b64-4b4f-b5c9-d14bb9603d66" />
+- **Educators and trainers:** organize a curriculum and keep supporting materials with each lesson.
+- **Independent creators:** turn your knowledge into a course you can share with your audience.
+- **Bootcamp instructors:** give learners an ordered path through topics, exercises, and resources.
+- **Self-directed learners:** build a study outline and track your progress through it.
 
+[Create your first course](https://lessonmap.org) · [Find the right plan](https://lessonmap.org/pricing)
 
-## Built with
+## Tech stack
 
-| Area           | Technology                                        |
-| -------------- | ------------------------------------------------- |
-| Application    | Next.js 16 App Router, React 19, TypeScript       |
-| Interface      | Tailwind CSS 4, shadcn/ui, Radix UI, Lucide icons |
-| Data           | PostgreSQL, Prisma 7                              |
-| Authentication | Better Auth with GitHub/Google OAuth                     |
-| AI             | DeepSeek with Zod-validated outline responses     |
-| Payments       | Dodo Payments and signed webhooks                 |
-| File storage   | Cloudflare R2 through the AWS S3 SDK              |
+Next.js · React · TypeScript · Tailwind CSS · shadcn/ui · Radix UI · PostgreSQL · Prisma · Better Auth · DeepSeek · Dodo Payments · Cloudflare R2 · Resend
 
-
-## Feedback and contributions
-
-The private business dashboard is at `/dashboard/admin`. See [dashboard setup and security](docs/business-dashboard.md) for the super-admin bootstrap, authenticator setup, Google OAuth callback, and Dodo configuration.
-
-Found a problem or have an idea? [Open an issue](https://github.com/ayush-khatrii/Lesson-Map/issues) with the steps to reproduce it, expected behavior, and a screenshot when useful.
-
-For contributions, keep changes focused and run the relevant checks before opening a pull request.
-
-Transactional email uses Resend for welcome, subscription activation/renewal, and
-password-reset events. See [email setup and action controls](docs/email.md).
-
-Created by [Ayush Khatri](https://github.com/ayush-khatrii), with contributions from [Vrut07](https://github.com/vrut07).
+---
 
 Copyright © 2026 Ayush Khatri. All rights reserved.
-
-## Production domain
-
-The public site is `https://lessonmap.org`. Metadata, canonical links, Open Graph
-URLs, structured data, robots.txt, and the sitemap use the shared site settings
-in `lib/site.ts`. The previous Vercel hostname permanently redirects to the same
-path on the new domain.
-
-When deploying the domain change:
-
-- Set `NEXT_PUBLIC_BASE_URL=https://lessonmap.org` in the production environment,
-  then rebuild and redeploy; public environment variables are captured at build time.
-- Register `https://lessonmap.org/api/auth/callback/google` and
-  `https://lessonmap.org/api/auth/callback/github` with the configured OAuth providers.
-- Apply `cors.json` to the Cloudflare R2 bucket so browser uploads work from the new domain.
-- Update the Dodo webhook endpoint to `https://lessonmap.org/api/webhooks/dodopayments`
-  and use the signing secret for that endpoint.
-- Verify the new domain in Google Search Console and submit
-  `https://lessonmap.org/sitemap.xml`. Keep the old hostname connected so redirects work.
-
-These external service settings are separate from the repository changes.
-
-Creator launch setup (database migration, YouTube key, $15 Dodo product, wildcard DNS/TLS, and progress behavior): [docs/creator-launch.md](docs/creator-launch.md).
