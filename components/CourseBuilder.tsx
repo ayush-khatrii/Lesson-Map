@@ -2446,9 +2446,9 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
                 </div>
                 <div className="max-w-full overflow-x-auto">
               <FlowViewSwitcher
-                view={canUseFlow ? outlineView : "accordion"}
+                view={outlineView}
                 onChange={setOutlineView}
-                canUseFlow={canUseFlow}
+                canUseFlow={true}
                 isLoading={isPlanLoading}
                 onLocked={() => setFlowAccessOpen(true)}
               />
@@ -2462,10 +2462,11 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
           </div>
 
           <TabsContent value="outline">
-            {outlineView === "flow" && canUseFlow ? (
+            {outlineView === "flow" ? (
               <div className="space-y-4">
                 <LazyCourseFlowView
                   outline={flowOutline}
+                  watermarked={!canUseFlow}
                   selectedLessonId={flowLessonId}
                   onSelectLesson={(_, lessonId) => setFlowLessonId(lessonId)}
                 />

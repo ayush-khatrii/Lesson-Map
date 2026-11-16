@@ -1,3 +1,4 @@
+import YouTubeImport from "@/components/forms/YouTubeImport";
 import { CourseBuilder } from "@/components/CourseBuilder";
 import type { CourseInitialData } from "@/components/CourseBuilder";
 import { getExampleCourseTemplate } from "@/constants";
@@ -30,5 +31,5 @@ export default async function CreateCoursePage({
       }
     : undefined;
 
-  return <CourseBuilder initialData={initialData} />;
+  return <><YouTubeImport /><CourseBuilder initialData={initialData} /></>;
 }

@@ -25,6 +25,7 @@ type FlowNode = Node<OutlineNodeData, "outline">;
 
 export interface CourseFlowViewProps {
   outline: CourseOutline;
+  watermarked?: boolean;
   selectedLessonId?: string | null;
   isDone?: (lessonId: string) => boolean;
   onSelectLesson: (moduleId: string, lessonId: string) => void;
@@ -32,6 +33,7 @@ export interface CourseFlowViewProps {
 
 export default function CourseFlowView({
   outline,
+  watermarked = false,
   selectedLessonId,
   isDone,
   onSelectLesson,
@@ -144,6 +146,7 @@ export default function CourseFlowView({
       aria-label="Course flow diagram"
       className="relative h-[520px] w-full min-w-0 overflow-hidden rounded-xl border border-border bg-muted/20 sm:h-[600px]"
     >
+      {watermarked && <a href="https://lessonmap.org" className="absolute bottom-4 left-4 z-10 rounded-md border bg-background/95 px-3 py-2 text-sm font-semibold shadow">Made with LessonMap</a>}
       <ReactFlow<FlowNode>
         onInit={(instance) => {
           flow.current = instance;

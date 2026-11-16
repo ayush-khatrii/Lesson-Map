@@ -119,11 +119,11 @@ const PricingPage = () => {
       <div className="mx-auto w-full max-w-5xl px-4 sm:px-6">
         <div className="mx-auto mb-6 max-w-xl text-center">
           <h1 className="text-3xl font-semibold tracking-tight text-primary sm:text-4xl">
-            A plan for your next course
+            Try and share. Then grow your audience.
           </h1>
           <p className="mt-2 text-sm leading-6 text-muted-foreground">
             Start with one complete AI outline, free. Upgrade to Creator for ongoing AI assistance, Markdown &amp;
-            PDF export, social links, and unbranded sharing.
+            PDF export, email capture, social links, and unbranded sharing.
           </p>
         </div>
 

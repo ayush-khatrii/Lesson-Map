@@ -1,0 +1,11 @@
+ALTER TABLE "user" ADD COLUMN "subdomain" TEXT, ADD COLUMN "youtubeImports" INTEGER NOT NULL DEFAULT 0;
+CREATE UNIQUE INDEX "user_subdomain_key" ON "user"("subdomain");
+ALTER TABLE "Course" ADD COLUMN "emailCapture" BOOLEAN NOT NULL DEFAULT false;
+CREATE TABLE "PlaylistImport" ("id" TEXT PRIMARY KEY, "userId" TEXT NOT NULL REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE CASCADE, "requestId" TEXT NOT NULL, "playlistId" TEXT NOT NULL, "courseId" TEXT NOT NULL);
+CREATE UNIQUE INDEX "PlaylistImport_userId_requestId_key" ON "PlaylistImport"("userId", "requestId");
+CREATE TABLE "CourseEvent" ("id" TEXT PRIMARY KEY, "courseId" TEXT NOT NULL REFERENCES "Course"("id") ON DELETE CASCADE ON UPDATE CASCADE, "sessionId" TEXT NOT NULL, "kind" TEXT NOT NULL, "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP);
+CREATE UNIQUE INDEX "CourseEvent_courseId_sessionId_kind_key" ON "CourseEvent"("courseId", "sessionId", "kind");
+CREATE TABLE "Lead" ("id" TEXT PRIMARY KEY, "courseId" TEXT NOT NULL REFERENCES "Course"("id") ON DELETE CASCADE ON UPDATE CASCADE, "email" TEXT NOT NULL, "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP);
+CREATE UNIQUE INDEX "Lead_courseId_email_key" ON "Lead"("courseId", "email");
+CREATE TABLE "LessonProgress" ("id" TEXT PRIMARY KEY, "userId" TEXT NOT NULL REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE CASCADE, "lessonId" TEXT NOT NULL REFERENCES "Lesson"("id") ON DELETE CASCADE ON UPDATE CASCADE, "startedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "completedAt" TIMESTAMP(3), "updatedAt" TIMESTAMP(3) NOT NULL);
+CREATE UNIQUE INDEX "LessonProgress_userId_lessonId_key" ON "LessonProgress"("userId", "lessonId");

@@ -22,7 +22,7 @@ type PlanName = "FREE" | "CREATOR" | "PROFESSIONAL";
 
 const PLAN_META: Record<PlanName, { name: string; price: string; period: string }> = {
   FREE: { name: "Free", price: "$0", period: "forever" },
-  CREATOR: { name: "Creator", price: "$12", period: "per month" },
+  CREATOR: { name: "Creator", price: "See billing portal", period: "" },
   PROFESSIONAL: { name: "Paid", price: "See billing portal", period: "" },
 };
 

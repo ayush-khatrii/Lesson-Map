@@ -32,6 +32,7 @@ function harness({ authenticated = true, failWrite = false } = {}) {
       };
     }
   }
+  db.courseEvent = { groupBy: async () => [] };
   db.$transaction = (operations) => Promise.all(operations);
   const cache = {
     cacheLife: (profile) => events.push({ type: "life", profile }),

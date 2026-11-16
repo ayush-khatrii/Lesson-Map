@@ -10,7 +10,7 @@ Create courses from scratch, start from templates, or generate an initial course
 
 Create a course outline, organize modules and lessons, attach learning resources, and share a public learning page—all in one workspace.
 
-[Try LessonMap](https://lessonmap.vercel.app) · [Explore templates](https://lessonmap.vercel.app/examples) · [View plans](https://lessonmap.vercel.app/pricing) · [Report an issue](https://github.com/ayush-khatrii/Lesson-Map/issues)
+[Try LessonMap](https://lessonmap.org) · [Explore templates](https://lessonmap.org/examples) · [View plans](https://lessonmap.org/pricing) · [Report an issue](https://github.com/ayush-khatrii/Lesson-Map/issues)
 
 Built for independent educators, bootcamp instructors, and creators who want a clear structure for their next course.
 
@@ -85,3 +85,26 @@ password-reset events. See [email setup and action controls](docs/email.md).
 Created by [Ayush Khatri](https://github.com/ayush-khatrii), with contributions from [Vrut07](https://github.com/vrut07).
 
 Copyright © 2026 Ayush Khatri. All rights reserved.
+
+## Production domain
+
+The public site is `https://lessonmap.org`. Metadata, canonical links, Open Graph
+URLs, structured data, robots.txt, and the sitemap use the shared site settings
+in `lib/site.ts`. The previous Vercel hostname permanently redirects to the same
+path on the new domain.
+
+When deploying the domain change:
+
+- Set `NEXT_PUBLIC_BASE_URL=https://lessonmap.org` in the production environment,
+  then rebuild and redeploy; public environment variables are captured at build time.
+- Register `https://lessonmap.org/api/auth/callback/google` and
+  `https://lessonmap.org/api/auth/callback/github` with the configured OAuth providers.
+- Apply `cors.json` to the Cloudflare R2 bucket so browser uploads work from the new domain.
+- Update the Dodo webhook endpoint to `https://lessonmap.org/api/webhooks/dodopayments`
+  and use the signing secret for that endpoint.
+- Verify the new domain in Google Search Console and submit
+  `https://lessonmap.org/sitemap.xml`. Keep the old hostname connected so redirects work.
+
+These external service settings are separate from the repository changes.
+
+Creator launch setup (database migration, YouTube key, $15 Dodo product, wildcard DNS/TLS, and progress behavior): [docs/creator-launch.md](docs/creator-launch.md).

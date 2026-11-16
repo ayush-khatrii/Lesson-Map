@@ -4,8 +4,8 @@ export function getAuthRedirect(value: string | null): string {
     return "/dashboard";
   }
   try {
-    const url = new URL(value, "https://lessonmap.vercel.app");
-    if (url.origin !== "https://lessonmap.vercel.app" || /^\/(sign-in|sign-up|api\/auth)(\/|$)/.test(url.pathname)) {
+    const url = new URL(value, "https://lessonmap.org");
+    if (url.origin !== "https://lessonmap.org" || /^\/(sign-in|sign-up|api\/auth)(\/|$)/.test(url.pathname)) {
       return "/dashboard";
     }
     return `${url.pathname}${url.search}${url.hash}`;

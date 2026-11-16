@@ -1,16 +1,19 @@
-const FALLBACK_SITE_URL = "https://lessonmap.vercel.app";
+export const CANONICAL_SITE_URL = "https://lessonmap.org";
+const LEGACY_HOST = "lessonmap.vercel.app";
 
 function resolveSiteUrl() {
-  const candidate = process.env.NEXT_PUBLIC_BASE_URL?.trim() || FALLBACK_SITE_URL;
+  const candidate = process.env.NEXT_PUBLIC_BASE_URL?.trim() || CANONICAL_SITE_URL;
 
   try {
     const url = new URL(candidate);
-    if (url.protocol !== "https:" && url.protocol !== "http:") {
-      return FALLBACK_SITE_URL;
+    if ((url.protocol !== "https:" && url.protocol !== "http:") || url.username || url.password) {
+      return CANONICAL_SITE_URL;
     }
+    // Older deployment settings must not publish the retired domain in SEO URLs.
+    if (url.hostname === LEGACY_HOST || url.hostname === "www.lessonmap.org") return CANONICAL_SITE_URL;
     return url.origin;
   } catch {
-    return FALLBACK_SITE_URL;
+    return CANONICAL_SITE_URL;
   }
 }
 
@@ -18,8 +21,10 @@ export const SITE_URL = resolveSiteUrl();
 
 export const SITE_NAME = "LessonMap";
 
+export const SITE_TITLE = "LessonMap — Create and Share Visual Course Outlines";
+
 export const SITE_DESCRIPTION =
-  "Plan courses visually, organize modules and lessons, attach learning resources, and share a clear course outline with one link.";
+  "Create course outlines with AI, organize modules and lessons, add learning resources, and share clear, visual learning paths with LessonMap.";
 
 export const PUBLIC_SITEMAP_TAG = "public-course-sitemap";
 

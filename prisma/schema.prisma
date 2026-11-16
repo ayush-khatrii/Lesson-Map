@@ -22,6 +22,11 @@ model User {
   adminAccess   AdminAccess?
   adminSessions AdminSession[]
 
+  subdomain String? @unique
+  youtubeImports Int @default(0)
+  imports PlaylistImport[]
+  lessonProgress LessonProgress[]
+
   plan                          Plan      @default(FREE)
   subscriptionId                String?   @unique
   customerId                    String?   @unique
@@ -80,6 +85,9 @@ model Course {
   shareSlug   String?  @unique
   // Per-course control over the creator's social links on the public page.
   showSocialLinks Boolean @default(true)
+  emailCapture Boolean @default(false)
+  events CourseEvent[]
+  leads Lead[]
   userId      String
   user        User     @relation(fields: [userId], references: [id])
   Module      Module[]
@@ -131,6 +139,7 @@ model Lesson {
   moduleId    String
   module      Module     @relation(fields: [moduleId], references: [id], onDelete: Cascade)
   resources   Resource[]
+  progress LessonProgress[]
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @default(now()) @updatedAt
 }
@@ -310,4 +319,49 @@ model AdminReportCache {
   key       String   @id
   data      Json
   fetchedAt DateTime @default(now())
+}
+
+model PlaylistImport {
+  id         String @id @default(cuid())
+  userId     String
+  user       User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  requestId  String
+  playlistId String
+  courseId   String
+
+  @@unique([userId, requestId])
+}
+
+model CourseEvent {
+  id        String   @id @default(cuid())
+  courseId  String
+  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  sessionId String
+  kind      String
+  createdAt DateTime @default(now())
+
+  @@unique([courseId, sessionId, kind])
+}
+
+model Lead {
+  id        String   @id @default(cuid())
+  courseId  String
+  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  email     String
+  createdAt DateTime @default(now())
+
+  @@unique([courseId, email])
+}
+
+model LessonProgress {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lessonId    String
+  lesson      Lesson    @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([userId, lessonId])
 }

@@ -1,3 +1,4 @@
+import { SITE_URL } from "@/lib/site";
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { db } from "@/lib/prisma";
@@ -7,13 +8,11 @@ import { sendEmailAction } from "@/lib/email/send";
 export const auth = betterAuth({
   baseURL: {
     allowedHosts: [
-      new URL(
-        process.env.NEXT_PUBLIC_BASE_URL || "https://lessonmap.vercel.app",
-      ).host,
+      new URL(SITE_URL).host,
       ...(process.env.NODE_ENV !== "production" ? ["localhost:*"] : []),
     ],
     protocol: "auto",
-    fallback: "https://lessonmap.vercel.app",
+    fallback: SITE_URL,
   },
   database: prismaAdapter(db, {
     provider: "postgresql",

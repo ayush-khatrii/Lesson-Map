@@ -1,3 +1,5 @@
+import PublicCourseActions from "@/components/PublicCourseActions";
+import { SITE_URL } from "@/lib/site";
 import { db } from "@/lib/prisma";
 import LessonMapPublicPage from "@/components/CoursePreview";
 import type { Course, SocialLink } from "@/components/CoursePreview";
@@ -15,11 +17,12 @@ import {
 
 type CoursePageProps = {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ lesson?: string | string[] }>;
+  searchParams: Promise<{ lesson?: string | string[]; clone?: string | string[] }>;
 };
 
 export async function generateMetadata({ params }: CoursePageProps): Promise<Metadata> {
   const { slug } = await params;
+  const tenant = (await headers()).get("x-lessonmap-subdomain");
   const course = await db.course.findFirst({
     where: { shareSlug: slug, isPublic: true },
     select: {
@@ -28,11 +31,11 @@ export async function generateMetadata({ params }: CoursePageProps): Promise<Met
       shareSlug: true,
       createdAt: true,
       updatedAt: true,
-      user: { select: { name: true } },
+      user: { select: { name: true, subdomain: true, plan: true, subscriptionStatus: true, subscriptionCancelAtPeriodEnd: true, subscriptionCurrentPeriodEnd: true } },
     },
   });
 
-  if (!course?.shareSlug) {
+  if (!course?.shareSlug || (tenant && (course.user.subdomain !== tenant || effectiveAiPlan(course.user) === "FREE"))) {
     return {
       title: "Course Preview",
       robots: { index: false, follow: false },
@@ -69,6 +72,7 @@ export async function generateMetadata({ params }: CoursePageProps): Promise<Met
 
 export default async function CoursePreviewPage({ params, searchParams }: CoursePageProps) {
   const { slug } = await params;
+  const tenant = (await headers()).get("x-lessonmap-subdomain");
 
   // Public courses are resolved by their stable share slug. The course ID is
   // also accepted for an authenticated owner so the dashboard can use this
@@ -89,6 +93,7 @@ export default async function CoursePreviewPage({ params, searchParams }: Course
       user: {
         select: {
           name: true,
+          subdomain: true,
           image: true,
           plan: true,
           subscriptionStatus: true,
@@ -116,7 +121,7 @@ export default async function CoursePreviewPage({ params, searchParams }: Course
     },
   });
 
-  if (!course) notFound();
+  if (!course || (tenant && (!course.isPublic || course.user.subdomain !== tenant || effectiveAiPlan(course.user) === "FREE"))) notFound();
 
   const totalLessons = course.Module.reduce(
     (acc, m) => acc + m.Lesson.length,
@@ -194,7 +199,8 @@ export default async function CoursePreviewPage({ params, searchParams }: Course
     })),
   };
 
-  const requestedLesson = (await searchParams).lesson;
+  const query = await searchParams;
+  const requestedLesson = query.lesson;
   const initialLessonId =
     typeof requestedLesson === "string" &&
     course.Module.some((mod) =>
@@ -264,10 +270,11 @@ export default async function CoursePreviewPage({ params, searchParams }: Course
           dangerouslySetInnerHTML={{ __html: jsonLd(structuredData) }}
         />
       ) : null}
+      {course.isPublic && course.shareSlug && <PublicCourseActions key={course.id} slug={course.shareSlug} isOwner={userId === course.userId} emailCapture={course.emailCapture && effectiveAiPlan(course.user) !== "FREE"} mainOrigin={SITE_URL} cloneRequested={query.clone === "1"} />}
       <LessonMapPublicPage
         course={previewCourse}
         slug={slug}
-        canUseFlow={effectiveAiPlan(course.user) !== "FREE"}
+        canUseFlow={true}
         isOwner={userId === course.userId}
         initialLessonId={initialLessonId}
       />

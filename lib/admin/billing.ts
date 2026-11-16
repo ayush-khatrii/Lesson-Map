@@ -19,6 +19,10 @@ export function adminDodo() {
     const id = productIdForPlan(plan);
     return id ? [{ plan, id }] : [];
   });
+  const earlyBird = process.env.DODO_PRODUCT_CREATOR_EARLY_BIRD?.trim();
+  if (earlyBird && !products.some((product) => product.id === earlyBird)) {
+    products.push({ plan: "CREATOR", id: earlyBird });
+  }
   if (!products.length) throw new Error("Billing products are not configured.");
   if (new Set(products.map((p) => p.id)).size !== products.length)
     throw new Error("Billing plan products must be distinct.");

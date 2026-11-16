@@ -33,8 +33,9 @@ test('internal Professional accounts show a generic paid plan and billing action
   assert.match(html, /Manage billing/);
   assert.doesNotMatch(html, /Professional|Custom|\$12/);
 });
-test('public Free and Creator labels and prices remain visible', () => {
+test('billing shows the account plan and delegates subscription-specific prices to the portal', () => {
   assert.match(renderBilling('FREE'), /Free plan/);
   assert.match(renderBilling('CREATOR'), /Creator plan/);
-  assert.match(renderBilling('CREATOR'), /\$12/);
+  assert.match(renderBilling('CREATOR'), /See billing portal/);
+  assert.doesNotMatch(renderBilling('CREATOR'), /\$12|\$15/);
 });

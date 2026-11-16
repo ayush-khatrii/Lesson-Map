@@ -1,3 +1,4 @@
+import { CANONICAL_SITE_URL } from "@/lib/site";
 import { SUPPORT_EMAIL } from "@/constants/email";
 
 /**
@@ -23,7 +24,7 @@ export const LEGAL_JURISDICTION = "India";
 export const REFUND_WINDOW_DAYS = 14;
 
 /** The public app origin, shown in policy copy. */
-export const LEGAL_SITE_URL = "https://lessonmap.vercel.app";
+export const LEGAL_SITE_URL = CANONICAL_SITE_URL;
 
 export const POLICY_LINKS = [
   { href: "/privacy", label: "Privacy Policy", key: "privacy" },

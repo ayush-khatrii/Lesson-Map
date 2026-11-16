@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import "@/app/globals.css";
 import localFont from "next/font/local";
 import { Providers } from "@/components/Providers";
-import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/site";
+import { SITE_DESCRIPTION, SITE_NAME, SITE_TITLE, SITE_URL } from "@/lib/site";
 
 const alanSans = localFont({
   src: "./fonts/alan-sans-latin-wght-normal.woff2",
@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   applicationName: SITE_NAME,
 
   title: {
-    default: "LessonMap — Visual Course & Lesson Planner",
+    default: SITE_TITLE,
     template: "%s | LessonMap",
   },
 
@@ -34,9 +34,8 @@ export const metadata: Metadata = {
   },
 
   openGraph: {
-    title: "LessonMap — Visual Course & Lesson Planner",
-    description:
-      "Build and organize courses with a beautiful visual lesson mapping workspace.",
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
     url: SITE_URL,
     siteName: "LessonMap",
     type: "website",
@@ -47,9 +46,8 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     images: [{ url: "/opengraph-image", alt: "LessonMap — Visual course planning for creators" }],
-    title: "LessonMap — Visual Course & Lesson Planner",
-    description:
-      "Organize lessons, modules, and learning paths visually with LessonMap.",
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
   },
 };
 

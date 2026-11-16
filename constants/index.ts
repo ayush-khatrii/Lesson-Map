@@ -132,7 +132,7 @@ export const plans = [
     name: "Free Plan",
     type: "FREE",
     description:
-      "Start with a complete AI outline and build up to three courses at your own pace.",
+      "Try your idea, build a roadmap, and share it with your audience.",
     price: "$0",
     period: "/month",
     cta: "Start Free",
@@ -143,18 +143,20 @@ export const plans = [
       "Unlimited manual modules and lessons",
       "Accordion-style course builder",
       "Shareable public link with LessonMap branding",
+      "View-only Flow map with LessonMap watermark",
+      "Roadmap cloning and basic visit/start counts",
     ],
   },
   {
     name: "Creator Plan",
     type: "CREATOR",
     description:
-      "Unlimited courses, full AI outlines, visual maps, and clean exports.",
-    price: "$12",
+      "Publish polished roadmaps, collect leads, and share without branding.",
+    price: "$15",
     period: "/month",
     isPopular: true,
     cta: "Start Creator Plan",
-    accent: "Most Popular",
+    accent: "Early-bird",
     features: [
       `${COURSE_LIMITS.CREATOR} course maps`,
       `${AI_LIMITS.CREATOR.generations} AI generations/month · full multi-module courses (Only successful AI generations count, failed attempts are never charged)`,
@@ -163,6 +165,7 @@ export const plans = [
       "Export courses as Markdown, accordion PDF, and Flow PDF or PNG",
       "Shareable links without LessonMap branding",
       "Social and website links on your public course pages",
+      "Email capture with lead list and CSV export",
     ],
   },
 ];
@@ -192,7 +195,7 @@ export const comparisonRows = [
   },
   {
     label: "Builder style",
-    free: "Accordion view",
+    free: "Accordion + view-only, watermarked Flow",
     creator: "Accordion + Flow / node-like map",
   },
   {
@@ -204,6 +207,16 @@ export const comparisonRows = [
     label: "Social and website links",
     free: "Not included",
     creator: "Instagram, LinkedIn, YouTube, GitHub, X, and your website",
+  },
+  {
+    label: "Email capture",
+    free: "Not included",
+    creator: "Signup form, lead list, and CSV export",
+  },
+  {
+    label: "Visits and lesson starts",
+    free: "Basic counts",
+    creator: "Basic counts",
   },
   {
     label: "Best for",

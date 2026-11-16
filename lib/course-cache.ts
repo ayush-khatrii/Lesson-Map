@@ -26,11 +26,25 @@ export async function getUserCourses(userId: string) {
   cacheLife({ stale: 300, revalidate: 60, expire: 300 });
   cacheTag(userCoursesTag(userId));
 
-  return db.course.findMany({
+  const courses = await db.course.findMany({
     where: { userId },
     orderBy: { createdAt: "desc" },
     include: courseInclude,
   });
+  const counts = await db.courseEvent.groupBy({
+    by: ["courseId", "kind"],
+    where: { course: { userId } },
+    _count: true,
+  });
+  return courses.map((course) => ({
+    ...course,
+    visits:
+      counts.find((row) => row.courseId === course.id && row.kind === "visit")
+        ?._count ?? 0,
+    starts:
+      counts.find((row) => row.courseId === course.id && row.kind === "start")
+        ?._count ?? 0,
+  }));
 }
 
 export async function getUserCourse(userId: string, courseId: string) {

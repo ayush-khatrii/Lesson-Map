@@ -1,3 +1,5 @@
+import { headers } from "next/headers";
+import { effectiveAiPlan } from "@/lib/ai/schema";
 import { db } from "@/lib/prisma";
 import { summarizeForMetadata } from "@/lib/site";
 import { ImageResponse } from "next/og";
@@ -17,10 +19,13 @@ export default async function CourseOpenGraphImage({
     select: {
       courseName: true,
       description: true,
-      user: { select: { name: true } },
+      user: { select: { name: true, subdomain: true, plan: true, subscriptionStatus: true, subscriptionCancelAtPeriodEnd: true, subscriptionCurrentPeriodEnd: true } },
       Module: { select: { _count: { select: { Lesson: true } } } },
     },
   });
+
+  const tenant = (await headers()).get("x-lessonmap-subdomain");
+  if (tenant && (!course || course.user.subdomain !== tenant || effectiveAiPlan(course.user) === "FREE")) return new Response("Not found", { status: 404 });
 
   const title = course?.courseName ?? "Course outline";
   const creator = course?.user.name ?? "LessonMap creator";

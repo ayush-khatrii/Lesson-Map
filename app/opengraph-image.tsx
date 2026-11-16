@@ -61,6 +61,7 @@ export default async function OpenGraphImage() {
           workspace.
         </div>
       </div>
+      <div style={{ fontSize: 24, color: "#53596b" }}>lessonmap.org</div>
     </div>,
     size,
   );

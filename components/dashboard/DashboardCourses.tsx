@@ -1,4 +1,5 @@
 "use client";
+import CourseLeads from "@/components/dashboard/CourseLeads";
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
@@ -82,6 +83,8 @@ export type CourseWithRelations = {
   updatedAt: string;
   shareSlug: string | null;
   isPublic: boolean;
+  visits?: number;
+  starts?: number;
 };
 
 function timeAgo(date: string | Date): string {
@@ -251,6 +254,8 @@ function CourseAccordionItem({
       </AccordionTrigger>
 
       <AccordionContent className="border-t border-border bg-muted/20 px-4 pt-4 pb-4 sm:px-5 sm:pt-5 sm:pb-5">
+        <p className="mb-3 text-sm text-muted-foreground">{course.visits ?? 0} visits · {course.starts ?? 0} starts</p>
+        <CourseLeads courseId={course.id} canCapture={canUseFlow} />
         {isOwner && (
           <div className="mb-4 rounded-lg border border-border bg-background/60 px-3 py-3">
             <div className="flex flex-wrap items-center justify-between gap-3">
@@ -394,9 +399,9 @@ function CourseAccordionItem({
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <h3 className="text-sm font-semibold">Course curriculum</h3>
           <FlowViewSwitcher
-            view={canUseFlow ? view : "accordion"}
+            view={view}
             onChange={setView}
-            canUseFlow={canUseFlow}
+            canUseFlow={true}
             isLoading={isPlanLoading}
             onLocked={() => setFlowAccessOpen(true)}
           />
@@ -405,9 +410,10 @@ function CourseAccordionItem({
           open={flowAccessOpen}
           onOpenChange={setFlowAccessOpen}
         />
-        {view === "flow" && canUseFlow ? (
+        {view === "flow" ? (
           <LazyCourseFlowView
             outline={outline}
+            watermarked={!canUseFlow}
             onSelectLesson={(_, lessonId) =>
               router.push(
                 `/p/${course.id}?lesson=${encodeURIComponent(lessonId)}`,

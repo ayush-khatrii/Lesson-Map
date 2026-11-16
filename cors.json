@@ -1,6 +1,6 @@
 [
   {
-    "AllowedOrigins": ["http://localhost:3000", "https://lessonmap.vercel.app"],
+    "AllowedOrigins": ["http://localhost:3000", "https://lessonmap.org"],
     "AllowedMethods": ["GET", "PUT", "HEAD"],
     "AllowedHeaders": ["*"],
     "ExposeHeaders": ["ETag"],

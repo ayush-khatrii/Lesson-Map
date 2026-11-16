@@ -9,6 +9,7 @@ function harness(overrides = {}, options = {}) {
   const env = {
     NODE_ENV: "production", DODO_PAYMENTS_API_KEY: "test-secret",
     DODO_PAYMENTS_ENVIRONMENT: "test_mode", DODO_PRODUCT_CREATOR: "pdt_creator",
+    DODO_PRODUCT_CREATOR_EARLY_BIRD: "pdt_creator_15",
     DODO_PRODUCT_PROFESSIONAL: "pdt_professional", NEXT_PUBLIC_BASE_URL: "https://example.com/",
     DODO_PAYMENTS_WEBHOOK_SECRET: "test-webhook-secret",
     ...overrides,
@@ -67,7 +68,7 @@ for (const plan of ["CREATOR"]) {
     assert.equal(h.calls[0].config.environment, "live_mode");
     const request = h.calls[1].request;
     assert.equal(request.feature_flags.allow_discount_code, true);
-    assert.equal(request.product_cart[0].product_id, `pdt_${plan.toLowerCase()}`);
+    assert.equal(request.product_cart[0].product_id, "pdt_creator_15");
     assert.equal(request.metadata.userId, "user-1");
     assert.equal(request.metadata.plan, plan);
     assert.equal(request.return_url, `https://example.com/checkout/return?plan=${plan}`);
@@ -76,7 +77,7 @@ for (const plan of ["CREATOR"]) {
 
 for (const [overrides, expected] of [
   [{ DODO_PAYMENTS_API_KEY: "", DODO_PAYMENTS_KEY: "legacy-secret" }, "DODO_PAYMENTS_API_KEY"],
-  [{ DODO_PRODUCT_CREATOR: " " }, "DODO_PRODUCT_CREATOR"],
+  [{ DODO_PRODUCT_CREATOR_EARLY_BIRD: " " }, "DODO_PRODUCT_CREATOR"],
   [{ DODO_PAYMENTS_WEBHOOK_SECRET: "" }, "DODO_PAYMENTS_WEBHOOK_SECRET"],
   [{ DODO_PAYMENTS_ENVIRONMENT: "" }, "DODO_PAYMENTS_ENVIRONMENT"],
   [{ DODO_PAYMENTS_ENVIRONMENT: "live" }, "DODO_PAYMENTS_ENVIRONMENT"],
@@ -111,9 +112,9 @@ test("missing hosted URL is a failure instead of a successful redirect", async (
 });
 
 test("setup diagnostics are available locally, but hidden in production", async () => {
-  const local = await harness({ NODE_ENV: "development", DODO_PRODUCT_CREATOR: "" }).post();
+  const local = await harness({ NODE_ENV: "development", DODO_PRODUCT_CREATOR_EARLY_BIRD: "" }).post();
   assert.match((await local.json()).detail, /DODO_PRODUCT_CREATOR/);
-  const production = await harness({ DODO_PRODUCT_CREATOR: "" }).post();
+  const production = await harness({ DODO_PRODUCT_CREATOR_EARLY_BIRD: "" }).post();
   assert.equal((await production.json()).detail, undefined);
 });
 
@@ -129,5 +130,11 @@ test("Professional is retained internally but cannot create a new Dodo checkout"
   const h = harness();
   const response = await h.post("PROFESSIONAL");
   assert.equal(response.status, 400);
+  assert.equal(h.calls.length, 0);
+});
+
+ test("new checkout never falls back to the legacy $12 product", async () => {
+  const h = harness({ DODO_PRODUCT_CREATOR_EARLY_BIRD: "" });
+  assert.equal((await h.post()).status, 503);
   assert.equal(h.calls.length, 0);
 });

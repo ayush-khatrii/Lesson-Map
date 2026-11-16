@@ -1,5 +1,6 @@
 "use client";
 
+import { trackCourseEvent } from "@/components/PublicCourseActions";
 import { useState, useMemo, useCallback, useEffect } from "react";
 import Link from "next/link";
 import {
@@ -300,12 +301,6 @@ const RESOURCE_META: Record<
   Document: { icon: FileType, label: "Document", color: "text-chart-2" },
   Spreadsheet: { icon: FileSpreadsheet, label: "Spreadsheet", color: "text-chart-4" },
 };
-
-function getSeedIds(modules: Module[]): string[] {
-  return modules.flatMap((m) =>
-    m.lessons.filter((l) => l.done).map((l) => l.id),
-  );
-}
 
 function clickUnlessSelecting(handler: () => void) {
   return () => {
@@ -929,11 +924,7 @@ export default function LessonMapPublicPage({
   );
   const courseId = slug ?? course.id ?? "default-course";
 
-  const seedIds = useMemo(() => getSeedIds(course.modules), [course.modules]);
-  const { isDone, toggle, completedCount, hydrated } = useLessonProgress(
-    courseId,
-    seedIds,
-  );
+  const { isDone, toggle, completedCount, hydrated, markStarted } = useLessonProgress(courseId);
 
   const [view, setView] = useState<ViewMode>("accordion");
   const [upgradeOpen, setUpgradeOpen] = useState(false);
@@ -946,6 +937,11 @@ export default function LessonMapPublicPage({
   const [selectedLessonId, setSelectedLessonId] = useState<string | null>(
     initialLessonId ?? null,
   );
+
+  useEffect(() => {
+    if (slug && selectedLessonId && !isOwner) trackCourseEvent(slug, "start");
+    if (selectedLessonId) markStarted(selectedLessonId);
+  }, [slug, selectedLessonId, isOwner, markStarted]);
 
   const flowOutline = useMemo(
     () => ({
@@ -1106,6 +1102,7 @@ export default function LessonMapPublicPage({
               <div className="grid min-w-0 grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,1.4fr)_minmax(300px,1fr)]">
                 <LazyCourseFlowView
                   outline={flowOutline}
+                  watermarked={!course.hideBranding}
                   selectedLessonId={selectedLessonId}
                   isDone={isDone}
                   onSelectLesson={handleSelectLesson}
