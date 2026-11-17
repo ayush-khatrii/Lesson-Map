@@ -173,6 +173,7 @@ function CourseAccordionItem({
     0,
   );
   const publicUrl = course.shareSlug ? getPublicUrl(course.shareSlug) : "";
+  const descriptionCharacters = Array.from(course.description || "No description");
 
   const handleCopy = async () => {
     if (!publicUrl) return;
@@ -217,7 +218,9 @@ function CourseAccordionItem({
               )}
             </div>
             <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
-              {course.description || "No description"}
+              {descriptionCharacters.length > 100
+                ? `${descriptionCharacters.slice(0, 100).join("")}...`
+                : descriptionCharacters.join("")}
             </p>
             <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground xl:hidden">
               <span>
