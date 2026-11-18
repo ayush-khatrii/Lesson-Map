@@ -14,6 +14,7 @@ export default function PrivacyPage() {
   return (
     <LegalPage
       current="privacy"
+      lastUpdated="November 18, 2026"
       title="Privacy Policy"
       intro={`This policy explains what ${LEGAL_ENTITY} collects when you use our course planning and sharing service, why we need it, and the choices you have.`}
     >
@@ -27,13 +28,14 @@ export default function PrivacyPage() {
             </>,
             <>
               <strong className="text-foreground">Authentication data.</strong> Passwords are stored
-              only as a salted hash — we never see or keep your plain password. When you use a social
-              sign-in, we store the access tokens the provider issues so your session keeps working.
+              as salted hashes rather than plain text. Passwords are processed when you sign in or
+              change them. Social sign-in may store provider-issued tokens and account identifiers;
+              we also keep session and password-reset verification records.
             </>,
             <>
               <strong className="text-foreground">Your content.</strong> Courses, modules, lessons,
               and the resources you attach to lessons, including notes, links, code, and uploaded
-              files such as PDFs and images.
+              files such as PDFs, images, documents, and spreadsheets.
             </>,
             <>
               <strong className="text-foreground">Profile links.</strong> Any social or website URLs
@@ -42,6 +44,11 @@ export default function PrivacyPage() {
             </>,
           ]}
         />
+        <p>
+          If you choose to sign up for updates on a public course page, we store your email address
+          and signup date for that course after you agree to share your email with its creator.
+          The creator can view and export this list to contact you about the course.
+        </p>
       </LegalSection>
 
       <LegalSection title="2. Information created by using the service">
@@ -56,9 +63,8 @@ export default function PrivacyPage() {
               <strong className="text-foreground">AI generation records.</strong> When you generate a
               course with AI we store the request identifier, a one-way hash of your request, the
               status, the number of tokens used, and a timestamp.{" "}
-              <strong className="text-foreground">
-                We do not store the prompt you typed or the generated outline text.
-              </strong>
+              The generation record does not contain your raw prompt or the generated text.
+              Successful generated or revised outlines are saved as course content in your account.
             </>,
             <>
               <strong className="text-foreground">Rate limiting data.</strong> A request key with a
@@ -71,23 +77,36 @@ export default function PrivacyPage() {
             </>,
             <>
               <strong className="text-foreground">Application logs.</strong> Our hosting provider
-              keeps short-lived logs of requests and errors for debugging and security.
+              processes request and error logs for debugging and security. We also record
+              administrative security actions, such as administrator sign-ins.
             </>,
           ]}
         />
       </LegalSection>
 
-      <LegalSection title="3. Cookies and local storage">
+      <LegalSection title="3. Cookies and browser storage">
         <p>
-          We use a single essential cookie to keep you signed in. It is required for the service to
-          work and is not used for advertising.
+          We use essential authentication cookies to keep you signed in and support secure
+          sign-in flows. Administrator access uses a separate session cookie. These cookies
+          are not used for advertising.
         </p>
         <p>
-          Your theme preference and your lesson progress are saved in your browser&apos;s local
-          storage. Lesson progress never leaves your device — it is not uploaded to us, which also
-          means it is not attached to your account and will not follow you to another browser.
+          Your theme preference is saved in your browser&apos;s local storage. When you are signed
+          in, we store your lesson progress in our database against your account, including lesson
+          identifiers, start times, completion times, and update times. This lets you retrieve your
+          progress when signed in on another browser or device. Guests can browse courses, but
+          lesson progress is not saved without signing in.
         </p>
         <p>
+          Public course pages use session storage for a randomly generated visitor identifier
+          and visit/start deduplication flags. We send that identifier and the event type to our
+          server, where we store it with the course and event time to provide visit and start
+          counts to the creator. These counts are separate from account-based lesson progress.
+        </p>
+        <p>
+          Earlier versions may have left lesson progress in local storage. The current progress
+          feature does not read or import that data; you can remove it by clearing this site&apos;s
+          browser storage. Clearing browser storage does not delete progress saved to your account.
           We do not use advertising cookies, cross-site trackers, or third-party analytics pixels.
         </p>
       </LegalSection>
@@ -98,6 +117,10 @@ export default function PrivacyPage() {
             "To create your account, sign you in, and keep your session secure.",
             "To store and display your courses, modules, lessons, and resources.",
             "To publish a course on a share link when you choose to make it public.",
+            "To save and retrieve signed-in learners’ lesson progress across devices.",
+            "To provide creators with public-course visit/start counts and consent-based email signup lists.",
+            "To import public YouTube playlist details when you request an import.",
+            "To send account, password-reset, and subscription-related emails.",
             "To generate course outlines when you request them and enforce your plan limits.",
             "To charge for paid plans, verify payments, and manage subscriptions and refunds.",
             "To prevent abuse, including rate limiting and protecting against unauthorised access.",
@@ -119,7 +142,7 @@ export default function PrivacyPage() {
             </>,
             <>
               <strong className="text-foreground">Neon</strong> — managed PostgreSQL database where
-              your account and content are stored.
+              your account, content, lesson progress, course events, and email signup lists are stored.
             </>,
             <>
               <strong className="text-foreground">Cloudflare R2</strong> — file storage for resources
@@ -127,7 +150,9 @@ export default function PrivacyPage() {
             </>,
             <>
               <strong className="text-foreground">DeepSeek</strong> — processes the topic, audience,
-              and outline size you submit when you use AI generation.
+              and outline size you submit when you use AI generation. For AI revisions, we also
+              send your revision instructions and relevant existing course content, including
+              course and module descriptions and lesson titles.
             </>,
             <>
               <strong className="text-foreground">Dodo Payments</strong> — payment processing and
@@ -137,29 +162,50 @@ export default function PrivacyPage() {
             </>,
             <>
               <strong className="text-foreground">GitHub and Google</strong> — only if you choose to
-              sign in with those providers.
+              sign in with those providers. Google also receives the playlist identifier when
+              you request a YouTube playlist import so we can retrieve public playlist and video details.
             </>,
           ]}
         />
+        <p>
+          Resend processes recipient names, email addresses, and message content to deliver
+          transactional emails when email delivery is configured, including welcome, password-reset,
+          and subscription messages.
+        </p>
+        <p>
+          If you open an external resource or a creator&apos;s social link, that destination may
+          receive information such as your IP address and browser details under its own privacy policy.
+        </p>
       </LegalSection>
 
       <LegalSection title="6. Public course pages">
         <p>
-          When you turn on sharing for a course, anyone with the link can view that course. The
+          When you turn on sharing for a course, anyone can view it, and search engines may
+          index it. Other users may also copy the public outline into their own account. The
           public page shows the course content and your creator name, avatar, and any social links you
           enabled. It does not show your email address.
         </p>
         <p>
-          You control this per course and can turn sharing off at any time, which immediately stops
-          the link from working.
+          You control sharing per course and can turn it off to stop public access through
+          LessonMap. This does not remove copies already made by other people or cached by search
+          engines. Your own signed-in owner preview can remain available.
+        </p>
+        <p>
+          Creators receive visit and start counts, not a list of individual learners&apos; lesson
+          progress. If you voluntarily submit your email for course updates, the creator receives
+          that email and signup date. You can ask the creator to remove it or contact LessonMap
+          using the address below. Turning off email collection does not delete existing signups
+          or copies the creator has already exported.
         </p>
       </LegalSection>
 
       <LegalSection title="7. Retaining and deleting your data">
         <LegalList
           items={[
-            "We keep your account and content while your account is active.",
-            "Deleting a course removes its modules, lessons, and resources, and we clean up the associated stored files.",
+            "We keep account data, course content, saved lesson progress, and related service records while needed to provide the service and meet security or legal requirements.",
+            "Deleting a course removes its modules, lessons, resource records, associated lesson progress, course events, and stored email signups. Unreferenced uploaded files are removed by the file-cleanup process rather than necessarily at the same time.",
+            "Creators may retain exported signup lists outside LessonMap. Contact the creator about those copies.",
+            "You can clear local and session storage in your browser. This does not remove data already stored on our servers.",
             "Billing records may be kept for as long as tax and accounting rules require, even after you close your account.",
             "You can ask us to access, correct, export, or delete your personal data by emailing us.",
           ]}
@@ -210,8 +256,9 @@ export default function PrivacyPage() {
 
       <LegalSection title="11. Changes to this policy">
         <p>
-          If we make material changes we will update the date at the top of this page. Continued use
-          of the service after a change means you accept the updated policy.
+          We will update the date at the top of this page when this policy changes. Where required,
+          we will provide additional notice or request consent for material changes to how we
+          process personal data.
         </p>
       </LegalSection>
     </LegalPage>

@@ -17,11 +17,13 @@ export default function LegalPage({
   title,
   intro,
   current,
+  lastUpdated = LEGAL_EFFECTIVE_DATE,
   children,
 }: {
   title: string;
   intro: string;
   current: PolicyKey;
+  lastUpdated?: string;
   children: ReactNode;
 }) {
   const others = POLICY_LINKS.filter((policy) => policy.key !== current);
@@ -35,7 +37,7 @@ export default function LegalPage({
           </p>
           <h1 className="mt-3 text-3xl font-semibold tracking-[-0.04em] sm:text-4xl">{title}</h1>
           <p className="mt-4 max-w-2xl text-sm leading-6 text-muted-foreground">{intro}</p>
-          <p className="mt-4 text-xs text-muted-foreground">Last updated {LEGAL_EFFECTIVE_DATE}</p>
+          <p className="mt-4 text-xs text-muted-foreground">Last updated {lastUpdated}</p>
         </Reveal>
 
         <div className="mt-12 space-y-6">{children}</div>
