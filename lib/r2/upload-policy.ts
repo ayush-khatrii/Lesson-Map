@@ -1,5 +1,13 @@
 // Shared by the upload form and server. Existing saved files are not restricted.
 export const MAX_UPLOAD_BYTES = 25 * 1024 * 1024;
+export const UPLOAD_URL_TTL_SECONDS = 300;
+export const UPLOAD_CLEANUP_GRACE_MS = 24 * 60 * 60 * 1000;
+export const UPLOAD_LIMITS = {
+  FREE: { requestsPerMinute: 5, storageBytes: 250 * 1024 * 1024 },
+  CREATOR: { requestsPerMinute: 10, storageBytes: 5 * 1024 * 1024 * 1024 },
+  PROFESSIONAL: { requestsPerMinute: 10, storageBytes: 5 * 1024 * 1024 * 1024 },
+} as const;
+export type UploadStorage = { usedBytes: number; limitBytes: number };
 export const UPLOAD_SAVE_WINDOW_MS = 60 * 60 * 1000;
 export const FILE_RESOURCE_TYPES = ["PDF", "Image", "Document", "Spreadsheet"] as const;
 export type FileResourceType = (typeof FILE_RESOURCE_TYPES)[number];

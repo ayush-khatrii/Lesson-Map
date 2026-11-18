@@ -8,7 +8,9 @@ import {
   matchesUploadResource,
   MAX_UPLOAD_BYTES,
   UPLOAD_SAVE_WINDOW_MS,
+  UPLOAD_URL_TTL_SECONDS,
 } from "@/lib/r2/upload-policy";
+import { UploadLimitError } from "@/lib/r2/generatePresignedUrl";
 import { HeadObjectCommand } from "@aws-sdk/client-s3";
 import {
   getR2,
@@ -61,6 +63,13 @@ export async function POST(request: Request) {
       where: { key, lessonId: data.lessonId },
     });
     if (existing) return NextResponse.json(existing);
+
+    const allocation = await db.uploadAllocation.findUnique({ where: { key } });
+    if (!allocation || allocation.userId !== userId || allocation.lessonId !== data.lessonId ||
+        allocation.size !== data.size ||
+        Date.now() - allocation.createdAt.getTime() > UPLOAD_SAVE_WINDOW_MS + UPLOAD_URL_TTL_SECONDS * 1000) {
+      return NextResponse.json({ error: "This upload reservation expired or is invalid. Please select the file again." }, { status: 400 });
+    }
 
     const r2 = getR2();
     let object;
@@ -117,6 +126,15 @@ export async function POST(request: Request) {
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${key}, 0))`;
       const saved = await tx.resource.findFirst({ where: { key } });
       if (saved) return saved;
+      // Cleanup takes the same lock. A removed/expired allocation cannot be
+      // revived by a completion request that was already checking R2.
+      const reserved = await tx.uploadAllocation.findUnique({ where: { key } });
+      if (!reserved || reserved.userId !== userId || reserved.lessonId !== data.lessonId ||
+          reserved.size !== size ||
+          Date.now() - reserved.createdAt.getTime() > UPLOAD_SAVE_WINDOW_MS + UPLOAD_URL_TTL_SECONDS * 1000) {
+        throw new UploadLimitError(400, "UPLOAD_EXPIRED", "This upload expired. Please select the file again.");
+      }
+      await tx.uploadAllocation.update({ where: { key }, data: { savedAt: new Date() } });
       return tx.resource.create({
         data: {
           ...data,
@@ -132,6 +150,9 @@ export async function POST(request: Request) {
     revalidateTag(userCoursesTag(userId), { expire: 0 });
     return NextResponse.json(resource, { status: 201 });
   } catch (error) {
+    if (error instanceof UploadLimitError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
     if (error instanceof R2NotConfiguredError) {
       console.error("Failed to save uploaded resource: R2 is not configured");
       return NextResponse.json(

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { generatePresignedUrl } from "@/lib/r2/generatePresignedUrl";
+import { generatePresignedUrl, getUploadStorage, UploadLimitError } from "@/lib/r2/generatePresignedUrl";
 import { R2NotConfiguredError } from "@/lib/r2/r2-client";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
@@ -61,6 +61,12 @@ export async function POST(request: Request) {
 
     return NextResponse.json(result);
   } catch (error) {
+    if (error instanceof UploadLimitError) {
+      return NextResponse.json(
+        { error: error.message, code: error.code, storage: error.storage },
+        { status: error.status, headers: error.retryAfter ? { "Retry-After": String(error.retryAfter) } : undefined },
+      );
+    }
     if (error instanceof R2NotConfiguredError) {
       console.error("Error creating upload URL: R2 is not configured");
       return NextResponse.json(
@@ -79,5 +85,19 @@ export async function POST(request: Request) {
       },
       { status: 500 },
     );
+  }
+}
+
+export async function GET() {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() });
+    const userId = session?.session.userId;
+    if (!userId) return NextResponse.json({ error: "Please sign in to continue." }, { status: 401 });
+    return NextResponse.json(await getUploadStorage(userId), { headers: { "Cache-Control": "private, no-store" } });
+  } catch (error) {
+    if (error instanceof UploadLimitError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
+    return NextResponse.json({ error: "Could not load storage usage." }, { status: 500 });
   }
 }
