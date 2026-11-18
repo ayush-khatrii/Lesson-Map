@@ -341,6 +341,12 @@ const PricingPage = () => {
             </table>
           </div>
 
+          <p className="mt-3 text-xs leading-5 text-muted-foreground">
+            Storage includes saved files and pending uploads. Space from deleted
+            or unfinished uploads is released after cleanup, following a minimum
+            24-hour safety window.
+          </p>
+
           <div className="mt-6 grid gap-4 md:grid-cols-2">
             <div className="rounded-2xl border border-border bg-background/70 p-4">
               <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-foreground">

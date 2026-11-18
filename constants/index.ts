@@ -1,5 +1,10 @@
 import { AI_LIMITS } from "@/lib/ai/schema";
 import { COURSE_LIMITS } from "@/lib/plans";
+import { MAX_UPLOAD_BYTES, UPLOAD_LIMITS } from "@/lib/r2/upload-policy";
+
+const formatStorageLimit = (bytes: number) =>
+  bytes >= 1024 ** 3 ? `${bytes / 1024 ** 3} GB` : `${bytes / 1024 ** 2} MB`;
+const maxFileSize = formatStorageLimit(MAX_UPLOAD_BYTES);
 
 export type ExampleCourseTemplate = {
   id: string;
@@ -141,6 +146,8 @@ export const plans = [
       `Up to ${COURSE_LIMITS.FREE} courses`,
       "One complete AI course outline, included once",
       "Unlimited manual modules and lessons",
+      `${formatStorageLimit(UPLOAD_LIMITS.FREE.storageBytes)} total file storage`,
+      `Uploads up to ${maxFileSize} per file · ${UPLOAD_LIMITS.FREE.requestsPerMinute} uploads/minute`,
       "Accordion-style course builder",
       "Shareable public link with LessonMap branding",
       "View-only Flow map with LessonMap watermark",
@@ -161,6 +168,8 @@ export const plans = [
       `${COURSE_LIMITS.CREATOR} course maps`,
       `${AI_LIMITS.CREATOR.generations} AI generations/month · full multi-module courses (Only successful AI generations count, failed attempts are never charged)`,
       "Unlimited modules and lessons in every course",
+      `${formatStorageLimit(UPLOAD_LIMITS.CREATOR.storageBytes)} total file storage`,
+      `Uploads up to ${maxFileSize} per file · ${UPLOAD_LIMITS.CREATOR.requestsPerMinute} uploads/minute`,
       "Accordion view + Flow / node-like view",
       "Export courses as Markdown, accordion PDF, and Flow PDF or PNG",
       "Shareable links without LessonMap branding",
@@ -187,6 +196,21 @@ export const comparisonRows = [
     label: "Failed AI generations",
     free: "Never counted against your limit",
     creator: "Never counted against your limit",
+  },
+  {
+    label: "Total file storage",
+    free: formatStorageLimit(UPLOAD_LIMITS.FREE.storageBytes),
+    creator: formatStorageLimit(UPLOAD_LIMITS.CREATOR.storageBytes),
+  },
+  {
+    label: "Maximum file size",
+    free: maxFileSize,
+    creator: maxFileSize,
+  },
+  {
+    label: "Upload rate",
+    free: `${UPLOAD_LIMITS.FREE.requestsPerMinute} uploads/minute`,
+    creator: `${UPLOAD_LIMITS.CREATOR.requestsPerMinute} uploads/minute`,
   },
   {
     label: "Export options",
