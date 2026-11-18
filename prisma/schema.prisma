@@ -26,6 +26,7 @@ model User {
   youtubeImports Int @default(0)
   imports PlaylistImport[]
   lessonProgress LessonProgress[]
+  uploadAllocations UploadAllocation[]
 
   plan                          Plan      @default(FREE)
   subscriptionId                String?   @unique
@@ -364,4 +365,18 @@ model LessonProgress {
   updatedAt   DateTime  @updatedAt
 
   @@unique([userId, lessonId])
+}
+
+// Keep allocations after lesson deletion until the stored object is removed.
+model UploadAllocation {
+  key       String   @id
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lessonId  String
+  size      Int
+  createdAt DateTime @default(now())
+  savedAt   DateTime?
+
+  @@index([userId])
+  @@index([savedAt, createdAt, key])
 }

@@ -1,9 +1,9 @@
 "use client";
 
-import { useRef, useState, type ElementType } from "react";
+import { useEffect, useRef, useState, type ElementType } from "react";
 import { Button } from "@/components/ui/button";
 import { Loader2, Upload, X } from "lucide-react";
-import { MAX_UPLOAD_BYTES, normalizeUploadContentType, matchesUploadResource, type FileResourceType } from "@/lib/r2/upload-policy";
+import { MAX_UPLOAD_BYTES, normalizeUploadContentType, matchesUploadResource, type FileResourceType, type UploadStorage } from "@/lib/r2/upload-policy";
 import { toast } from "sonner";
 
 export type UploadedResource = {
@@ -33,6 +33,7 @@ type FileUploadProps = {
 };
 
 function formatFileSize(size: number) {
+  if (size >= 1024 * 1024 * 1024) return `${(size / (1024 * 1024 * 1024)).toFixed(1)} GB`;
   if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
   return `${(size / (1024 * 1024)).toFixed(1)} MB`;
 }
@@ -53,6 +54,19 @@ const FileUpload = ({
   const [dragOver, setDragOver] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [storage, setStorage] = useState<UploadStorage | null>(null);
+  useEffect(() => {
+    const controller = new AbortController();
+    void fetch("/api/upload", { cache: "no-store", signal: controller.signal })
+      .then(async (response) => {
+        if (response.ok) {
+          const usage: UploadStorage = await response.json();
+          if (!controller.signal.aborted) setStorage(usage);
+        }
+      })
+      .catch(() => {}); // The upload endpoint still enforces limits if this read fails.
+    return () => controller.abort();
+  }, [lessonId]);
 
   const uploadFile = async (file: File, contentType: string) => {
     setIsUploading(true);
@@ -70,14 +84,17 @@ const FileUpload = ({
 
       if (!uploadResponse.ok) {
         const failure = await uploadResponse.json().catch(() => null);
+        if (failure?.storage) setStorage(failure.storage);
         throw new Error(failure?.error || "Failed to create upload URL");
       }
 
-      const { uploadUrl, uploadHeaders, key } = (await uploadResponse.json()) as {
+      const { uploadUrl, uploadHeaders, key, storage: usage } = (await uploadResponse.json()) as {
         uploadUrl: string;
         uploadHeaders: Record<string, string>;
         key: string;
+        storage: UploadStorage;
       };
+      setStorage(usage);
 
       const r2Response = await fetch(uploadUrl, {
         method: "PUT",
@@ -245,6 +262,12 @@ const FileUpload = ({
             Browse files
           </Button>
         </>
+      )}
+      {storage && (
+        <p className="text-center text-xs text-muted-foreground" role="status">
+          {formatFileSize(storage.usedBytes)} of {formatFileSize(storage.limitBytes)} used or reserved.
+          {" "}Deleted files and unfinished uploads free space after cleanup.
+        </p>
       )}
     </div>
   );

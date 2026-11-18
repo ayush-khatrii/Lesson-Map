@@ -7,6 +7,8 @@ import {
   R2NotConfiguredError,
 } from "@/lib/r2/r2-client";
 import { NextResponse } from "next/server";
+import { db } from "@/lib/prisma";
+import { UPLOAD_CLEANUP_GRACE_MS } from "@/lib/r2/upload-policy";
 
 export const maxDuration = 300;
 
@@ -25,7 +27,7 @@ export async function GET(request: Request) {
   }
   try {
     const r2 = getR2();
-    const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+    const cutoff = Date.now() - UPLOAD_CLEANUP_GRACE_MS;
     let cursor: string | undefined;
     let removed = 0;
     let failed = 0;
@@ -53,6 +55,31 @@ export async function GET(request: Request) {
       }
       cursor = page.IsTruncated ? page.NextContinuationToken : undefined;
     } while (cursor);
+    // Reservations with no uploaded object do not appear in R2's listing.
+    // Sweep these too; failed cleanup keeps their bytes reserved for a retry.
+    let allocationCursor: string | undefined;
+    while (true) {
+      const abandoned = await db.uploadAllocation.findMany({
+        where: {
+          savedAt: null,
+          createdAt: { lt: new Date(cutoff) },
+          ...(allocationCursor ? { key: { gt: allocationCursor } } : {}),
+        },
+        select: { key: true },
+        orderBy: { key: "asc" },
+        take: 100,
+      });
+      if (!abandoned.length) break;
+      for (const allocation of abandoned) {
+        try {
+          if (await deleteUnreferencedFile(allocation.key)) removed++;
+        } catch (error) {
+          failed++;
+          console.error("Upload reservation cleanup deferred:", error);
+        }
+      }
+      allocationCursor = abandoned[abandoned.length - 1].key;
+    }
     return NextResponse.json(
       { removed, failed },
       {
