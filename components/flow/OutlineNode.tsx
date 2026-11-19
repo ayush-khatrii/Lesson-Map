@@ -15,7 +15,7 @@ export const OutlineNode = memo(function OutlineNode({
 }: NodeProps<Node<OutlineNodeData>>) {
   const content = (
     <>
-      <span className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-primary">
+      <span className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-primary-text">
         {data.label}
         {data.kind === "module" &&
           Boolean(data.lessonCount) &&

@@ -27,42 +27,42 @@ export interface BentoProps {
 
 const DEFAULT_PARTICLE_COUNT = 12;
 const DEFAULT_SPOTLIGHT_RADIUS = 300;
-const DEFAULT_GLOW_COLOR = "132, 0, 255";
+const DEFAULT_GLOW_COLOR = "253, 199, 0";
 const MOBILE_BREAKPOINT = 768;
 
 const cardData: BentoCardProps[] = [
   {
-    color: "#060010",
+    color: "var(--card)",
     title: "Analytics",
     description: "Track user behavior",
     label: "Add Modules & Lessons",
   },
   {
-    color: "#060010",
+    color: "var(--card)",
     title: "Drag, Drop & Reorder",
     description: "Centralized data view",
     label: "Overview",
   },
   {
-    color: "#060010",
+    color: "var(--card)",
     title: "Collaboration",
     description: "Work together seamlessly",
     label: "Teamwork",
   },
   {
-    color: "#060010",
+    color: "var(--card)",
     title: "Automation",
     description: "Streamline workflows",
     label: "Efficiency",
   },
   {
-    color: "#060010",
+    color: "var(--card)",
     title: "Integration",
     description: "Connect favorite tools",
     label: "Connectivity",
   },
   {
-    color: "#060010",
+    color: "var(--card)",
     title: "Security",
     description: "Enterprise-grade protection",
     label: "Protection",
@@ -583,12 +583,9 @@ const MagicBento: React.FC<BentoProps> = ({
             --glow-intensity: 0;
             --glow-radius: 200px;
             --glow-color: ${glowColor};
-            --border-color: #392e4e;
-            --background-dark: #060010;
+            --border-color: var(--border);
+            --background-dark: var(--card);
             --white: hsl(0, 0%, 100%);
-            --purple-primary: rgba(132, 0, 255, 1);
-            --purple-glow: rgba(132, 0, 255, 0.2);
-            --purple-border: rgba(132, 0, 255, 0.8);
           }
           
           .card-responsive {
@@ -649,7 +646,7 @@ const MagicBento: React.FC<BentoProps> = ({
           }
           
           .card--border-glow:hover {
-            box-shadow: 0 4px 20px rgba(46, 24, 78, 0.4), 0 0 30px rgba(${glowColor}, 0.2);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), 0 0 30px rgba(${glowColor}, 0.2);
           }
           
           .particle::before {
@@ -665,7 +662,7 @@ const MagicBento: React.FC<BentoProps> = ({
           }
           
           .particle-container:hover {
-            box-shadow: 0 4px 20px rgba(46, 24, 78, 0.2), 0 0 30px rgba(${glowColor}, 0.2);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2), 0 0 30px rgba(${glowColor}, 0.2);
           }
           
           .text-clamp-1 {
@@ -742,10 +739,10 @@ const MagicBento: React.FC<BentoProps> = ({
                   clickEffect={clickEffect}
                   enableMagnetism={enableMagnetism}
                 >
-                  <div className="card__header flex justify-between gap-3 relative text-white">
+                  <div className="card__header flex justify-between gap-3 relative text-card-foreground">
                     <span className="card__label text-base">{card.label}</span>
                   </div>
-                  <div className="card__content flex flex-col relative text-white">
+                  <div className="card__content flex flex-col relative text-card-foreground">
                     <h3
                       className={`card__title font-normal text-base m-0 mb-1 ${
                         textAutoHide ? "text-clamp-1" : ""
@@ -880,10 +877,10 @@ const MagicBento: React.FC<BentoProps> = ({
                   el.addEventListener("click", handleClick);
                 }}
               >
-                <div className="card__header flex justify-between gap-3 relative text-white">
+                <div className="card__header flex justify-between gap-3 relative text-card-foreground">
                   <span className="card__label text-base">{card.label}</span>
                 </div>
-                <div className="card__content flex flex-col relative text-white">
+                <div className="card__content flex flex-col relative text-card-foreground">
                   <h3
                     className={`card__title font-normal text-base m-0 mb-1 ${
                       textAutoHide ? "text-clamp-1" : ""

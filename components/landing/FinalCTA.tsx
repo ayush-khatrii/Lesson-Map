@@ -16,11 +16,11 @@ export default function FinalCTA() {
         />
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute -bottom-24 -left-8 -z-10 h-64 w-72 rounded-full bg-sky-400/25 blur-[100px]"
+          className="pointer-events-none absolute -bottom-24 -left-8 -z-10 h-64 w-72 rounded-full bg-primary/25 blur-[100px]"
         />
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute -bottom-16 -right-4 -z-10 h-64 w-64 rounded-full bg-fuchsia-400/20 blur-[100px]"
+          className="pointer-events-none absolute -bottom-16 -right-4 -z-10 h-64 w-64 rounded-full bg-primary/20 blur-[100px]"
         />
 
         <Reveal className="relative overflow-hidden rounded-[2rem] border border-primary/10 bg-black/60 shadow-xl shadow-black/10 backdrop-blur-2xl backdrop-saturate-150 sm:rounded-[2.5rem] dark:border-border dark:bg-black/5 dark:shadow-black/40">
@@ -35,7 +35,7 @@ export default function FinalCTA() {
           />
 
           <div className="relative px-6 py-14 text-center sm:px-12 sm:py-20">
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary">
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary-text">
               Start building
             </p>
             <h2 className="mt-5 text-balance text-4xl font-semibold tracking-[-0.045em] text-foreground sm:text-6xl">

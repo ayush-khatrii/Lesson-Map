@@ -168,7 +168,7 @@ export function AiCourseEditor({
       <DialogContent className="max-h-[92dvh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
           <div className="mb-2 flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10">
-            <Wand2 className="h-5 w-5 text-primary" />
+            <Wand2 className="h-5 w-5 text-primary-text" />
           </div>
           <DialogTitle>Edit this course with AI</DialogTitle>
           <DialogDescription>
@@ -276,7 +276,7 @@ export function AiCourseEditor({
           {isFree && (
             <p className="text-sm text-muted-foreground">
               Free includes one complete AI outline per account. Using AI here uses that same one-time allowance.{" "}
-              <Link href="/pricing" className="text-primary underline">Upgrade to Creator</Link> for ongoing AI assistance.
+              <Link href="/pricing" className="text-primary-text underline">Upgrade to Creator</Link> for ongoing AI assistance.
             </p>
           )}
 

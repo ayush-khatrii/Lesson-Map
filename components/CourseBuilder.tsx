@@ -853,7 +853,7 @@ function ResourceRow({
       </span>
     </>
   );
-  const actionClass = "group flex w-full min-w-0 items-start gap-2 rounded-md text-left hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
+  const actionClass = "group flex w-full min-w-0 items-start gap-2 rounded-md text-left hover:text-primary-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
   return (
     <div className="@container/resource min-w-0 border-b border-border last:border-b-0 hover:bg-muted/30 transition-colors">
@@ -1521,8 +1521,8 @@ function OutlineTab({
                                         >
                                           <AccordionTrigger className="px-3.5 py-2 hover:no-underline [&>svg]:hidden group">
                                             <div className="flex items-center gap-2 w-full">
-                                              <Paperclip className="w-3 h-3 text-primary" />
-                                              <span className="text-[11px] font-semibold text-primary tracking-wide uppercase">
+                                              <Paperclip className="w-3 h-3 text-primary-text" />
+                                              <span className="text-[11px] font-semibold text-primary-text tracking-wide uppercase">
                                                 Lesson Resources (
                                                 {lessonResources.length})
                                               </span>
@@ -1701,7 +1701,7 @@ function ResourcesTab({
                 <AccordionTrigger className="group px-2.5 py-3 hover:bg-muted/30 hover:no-underline sm:px-4 sm:py-3.5 [&>svg]:hidden">
                   <div className="flex w-full min-w-0 items-start gap-2 sm:items-center sm:gap-2.5">
                     <div className="flex-shrink-0 w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
-                      <Paperclip className="w-3.5 h-3.5 text-primary" />
+                      <Paperclip className="w-3.5 h-3.5 text-primary-text" />
                     </div>
                     <p className="min-w-0 flex-1 break-words text-left text-xs font-semibold leading-snug [overflow-wrap:anywhere] sm:text-sm">
                       {module.name}
@@ -1851,13 +1851,13 @@ function SettingsTab({
       {!canUseSocialLinks && !isPlanLoading && (
         <p className="px-1 text-xs text-muted-foreground">
           Help learners find your channels and website.{" "}
-          <Link href="/pricing" className="font-medium text-primary hover:underline">Unlock social links with Creator</Link>
+          <Link href="/pricing" className="font-medium text-primary-text hover:underline">Unlock social links with Creator</Link>
         </p>
       )}
       {canUseSocialLinks && !hasSocialLinks && (
         <p className="px-1 text-xs text-muted-foreground">
           You have not added any social links yet. Add them under{" "}
-          <Link href="/settings" className="font-medium text-primary hover:underline">
+          <Link href="/settings" className="font-medium text-primary-text hover:underline">
             Settings → Social links
           </Link>{" "}
           and they will show up here.
@@ -2335,7 +2335,7 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
             {courseId && initialData?.audience && <p className="mt-2 text-xs text-muted-foreground [overflow-wrap:anywhere]">For {initialData.audience}</p>}
           </div>
           {courseId && <div className="flex flex-wrap items-center justify-center gap-2">
-            {courseId && <Button size="sm" variant="outline" className="h-9 gap-1.5" onClick={() => setAiAssistOpen(true)} disabled={isGenerating || isSaving}><Sparkles className="size-3.5 text-primary" />AI Assist</Button>}
+            {courseId && <Button size="sm" variant="outline" className="h-9 gap-1.5" onClick={() => setAiAssistOpen(true)} disabled={isGenerating || isSaving}><Sparkles className="size-3.5 text-primary-text" />AI Assist</Button>}
             <PreviewDialog title={title} description={description} modules={modules} resources={resources} />
             {courseId ? (
               <Button size="sm" className="h-9 gap-1.5" onClick={openEditDialog}><PenLine className="size-3.5" />Edit details</Button>
@@ -2371,7 +2371,7 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
                     <span className="block text-sm font-normal leading-relaxed text-muted-foreground">{methodDescription}</span>
                     <span className="hidden pt-2 text-xs font-normal text-muted-foreground lg:block">{detail}</span>
                   </span>
-                  <Check className="absolute right-4 top-4 size-4 text-primary opacity-0 group-data-[state=active]:opacity-100" />
+                  <Check className="absolute right-4 top-4 size-4 text-primary-text opacity-0 group-data-[state=active]:opacity-100" />
                 </TabsTrigger>
               ))}
             </TabsList>

@@ -5,6 +5,9 @@ import { join } from "node:path";
 export async function renderBrandIcon(size: number) {
   const logo = await readFile(join(process.cwd(), "public/logo-2.png"));
   const source = `data:image/png;base64,${logo.toString("base64")}`;
+  // The source has generous transparent padding. Enlarge the mark so it stays
+  // recognizable at browser-tab sizes, with a dark tile for yellow contrast.
+  const logoSize = Math.round(size * 1.28);
 
   return new ImageResponse(
     <div
@@ -14,7 +17,7 @@ export async function renderBrandIcon(size: number) {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: "#ffffff",
+        background: "#171717",
         overflow: "hidden",
         borderRadius: size * 0.2,
       }}
@@ -22,8 +25,8 @@ export async function renderBrandIcon(size: number) {
       <img
         src={source}
         alt=""
-        width={size}
-        height={size}
+        width={logoSize}
+        height={logoSize}
         style={{ flexShrink: 0 }}
       />
     </div>,

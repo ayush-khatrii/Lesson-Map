@@ -388,7 +388,7 @@ export default function CoursePreview() {
                         aria-hidden="true"
                       />
 
-                      <span className="grid size-6 shrink-0 place-items-center rounded-md bg-primary/15 font-mono text-[9px] font-bold text-primary">
+                      <span className="grid size-6 shrink-0 place-items-center rounded-md bg-primary/15 font-mono text-[9px] font-bold text-primary-text">
                         0{moduleIndex + 1}
                       </span>
 

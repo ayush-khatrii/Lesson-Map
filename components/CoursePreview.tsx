@@ -1,7 +1,15 @@
 "use client";
 
 import { trackCourseEvent } from "@/components/PublicCourseActions";
-import { useState, useMemo, useCallback, useEffect } from "react";
+import {
+  useState,
+  useMemo,
+  useCallback,
+  useEffect,
+  useRef,
+  useId,
+  type ComponentProps,
+} from "react";
 import Link from "next/link";
 import {
   LazyCourseFlowView,
@@ -16,6 +24,7 @@ import {
   Circle,
   Share2,
   Layers,
+  List,
   Clock,
   Heart,
   Trophy,
@@ -50,7 +59,14 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { Separator } from "@/components/ui/separator";
+import {
+  Sheet,
+  SheetTrigger,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "@/components/ui/sheet";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useLessonProgress } from "@/lib/useLessonProgress";
 import { cn } from "@/lib/utils";
@@ -64,7 +80,8 @@ import {
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-export type ResourceType = "Code" | "PDF" | "Link" | "Note" | "Image" | "Document" | "Spreadsheet";
+export type ResourceType =
+  "Code" | "PDF" | "Link" | "Note" | "Image" | "Document" | "Spreadsheet";
 
 export interface Resource {
   id: string;
@@ -293,13 +310,17 @@ const RESOURCE_META: Record<
   ResourceType,
   { icon: LucideIcon; label: string; color: string }
 > = {
-  Code: { icon: FileText, label: "Code", color: "text-primary" },
+  Code: { icon: FileText, label: "Code", color: "text-primary-text" },
   PDF: { icon: FileText, label: "PDF", color: "text-destructive" },
   Link: { icon: Link2, label: "Link", color: "text-chart-2" },
-  Note: { icon: Newspaper, label: "Note", color: "text-primary" },
+  Note: { icon: Newspaper, label: "Note", color: "text-primary-text" },
   Image: { icon: FileText, label: "Image", color: "text-chart-4" },
   Document: { icon: FileType, label: "Document", color: "text-chart-2" },
-  Spreadsheet: { icon: FileSpreadsheet, label: "Spreadsheet", color: "text-chart-4" },
+  Spreadsheet: {
+    icon: FileSpreadsheet,
+    label: "Spreadsheet",
+    color: "text-chart-4",
+  },
 };
 
 function clickUnlessSelecting(handler: () => void) {
@@ -390,7 +411,7 @@ function SocialLinks({ socials }: { socials: SocialLink[] }) {
             rel="noopener noreferrer"
             title={social.label}
             aria-label={social.label}
-            className="group flex items-center gap-2 rounded-full border border-border bg-background px-3 py-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:border-primary/30 hover:bg-primary/5 hover:text-primary"
+            className="group flex items-center gap-2 rounded-full border border-border bg-background px-3 py-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:border-primary/30 hover:bg-primary/5 hover:text-primary-text"
           >
             <Icon className="h-3.5 w-3.5" />
             <span>{social.label}</span>
@@ -416,7 +437,7 @@ function StatCard({
     <div className="rounded-2xl border border-border bg-card p-4">
       <div className="flex items-center gap-3">
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10">
-          <Icon className="h-4 w-4 text-primary" />
+          <Icon className="h-4 w-4 text-primary-text" />
         </div>
         <div className="min-w-0">
           <p className="text-lg font-bold leading-none text-foreground">
@@ -446,7 +467,12 @@ function ResourceRow({
     <button
       type="button"
       onClick={() => {
-        if (["Image", "PDF", "Link", "Document", "Spreadsheet"].includes(resource.type) && resource.url) {
+        if (
+          ["Image", "PDF", "Link", "Document", "Spreadsheet"].includes(
+            resource.type,
+          ) &&
+          resource.url
+        ) {
           try {
             const url = new URL(resource.url, window.location.origin);
             if (url.protocol === "https:" || url.protocol === "http:") {
@@ -478,8 +504,10 @@ function ResourceRow({
           {resource.meta || meta.label}
         </p>
       </div>
-      <span className="col-start-2 inline-flex min-h-7 max-w-full w-fit items-center gap-1 rounded-md border border-border bg-background/60 px-2 text-[10px] font-medium text-muted-foreground transition-colors group-hover:text-primary sm:col-start-3 sm:row-start-1 sm:self-center">
-        {resource.type === "Document" || resource.type === "Spreadsheet" ? "Download" : "View"}
+      <span className="col-start-2 inline-flex min-h-7 max-w-full w-fit items-center gap-1 rounded-md border border-border bg-background/60 px-2 text-[10px] font-medium text-muted-foreground transition-colors group-hover:text-primary-text sm:col-start-3 sm:row-start-1 sm:self-center">
+        {resource.type === "Document" || resource.type === "Spreadsheet"
+          ? "Download"
+          : "View"}
         {resource.url && <ExternalLink className="h-3.5 w-3.5" />}
       </span>
     </button>
@@ -581,7 +609,7 @@ function ResourcePreviewDialog({
               href={resource.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-4 inline-flex items-center gap-2 text-xs font-semibold text-primary hover:text-primary"
+              className="mt-4 inline-flex items-center gap-2 text-xs font-semibold text-primary-text hover:text-primary-text"
             >
               Open original resource <ExternalLink className="h-3.5 w-3.5" />
             </a>
@@ -617,26 +645,22 @@ function ModuleSidebar({
       collapsible
       value={openModuleId}
       onValueChange={onOpenModule}
-      className="space-y-2"
+      className="divide-y divide-border"
     >
       {modules.map((mod, mi) => {
-        const { pct } = moduleProgress(mod, isDone);
+        const { completed, total, pct } = moduleProgress(mod, isDone);
         const isComplete = pct === 100;
         const isStarted = pct > 0 && pct < 100;
 
         return (
-          <AccordionItem
-            key={mod.id}
-            value={mod.id}
-            className="overflow-hidden rounded-2xl border border-border bg-card/60 data-[state=open]:border-primary/30"
-          >
-            <AccordionTrigger className="select-text px-3 py-3 hover:no-underline hover:bg-accent/30 sm:px-4 sm:py-4 [&[data-state=open]]:bg-primary/5">
+          <AccordionItem key={mod.id} value={mod.id} className="border-0">
+            <AccordionTrigger className="rounded-none border-b border-transparent bg-muted/50 px-4 py-4 hover:bg-accent hover:no-underline focus-visible:ring-inset data-[state=open]:border-border data-[state=open]:bg-primary/5">
               <div className="flex w-full min-w-0 items-start gap-2 pr-1 sm:items-center sm:gap-3">
                 <div
                   className={cn(
                     "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold",
                     isComplete
-                      ? "border border-primary/30 bg-primary/10 text-primary"
+                      ? "border border-primary/30 bg-primary/10 text-primary-text"
                       : "border border-border bg-secondary text-muted-foreground",
                   )}
                 >
@@ -651,9 +675,9 @@ function ModuleSidebar({
                     className={cn(
                       "text-[10px] font-bold uppercase tracking-widest",
                       isComplete
-                        ? "text-primary"
+                        ? "text-primary-text"
                         : isStarted
-                          ? "text-primary"
+                          ? "text-primary-text"
                           : "text-muted-foreground",
                     )}
                   >
@@ -662,74 +686,66 @@ function ModuleSidebar({
                   <p className="break-words text-xs font-semibold leading-snug text-foreground [overflow-wrap:anywhere] sm:text-sm">
                     {mod.title}
                   </p>
+                  <p className="mt-1.5 text-xs font-normal text-muted-foreground">
+                    {completed} of {total} {total === 1 ? "lesson" : "lessons"}{" "}
+                    complete
+                  </p>
                 </div>
               </div>
             </AccordionTrigger>
 
-            <AccordionContent className="px-3 pb-3 pt-0">
-              <Separator className="mb-2 bg-accent/20" />
-              <div className="space-y-1">
+            <AccordionContent className="p-0">
+              <div className="divide-y divide-border/80">
                 {mod.lessons.map((lesson, li) => {
                   const done = isDone(lesson.id);
                   const selected = selectedLessonId === lesson.id;
-
                   return (
-                    <div key={lesson.id} className="space-y-1">
-                      <div
-                        className={cn(
-                          "flex items-center gap-2 rounded-xl px-3 py-2.5 transition-all",
-                          selected
-                            ? "border border-primary/30 bg-primary/10"
-                            : "border border-transparent hover:bg-accent/40",
-                        )}
+                    <div
+                      key={lesson.id}
+                      className={cn(
+                        "flex items-start gap-1 border-l-[3px] px-2 transition-colors",
+                        selected
+                          ? "border-l-primary bg-primary/10"
+                          : "border-l-transparent hover:bg-accent/60",
+                      )}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => onToggleLesson(lesson.id)}
+                        className="mt-2 flex size-9 shrink-0 items-center justify-center rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        aria-label={`Mark ${lesson.title} ${done ? "incomplete" : "complete"}`}
+                        aria-pressed={done}
                       >
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onToggleLesson(lesson.id);
-                          }}
-                          className="shrink-0"
-                          aria-label={
-                            done ? "Mark incomplete" : "Mark complete"
-                          }
-                        >
-                          {done ? (
-                            <CheckCircle2 className="h-4 w-4 text-primary" />
-                          ) : (
-                            <Circle className="h-4 w-4 text-muted-foreground hover:text-muted-foreground" />
+                        {done ? (
+                          <CheckCircle2 className="size-4 text-primary-text" />
+                        ) : (
+                          <Circle className="size-4 text-muted-foreground" />
+                        )}
+                      </button>
+                      <button
+                        type="button"
+                        aria-current={selected ? "step" : undefined}
+                        onClick={clickUnlessSelecting(() =>
+                          onSelectLesson(mod.id, lesson.id),
+                        )}
+                        className="min-w-0 flex-1 select-text rounded-md px-1 py-3 text-left outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+                      >
+                        <span
+                          className={cn(
+                            "block break-words text-sm leading-relaxed [overflow-wrap:anywhere]",
+                            selected
+                              ? "font-semibold text-foreground"
+                              : done
+                                ? "font-medium text-muted-foreground line-through"
+                                : "font-medium text-foreground",
                           )}
-                        </button>
-
-                        <div
-                          role="button"
-                          tabIndex={0}
-                          onClick={clickUnlessSelecting(() =>
-                            onSelectLesson(mod.id, lesson.id),
-                          )}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter" || e.key === " ") {
-                              e.preventDefault();
-                              onSelectLesson(mod.id, lesson.id);
-                            }
-                          }}
-                          className="min-w-0 flex-1 cursor-pointer text-left select-text"
                         >
-                          <span
-                            className={cn(
-                              "block break-words text-xs font-medium leading-snug [overflow-wrap:anywhere] sm:text-sm",
-                              done
-                                ? "text-muted-foreground line-through"
-                                : "text-foreground",
-                            )}
-                          >
-                            <span className="mr-1.5 text-xs text-muted-foreground">
-                              {li + 1}.
-                            </span>
-                            {lesson.title}
+                          <span className="mr-1.5 text-xs tabular-nums text-muted-foreground">
+                            {li + 1}.{" "}
                           </span>
-                        </div>
-                      </div>
+                          {lesson.title}
+                        </span>
+                      </button>
                     </div>
                   );
                 })}
@@ -742,6 +758,73 @@ function ModuleSidebar({
   );
 }
 
+// Reveal the current lesson within this scroller, without moving the page or
+// the other reader panel. The drawer remounts this when it opens.
+function CurriculumNavigation({
+  inDrawer = false,
+  ...props
+}: ComponentProps<typeof ModuleSidebar> & { inDrawer?: boolean }) {
+  const scroller = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const container = scroller.current;
+    if (!container || !props.selectedLessonId) return;
+    const reveal = () => {
+      const current = container.querySelector<HTMLElement>(
+        '[aria-current="step"]',
+      );
+      if (!current) return;
+      const outer = container.getBoundingClientRect();
+      const row = current.getBoundingClientRect();
+      if (row.top < outer.top) container.scrollTop += row.top - outer.top - 8;
+      else if (row.bottom > outer.bottom)
+        container.scrollTop += row.bottom - outer.bottom + 8;
+    };
+    const frame = requestAnimationFrame(reveal);
+    // Accordion expansion changes the row position throughout its animation.
+    const observer = new ResizeObserver(reveal);
+    const accordion = container.firstElementChild;
+    if (accordion) observer.observe(accordion);
+    return () => {
+      cancelAnimationFrame(frame);
+      observer.disconnect();
+    };
+  }, [props.selectedLessonId, props.openModuleId]);
+  const count = props.modules.reduce(
+    (sum, module) => sum + module.lessons.length,
+    0,
+  );
+  return (
+    <nav
+      aria-label="Course curriculum"
+      className={cn(
+        "flex min-h-0 flex-1 flex-col overflow-hidden bg-card",
+        !inDrawer && "rounded-2xl border border-border",
+      )}
+    >
+      {!inDrawer && (
+        <div className="flex shrink-0 items-center justify-between gap-2 border-b border-border px-4 py-4">
+          <h3 className="text-sm font-semibold">Modules &amp; lessons</h3>
+          <span className="rounded-md border border-border bg-muted px-2 py-0.5 text-xs tabular-nums text-muted-foreground">
+            {count} lessons
+          </span>
+        </div>
+      )}
+      <div
+        ref={scroller}
+        tabIndex={0}
+        aria-label="Modules and lessons list"
+        className="min-h-0 flex-1 overflow-y-auto overscroll-contain outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring [scrollbar-gutter:stable]"
+      >
+        {props.modules.length ? (
+          <ModuleSidebar {...props} />
+        ) : (
+          <p className="p-4 text-sm text-muted-foreground">No modules yet.</p>
+        )}
+      </div>
+    </nav>
+  );
+}
+
 // ─── Main Content Panel ───────────────────────────────────────────────────────
 
 function LessonContentPanel({
@@ -750,33 +833,54 @@ function LessonContentPanel({
   lesson,
   isDone,
   onToggleLesson,
+  contained = false,
+  selectionVersion = 0,
+  headingRef,
 }: {
   courseTitle: string;
   module: Module | null;
   lesson: Lesson | null;
   isDone: (id: string) => boolean;
   onToggleLesson: (id: string) => void;
+  contained?: boolean;
+  selectionVersion?: number;
+  headingRef?: React.Ref<HTMLHeadingElement>;
 }) {
   const [previewResource, setPreviewResource] = useState<Resource | null>(null);
   const [tab, setTab] = useState<"lesson" | "resources">("lesson");
+  const bodyRef = useRef<HTMLDivElement>(null);
+  const headingId = useId();
 
   useEffect(() => {
     setTab("lesson");
     setPreviewResource(null);
-  }, [lesson?.id]);
+    bodyRef.current?.scrollTo({ top: 0 });
+  }, [lesson?.id, selectionVersion]);
 
   if (!module || !lesson) {
     return (
-      <div className="flex h-full min-h-[420px] flex-col p-8 text-center">
+      <div
+        className={cn(
+          "flex min-w-0 flex-col items-center justify-center rounded-2xl border border-border bg-card p-8 text-center",
+          contained
+            ? "min-h-[300px] lg:h-full lg:min-h-0 lg:overflow-y-auto lg:overscroll-contain"
+            : "min-h-[420px]",
+        )}
+      >
         <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10">
-          <BookOpen className="h-7 w-7 text-primary" />
+          <BookOpen className="h-7 w-7 text-primary-text" />
         </div>
-        <h2 className="mb-2 break-words text-lg font-bold leading-snug text-foreground [overflow-wrap:anywhere] sm:text-xl">
+        <h2
+          ref={headingRef}
+          id={headingId}
+          tabIndex={-1}
+          className="mb-2 scroll-mt-24 break-words text-lg font-bold leading-snug text-foreground [overflow-wrap:anywhere] sm:text-xl"
+        >
           Welcome to {courseTitle}
         </h2>
         <p className="mx-auto mb-6 max-w-md text-sm leading-relaxed text-muted-foreground">
-          Select a lesson to begin. Your progress is saved
-          locally in your browser — pick up where you left off anytime.
+          Select a lesson to begin. Your progress is saved locally in your
+          browser — pick up where you left off anytime.
         </p>
       </div>
     );
@@ -789,25 +893,52 @@ function LessonContentPanel({
 
   return (
     <>
-      <div className="flex min-h-[420px] flex-col rounded-2xl border border-border bg-card/50">
-        <div className="border-b border-border px-6 py-5">
-          <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-primary">
+      <section
+        aria-labelledby={headingId}
+        className={cn(
+          "flex min-w-0 flex-col rounded-2xl border border-border bg-card",
+          contained
+            ? "min-h-[300px] lg:h-full lg:min-h-0 lg:overflow-hidden"
+            : "min-h-[420px]",
+        )}
+      >
+        <div className="shrink-0 border-b border-border px-4 py-4 sm:px-6">
+          <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-primary-text">
             {module.label}
           </p>
-          <h2 className="break-words text-lg font-bold leading-snug text-foreground [overflow-wrap:anywhere] sm:text-xl">
+          <h2
+            ref={headingRef}
+            id={headingId}
+            tabIndex={-1}
+            className="scroll-mt-24 break-words text-lg font-bold leading-snug text-foreground [overflow-wrap:anywhere] sm:text-xl"
+          >
             {lesson.title}
           </h2>
         </div>
 
         <Tabs
           value={tab}
-          onValueChange={(value) => setTab(value as "lesson" | "resources")}
-          className="flex flex-1 flex-col gap-0"
+          onValueChange={(value) => {
+            setTab(value as "lesson" | "resources");
+            bodyRef.current?.scrollTo({ top: 0 });
+          }}
+          className={cn(
+            "flex min-w-0 flex-1 flex-col gap-0",
+            contained && "lg:min-h-0",
+          )}
         >
-          <div className="min-w-0 px-3 pt-4 sm:px-6">
+          <div className="min-w-0 shrink-0 border-b border-border bg-muted/20 px-4 py-3 sm:px-6">
             <TabsList>
-              <TabsTrigger value="lesson">Lesson</TabsTrigger>
-              <TabsTrigger value="resources">
+              <TabsTrigger
+                value="lesson"
+                className="text-muted-foreground data-[state=active]:text-primary-foreground dark:data-[state=active]:text-primary-foreground"
+              >
+                Lesson
+              </TabsTrigger>
+              <TabsTrigger
+                value="resources"
+                className="text-muted-foreground data-[state=active]:text-primary-foreground dark:data-[state=active]:text-primary-foreground"
+              >
                 Resources
                 {resources.length > 0 && (
                   <span className="ml-1 text-[10px] font-bold tabular-nums opacity-80">
@@ -818,61 +949,76 @@ function LessonContentPanel({
             </TabsList>
           </div>
 
-          <TabsContent value="lesson" className="min-w-0 px-3 py-4 sm:px-6 sm:py-5">
-            {paragraphs.length > 0 ? (
-              <div className="space-y-3">
-                {paragraphs.map((paragraph, index) => (
-                  <p
-                    key={index}
-                    className="whitespace-pre-wrap break-words text-sm leading-relaxed text-foreground/90 [overflow-wrap:anywhere]"
-                  >
-                    {paragraph}
+          <div
+            ref={bodyRef}
+            className={cn(
+              "min-w-0 flex-1",
+              contained &&
+                "lg:min-h-0 lg:overflow-y-auto lg:overscroll-contain lg:[scrollbar-gutter:stable]",
+            )}
+          >
+            <TabsContent
+              value="lesson"
+              className="min-w-0 px-3 py-4 sm:px-6 sm:py-5"
+            >
+              {paragraphs.length > 0 ? (
+                <div className="space-y-3">
+                  {paragraphs.map((paragraph, index) => (
+                    <p
+                      key={index}
+                      className="whitespace-pre-wrap break-words text-sm leading-relaxed text-foreground/90 [overflow-wrap:anywhere]"
+                    >
+                      {paragraph}
+                    </p>
+                  ))}
+                </div>
+              ) : (
+                <div className="rounded-xl border border-dashed border-border bg-card/60 px-4 py-6 text-center">
+                  <p className="text-sm font-medium text-foreground">
+                    This lesson has no notes yet.
                   </p>
-                ))}
-              </div>
-            ) : (
-              <div className="rounded-xl border border-dashed border-border bg-card/60 px-4 py-6 text-center">
-                <p className="text-sm font-medium text-foreground">
-                  This lesson has no notes yet.
-                </p>
-                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                  The course author has only added a title. Check the resources
-                  tab for attached material.
-                </p>
-              </div>
-            )}
-          </TabsContent>
+                  <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                    The course author has only added a title. Check the
+                    resources tab for attached material.
+                  </p>
+                </div>
+              )}
+            </TabsContent>
 
-          <TabsContent value="resources" className="min-w-0 px-3 py-4 sm:px-6 sm:py-5">
-            {resources.length > 0 ? (
-              <div className="grid grid-cols-1 gap-2">
-                {resources.map((r) => (
-                  <ResourceRow
-                    key={r.id}
-                    resource={r}
-                    onPreview={setPreviewResource}
-                  />
-                ))}
-              </div>
-            ) : (
-              <div className="rounded-xl border border-dashed border-border bg-card/60 px-4 py-6 text-center">
-                <p className="text-sm font-medium text-foreground">
-                  No resources attached
-                </p>
-                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                  This lesson does not have any files, links, or notes yet.
-                </p>
-              </div>
-            )}
-          </TabsContent>
+            <TabsContent
+              value="resources"
+              className="min-w-0 px-3 py-4 sm:px-6 sm:py-5"
+            >
+              {resources.length > 0 ? (
+                <div className="grid grid-cols-1 gap-2">
+                  {resources.map((r) => (
+                    <ResourceRow
+                      key={r.id}
+                      resource={r}
+                      onPreview={setPreviewResource}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="rounded-xl border border-dashed border-border bg-card/60 px-4 py-6 text-center">
+                  <p className="text-sm font-medium text-foreground">
+                    No resources attached
+                  </p>
+                  <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                    This lesson does not have any files, links, or notes yet.
+                  </p>
+                </div>
+              )}
+            </TabsContent>
+          </div>
         </Tabs>
 
-        <div className="border-t border-border px-6 py-4">
+        <div className="shrink-0 border-t border-border px-4 py-4 sm:px-6">
           <Button
             className={cn(
               "w-full gap-2 font-semibold",
               done
-                ? "border border-primary/30 bg-primary/10 text-primary hover:bg-primary/15"
+                ? "border border-primary/30 bg-primary/10 text-foreground hover:bg-primary/15"
                 : "bg-primary text-primary-foreground hover:bg-primary/90",
             )}
             variant={done ? "outline" : "default"}
@@ -889,7 +1035,7 @@ function LessonContentPanel({
             )}
           </Button>
         </div>
-      </div>
+      </section>
       <ResourcePreviewDialog
         resource={previewResource}
         onClose={() => setPreviewResource(null)}
@@ -924,7 +1070,8 @@ export default function LessonMapPublicPage({
   );
   const courseId = slug ?? course.id ?? "default-course";
 
-  const { isDone, toggle, completedCount, hydrated, markStarted } = useLessonProgress(courseId);
+  const { isDone, toggle, completedCount, hydrated, markStarted } =
+    useLessonProgress(courseId);
 
   const [view, setView] = useState<ViewMode>("accordion");
   const [upgradeOpen, setUpgradeOpen] = useState(false);
@@ -937,6 +1084,48 @@ export default function LessonMapPublicPage({
   const [selectedLessonId, setSelectedLessonId] = useState<string | null>(
     initialLessonId ?? null,
   );
+
+  const [curriculumOpen, setCurriculumOpen] = useState(false);
+  const [selectionVersion, setSelectionVersion] = useState(0);
+  const readerRef = useRef<HTMLDivElement>(null);
+  const lessonHeadingRef = useRef<HTMLHeadingElement>(null);
+  const focusLessonAfterClose = useRef(false);
+  const didAlignInitialLesson = useRef(false);
+  const isListView = view === "accordion" || !canUseFlow;
+
+  const alignReader = useCallback(() => {
+    const target = window.matchMedia("(min-width: 1024px)").matches
+      ? readerRef.current
+      : lessonHeadingRef.current;
+    target?.scrollIntoView({ block: "start", behavior: "instant" });
+  }, []);
+
+  useEffect(() => {
+    const desktop = window.matchMedia("(min-width: 1024px)");
+    const closeOnDesktop = () => {
+      if (desktop.matches) {
+        focusLessonAfterClose.current = false;
+        setCurriculumOpen(false);
+      }
+    };
+    desktop.addEventListener("change", closeOnDesktop);
+    return () => desktop.removeEventListener("change", closeOnDesktop);
+  }, []);
+
+  useEffect(() => {
+    if (
+      !hydrated ||
+      !initialLessonId ||
+      !isListView ||
+      didAlignInitialLesson.current
+    )
+      return;
+    const frame = requestAnimationFrame(() => {
+      alignReader();
+      didAlignInitialLesson.current = true;
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [hydrated, initialLessonId, isListView, alignReader]);
 
   useEffect(() => {
     if (slug && selectedLessonId && !isOwner) trackCourseEvent(slug, "start");
@@ -974,9 +1163,31 @@ export default function LessonMapPublicPage({
     (moduleId: string, lessonId: string) => {
       setOpenModuleId(moduleId);
       setSelectedLessonId(lessonId);
+      setSelectionVersion((value) => value + 1);
+      if (isListView) {
+        if (curriculumOpen) {
+          focusLessonAfterClose.current = true;
+          setCurriculumOpen(false);
+        } else requestAnimationFrame(alignReader);
+      }
     },
-    [],
+    [isListView, curriculumOpen, alignReader],
   );
+
+  const curriculumProps = {
+    modules: course.modules,
+    isDone,
+    onToggleLesson: toggle,
+    selectedLessonId,
+    onSelectLesson: handleSelectLesson,
+    openModuleId,
+    onOpenModule: setOpenModuleId,
+  };
+  const selectedPosition = selectedLessonId
+    ? course.modules
+        .flatMap((module) => module.lessons)
+        .findIndex((lesson) => lesson.id === selectedLessonId) + 1
+    : 0;
 
   if (!hydrated) {
     return (
@@ -988,6 +1199,7 @@ export default function LessonMapPublicPage({
 
   return (
     <div
+      data-course-reader-page
       className={cn(
         "min-h-screen bg-background text-foreground",
         SELECTABLE_TEXT,
@@ -1007,7 +1219,7 @@ export default function LessonMapPublicPage({
           {/* Header strip */}
           <div className="border-b border-border px-4 py-4 sm:px-6 sm:py-6 md:px-8">
             <div className="mb-3 flex flex-wrap items-center gap-2">
-              <Badge className="border-primary/25 bg-primary/10 text-xs font-bold uppercase tracking-wide text-primary">
+              <Badge className="border-primary/25 bg-primary/10 text-xs font-bold uppercase tracking-wide text-primary-text">
                 Public Course
               </Badge>
             </div>
@@ -1051,7 +1263,7 @@ export default function LessonMapPublicPage({
               <span className="font-semibold text-foreground">
                 Your progress
               </span>
-              <span className="font-bold text-primary">{overallPct}%</span>
+              <span className="font-bold text-primary-text">{overallPct}%</span>
             </div>
             <Progress value={overallPct} className="mt-2 h-2 bg-secondary" />
             <p className="mt-1.5 text-xs text-muted-foreground">
@@ -1061,8 +1273,15 @@ export default function LessonMapPublicPage({
           </div>
 
           {/* View toggle + two-column body */}
-          <div className="py-6">
-            <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+          <div
+            ref={readerRef}
+            className={cn(
+              "scroll-mt-4 py-6",
+              isListView &&
+                "lg:flex lg:h-[calc(100dvh-2rem)] lg:min-h-0 lg:flex-col lg:py-0 lg:my-6",
+            )}
+          >
+            <div className="mb-5 shrink-0 flex flex-wrap items-center justify-between gap-3">
               <h2 className="text-base font-bold text-foreground">
                 Course curriculum
               </h2>
@@ -1074,30 +1293,69 @@ export default function LessonMapPublicPage({
               />
             </div>
 
-            {view === "accordion" || !canUseFlow ? (
-              <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(280px,340px)_1fr]">
-                {/* Left: module accordions */}
-                <div className="pr-1">
-                  <ModuleSidebar
-                    modules={course.modules}
+            {isListView ? (
+              <>
+                <Sheet open={curriculumOpen} onOpenChange={setCurriculumOpen}>
+                  <div className="sticky top-0 z-20 mb-4 flex items-center justify-between gap-3 rounded-xl border border-border bg-background/95 px-3 py-3 backdrop-blur lg:hidden">
+                    <SheetTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="shrink-0 gap-2"
+                      >
+                        <List className="size-4" />
+                        Curriculum
+                      </Button>
+                    </SheetTrigger>
+                    <span className="min-w-0 text-right text-xs text-muted-foreground">
+                      {selectedPosition
+                        ? `Lesson ${selectedPosition} of ${totalLessons}`
+                        : `${totalLessons} lessons`}
+                    </span>
+                  </div>
+                  <SheetContent
+                    side="left"
+                    className="h-dvh w-[calc(100vw-2rem)] max-w-sm gap-0 overflow-hidden p-0 [&>button]:grid [&>button]:size-10 [&>button]:place-items-center"
+                    onCloseAutoFocus={(event) => {
+                      if (focusLessonAfterClose.current) {
+                        event.preventDefault();
+                        focusLessonAfterClose.current = false;
+                        alignReader();
+                        lessonHeadingRef.current?.focus({
+                          preventScroll: true,
+                        });
+                      } else if (
+                        window.matchMedia("(min-width: 1024px)").matches
+                      ) {
+                        event.preventDefault();
+                      }
+                    }}
+                  >
+                    <SheetHeader className="shrink-0 border-b border-border pr-12">
+                      <SheetTitle>Modules &amp; lessons</SheetTitle>
+                      <SheetDescription>
+                        {course.modules.length} modules · {totalLessons} lessons
+                      </SheetDescription>
+                    </SheetHeader>
+                    <CurriculumNavigation {...curriculumProps} inDrawer />
+                  </SheetContent>
+                </Sheet>
+                <div className="grid min-h-0 min-w-0 flex-1 grid-cols-1 gap-5 lg:grid-cols-[340px_minmax(0,1fr)]">
+                  <div className="hidden min-h-0 lg:flex">
+                    <CurriculumNavigation {...curriculumProps} />
+                  </div>
+                  <LessonContentPanel
+                    courseTitle={course.title}
+                    module={selectedModule}
+                    lesson={selectedLesson}
                     isDone={isDone}
                     onToggleLesson={toggle}
-                    selectedLessonId={selectedLessonId}
-                    onSelectLesson={handleSelectLesson}
-                    openModuleId={openModuleId}
-                    onOpenModule={setOpenModuleId}
+                    contained
+                    selectionVersion={selectionVersion}
+                    headingRef={lessonHeadingRef}
                   />
                 </div>
-
-                {/* Right: lesson content panel */}
-                <LessonContentPanel
-                  courseTitle={course.title}
-                  module={selectedModule}
-                  lesson={selectedLesson}
-                  isDone={isDone}
-                  onToggleLesson={toggle}
-                />
-              </div>
+              </>
             ) : (
               <div className="grid min-w-0 grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,1.4fr)_minmax(300px,1fr)]">
                 <LazyCourseFlowView
@@ -1132,7 +1390,7 @@ export default function LessonMapPublicPage({
                   {course.creator.name}
                 </h3>
                 {course.creator.role && (
-                  <p className="text-sm font-medium text-primary">
+                  <p className="text-sm font-medium text-primary-text">
                     {course.creator.role}
                   </p>
                 )}
@@ -1159,7 +1417,7 @@ export default function LessonMapPublicPage({
                 LessonMap
               </span>
               <span>·</span>
-              <span>Stacex Technologies</span>
+              {/* <span>Stacex Technologies</span> */}
             </div>
             <p className="text-xs text-muted-foreground">
               © {new Date().getFullYear()} Stacex Technologies. All rights

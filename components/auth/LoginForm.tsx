@@ -103,7 +103,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
   return (
     <div className={cn("rounded-2xl border bg-card p-6 shadow-sm sm:p-8", className)} {...props}>
       <div className="mb-6 space-y-2 text-center">
-        <p className="text-sm font-semibold text-primary">LessonMap</p>
+        <p className="text-sm font-semibold text-primary-text">LessonMap</p>
         <h1 className="text-2xl font-bold tracking-tight">{isSignUp ? "Create your account" : "Welcome back"}</h1>
         <p className="text-sm text-muted-foreground">{isSignUp ? "Start building your course outlines." : "Sign in to continue building your courses."}</p>
       </div>
@@ -151,7 +151,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
       </div>
       <p className="mt-6 text-center text-sm text-muted-foreground">
         {isSignUp ? "Already have an account? " : "New to LessonMap? "}
-        <button type="button" disabled={pending !== null} className="rounded text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50" onClick={() => { setIsSignUp(!isSignUp); setError(null); setNotice(null); setShowPassword(false); }}>
+        <button type="button" disabled={pending !== null} className="rounded text-primary-text underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50" onClick={() => { setIsSignUp(!isSignUp); setError(null); setNotice(null); setShowPassword(false); }}>
           {isSignUp ? "Sign in" : "Create an account"}
         </button>
       </p>

@@ -71,7 +71,7 @@ export function CourseExportTab({
         <p className="rounded-xl border border-dashed p-4 text-sm text-muted-foreground">
           All exports require a paid plan. Upgrade to download accordion PDFs,
           Markdown outlines, and Flow PDF or PNG maps.{" "}
-          <Link href="/pricing" className="font-medium text-primary underline">
+          <Link href="/pricing" className="font-medium text-primary-text underline">
             View plans
           </Link>
         </p>
@@ -162,7 +162,7 @@ export function CourseExportTab({
               Available on Creator.{" "}
               <Link
                 href="/pricing"
-                className="font-medium text-primary underline"
+                className="font-medium text-primary-text underline"
               >
                 View plans
               </Link>

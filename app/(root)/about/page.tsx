@@ -14,15 +14,15 @@ export default function AboutPage() {
     <div className="pt-16">
       <div className="mx-auto w-full max-w-2xl px-6 py-8 sm:py-10">
         <Reveal>
-          <h1 className="text-2xl font-medium tracking-tight text-primary sm:text-3xl">About LessonMap</h1>
+          <h1 className="text-2xl font-medium tracking-tight text-primary-text sm:text-3xl">About LessonMap</h1>
           <p className="mt-3 text-sm leading-6 text-muted-foreground">A simple workspace to organize modules and lessons, attach learning resources, and share your course with a link.</p>
         </Reveal>
         <Reveal className="mt-6 rounded-xl border border-border p-5">
           <div className="flex items-center gap-3">
-            <div className="flex size-10 shrink-0 items-center justify-center rounded-full border border-border font-mono text-sm text-primary" aria-hidden="true">ak.</div>
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-full border border-border font-mono text-sm text-primary-text" aria-hidden="true">ak.</div>
             <div>
               <p className="text-xs text-muted-foreground">Built by</p>
-              <h2 className="text-lg font-medium tracking-tight text-primary">Ayush Khatri</h2>
+              <h2 className="text-lg font-medium tracking-tight text-primary-text">Ayush Khatri</h2>
             </div>
           </div>
           <div>

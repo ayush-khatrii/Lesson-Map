@@ -189,7 +189,7 @@ export default function PostPurchaseHandler() {
   return (
     <div className="pointer-events-none fixed inset-x-0 top-16 z-[1000] flex justify-center px-4">
       <div className="flex items-center gap-3 rounded-2xl border border-primary/30 bg-background/95 px-5 py-3 shadow-lg backdrop-blur">
-        <Loader2 className="h-4 w-4 animate-spin text-primary" />
+        <Loader2 className="h-4 w-4 animate-spin text-primary-text" />
         <div>
           <p className="text-sm font-semibold">Confirming your payment</p>
           <p className="text-xs text-muted-foreground">

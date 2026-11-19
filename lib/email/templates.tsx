@@ -1,3 +1,4 @@
+import { BRAND_COLORS } from "@/constants/brand";
 import * as React from "react";
 import { EMAIL_REPLY_TO } from "@/constants/email";
 import type { EmailEvent } from "./types";
@@ -69,7 +70,9 @@ export function emailContent(event: EmailEvent, origin: string) {
               borderRadius: 12,
             }}
           >
-            <p style={{ fontWeight: 700, color: "#6d28d9" }}>LessonMap</p>
+            <p style={{ fontWeight: 700, color: BRAND_COLORS.ink }}>
+              LessonMap
+            </p>
             <h1 style={{ fontSize: 26 }}>{heading}</h1>
             <p>{greeting}</p>
             <p style={{ lineHeight: 1.6 }}>{message}</p>
@@ -79,8 +82,8 @@ export function emailContent(event: EmailEvent, origin: string) {
                 style={{
                   display: "inline-block",
                   padding: "12px 20px",
-                  backgroundColor: "#6d28d9",
-                  color: "#ffffff",
+                  backgroundColor: BRAND_COLORS.primary,
+                  color: BRAND_COLORS.onPrimary,
                   borderRadius: 6,
                   textDecoration: "none",
                 }}

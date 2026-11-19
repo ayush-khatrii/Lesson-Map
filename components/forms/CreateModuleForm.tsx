@@ -255,7 +255,7 @@ export default function CreateModuleForm({ courses }: { courses: Course[] }) {
             </>
           ) : (
             <>
-              <Sparkles className="h-3 w-3 text-primary" /> AI Assist
+              <Sparkles className="h-3 w-3 text-primary-text" /> AI Assist
             </>
           )}
         </Button>

@@ -211,7 +211,7 @@ function CourseAccordionItem({
                 </Badge>
               )}
               {course.isPublic && (
-                <Badge className="h-5 border-0 bg-primary/15 text-[10px] text-primary">
+                <Badge className="h-5 border-0 bg-primary/15 text-[10px] text-primary-text">
                   <Globe className="mr-1 h-3 w-3" />
                   Public
                 </Badge>
@@ -352,7 +352,7 @@ function CourseAccordionItem({
             asChild
           >
             <Link href={`/dashboard/${course.id}/edit#ai-assist`}>
-              <Sparkles className="w-3.5 h-3.5 text-primary" /> AI Assist
+              <Sparkles className="w-3.5 h-3.5 text-primary-text" /> AI Assist
             </Link>
           </Button>
 

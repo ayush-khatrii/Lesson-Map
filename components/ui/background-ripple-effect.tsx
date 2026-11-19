@@ -74,7 +74,7 @@ const DivGrid = ({
   cols = 30,
   cellSize = 56,
   borderColor = "#3f3f46",
-  fillColor = "rgba(14,165,233,0.3)",
+  fillColor = "color-mix(in oklab, var(--primary) 30%, transparent)",
   clickedCell = null,
   onCellClick = () => {},
   interactive = true,

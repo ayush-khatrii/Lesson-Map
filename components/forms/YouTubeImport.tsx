@@ -157,7 +157,7 @@ export default function YouTubeImport({
           className="mb-8 rounded-xl border bg-background p-5 shadow-sm"
         >
           <div className="mb-5 flex items-center gap-3 border-b pb-4">
-            <span className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+            <span className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary-text">
               <BookOpen className="size-5" />
             </span>
             <div>
@@ -176,7 +176,7 @@ export default function YouTubeImport({
               key={lesson}
               className="mt-2 flex items-center gap-3 rounded-lg border bg-card p-3"
             >
-              <ListVideo className="size-4 shrink-0 text-primary" />
+              <ListVideo className="size-4 shrink-0 text-primary-text" />
               <span className="text-sm">{lesson}</span>
             </div>
           ))}
@@ -194,7 +194,7 @@ export default function YouTubeImport({
               key={benefit}
               className="flex items-start gap-2 text-sm leading-relaxed text-muted-foreground"
             >
-              <Check className="mt-0.5 size-4 shrink-0 text-primary" />
+              <Check className="mt-0.5 size-4 shrink-0 text-primary-text" />
               {benefit}
             </li>
           ))}

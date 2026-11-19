@@ -8,22 +8,22 @@ const features = [
 	{
 		title: "Drag & Drop Builder",
 		description: "Create and organize your course outline visually with an intuitive drag & drop interface.",
-		icon: <FaGripVertical className="text-3xl text-indigo-400" />,
+		icon: <FaGripVertical className="text-3xl text-primary-text" />,
 	},
 	{
 		title: "AI-Assisted Creation",
 		description: "Use AI to instantly generate structured outlines, lesson ideas, and topic flow.",
-		icon: <FaMagic className="text-3xl text-purple-400" />,
+		icon: <FaMagic className="text-3xl text-primary-text" />,
 	},
 	{
 		title: "PDF Export",
 		description: "Export your outlines into clean, printable PDFs for easy sharing and presentation. Included with Creator.",
-		icon: <FaFilePdf className="text-3xl text-pink-400" />,
+		icon: <FaFilePdf className="text-3xl text-primary-text" />,
 	},
 	{
 		title: "Progress Indicators",
 		description: "Track and display progress for your students across lessons and modules.",
-		icon: <FaChartLine className="text-3xl text-teal-400" />,
+		icon: <FaChartLine className="text-3xl text-primary-text" />,
 	},
 ];
 

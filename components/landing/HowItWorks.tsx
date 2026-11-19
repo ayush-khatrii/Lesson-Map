@@ -26,7 +26,7 @@ const items = [
       <div>
         <div className="mb-3 flex items-center justify-between text-[10px] text-muted-foreground"><span>Your first HTML page</span><span>4 resources</span></div>
         <div className="grid grid-cols-2 gap-2">
-          {[[FileText,"Notes"],[Code2,"Code"],[Link2,"Links"],[ImageIcon,"Images"]].map(([Icon,label]) => { const I = Icon as typeof FileText; return <div key={label as string} className="rounded-lg border border-border bg-background/70 p-3"><I className="size-4 text-primary" /><p className="mt-4 text-xs font-medium">{label as string}</p></div>; })}
+          {[[FileText,"Notes"],[Code2,"Code"],[Link2,"Links"],[ImageIcon,"Images"]].map(([Icon,label]) => { const I = Icon as typeof FileText; return <div key={label as string} className="rounded-lg border border-border bg-background/70 p-3"><I className="size-4 text-primary-text" /><p className="mt-4 text-xs font-medium">{label as string}</p></div>; })}
         </div>
       </div>
     ),
@@ -50,7 +50,7 @@ export default function HowItWorks() {
     <section id="how-it-works" className="border-y border-border/70 bg-muted/20 py-20 sm:py-24">
       <div className={shell}>
         <Reveal className="mx-auto max-w-2xl text-center">
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary">How it works</p>
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary-text">How it works</p>
           <h2 className="mt-4 text-balance text-3xl font-semibold tracking-[-0.04em] sm:text-5xl">Plan it. Add the material. <span className="text-muted-foreground">Share it.</span></h2>
         </Reveal>
         <div className="mt-12 grid gap-5 md:grid-cols-3">
@@ -58,7 +58,7 @@ export default function HowItWorks() {
             <Reveal key={item.number} delay={index * 0.07}>
               <Card className="group h-full overflow-hidden rounded-2xl border-border/80 bg-card/70 p-2 shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-xl">
                 <div className="min-h-56 rounded-xl border border-border/60 bg-muted/30 p-5">{item.visual}</div>
-                <div className="px-4 pb-5 pt-2"><div className="mb-4 flex items-center gap-2"><span className="font-mono text-[10px] text-muted-foreground">{item.number}</span><Sparkles className="size-3.5 text-primary" /></div><h3 className="text-lg font-semibold tracking-tight">{item.title}</h3><p className="mt-2 text-sm leading-6 text-muted-foreground">{item.description}</p></div>
+                <div className="px-4 pb-5 pt-2"><div className="mb-4 flex items-center gap-2"><span className="font-mono text-[10px] text-muted-foreground">{item.number}</span><Sparkles className="size-3.5 text-primary-text" /></div><h3 className="text-lg font-semibold tracking-tight">{item.title}</h3><p className="mt-2 text-sm leading-6 text-muted-foreground">{item.description}</p></div>
               </Card>
             </Reveal>
           ))}

@@ -115,7 +115,7 @@ const Dashboard = async () => {
             <div className="flex flex-wrap justify-center gap-2">
               <Button variant="outline" size="sm" asChild>
                 <Link href="/dashboard/create/new">
-                  <Sparkles className="w-3.5 h-3.5 text-primary" /> AI Generate
+                  <Sparkles className="w-3.5 h-3.5 text-primary-text" /> AI Generate
                 </Link>
               </Button>
               <Button size="sm" asChild>

@@ -78,7 +78,7 @@ function PreviewDialog({
                   className="rounded-xl border border-border bg-card p-3 sm:p-4"
                 >
                   <div className="flex min-w-0 items-start gap-3">
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-xs font-bold text-primary">
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-xs font-bold text-primary-text">
                       {moduleIndex + 1}
                     </span>
                     <div className="min-w-0 flex-1">
@@ -248,7 +248,7 @@ export default function ExamplePage() {
       <main className="mx-auto w-full max-w-7xl space-y-8 px-4 py-8 pt-24 sm:px-6 lg:px-8">
         <section className="flex flex-col items-center gap-5 text-center">
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10">
-            <GraduationCap className="h-6 w-6 text-primary" />
+            <GraduationCap className="h-6 w-6 text-primary-text" />
           </div>
           <div>
             <p className="mb-1 text-xs font-medium uppercase tracking-widest text-muted-foreground">

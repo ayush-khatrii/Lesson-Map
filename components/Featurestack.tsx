@@ -48,10 +48,10 @@ function StackCard({
       >
         <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:gap-6">
           <div className="flex size-12 shrink-0 items-center justify-center rounded-xl border border-border bg-muted/40">
-            <Icon aria-hidden="true" className="size-5 text-primary" />
+            <Icon aria-hidden="true" className="size-5 text-primary-text" />
           </div>
           <div>
-            <h3 className="text-lg font-medium tracking-tight text-primary">
+            <h3 className="text-lg font-medium tracking-tight text-primary-text">
               {feature.title}
             </h3>
             <p className="mt-2 max-w-md text-sm leading-6 text-muted-foreground">

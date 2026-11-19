@@ -1,3 +1,6 @@
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
+import { BRAND_COLORS } from "@/constants/brand";
 import { headers } from "next/headers";
 import { effectiveAiPlan } from "@/lib/ai/schema";
 import { db } from "@/lib/prisma";
@@ -19,59 +22,110 @@ export default async function CourseOpenGraphImage({
     select: {
       courseName: true,
       description: true,
-      user: { select: { name: true, subdomain: true, plan: true, subscriptionStatus: true, subscriptionCancelAtPeriodEnd: true, subscriptionCurrentPeriodEnd: true } },
+      user: {
+        select: {
+          name: true,
+          subdomain: true,
+          plan: true,
+          subscriptionStatus: true,
+          subscriptionCancelAtPeriodEnd: true,
+          subscriptionCurrentPeriodEnd: true,
+        },
+      },
       Module: { select: { _count: { select: { Lesson: true } } } },
     },
   });
 
   const tenant = (await headers()).get("x-lessonmap-subdomain");
-  if (tenant && (!course || course.user.subdomain !== tenant || effectiveAiPlan(course.user) === "FREE")) return new Response("Not found", { status: 404 });
+  if (
+    tenant &&
+    (!course ||
+      course.user.subdomain !== tenant ||
+      effectiveAiPlan(course.user) === "FREE")
+  )
+    return new Response("Not found", { status: 404 });
+
+  const logo = await readFile(join(process.cwd(), "public/logo-2.png"));
+  const logoSrc = `data:image/png;base64,${logo.toString("base64")}`;
 
   const title = course?.courseName ?? "Course outline";
   const creator = course?.user.name ?? "LessonMap creator";
   const moduleCount = course?.Module.length ?? 0;
   const lessonCount =
-    course?.Module.reduce((total, module) => total + module._count.Lesson, 0) ?? 0;
+    course?.Module.reduce((total, module) => total + module._count.Lesson, 0) ??
+    0;
 
   return new ImageResponse(
-    (
+    <div
+      style={{
+        width: "100%",
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "space-between",
+        padding: "64px 72px",
+        color: "white",
+        background: `radial-gradient(circle at 88% 12%, ${BRAND_COLORS.primary} 0, transparent 35%), linear-gradient(135deg, #171717 0%, #292524 100%)`,
+        fontFamily: "sans-serif",
+      }}
+    >
       <div
         style={{
-          width: "100%",
-          height: "100%",
           display: "flex",
-          flexDirection: "column",
-          justifyContent: "space-between",
-          padding: "64px 72px",
-          color: "white",
-          background:
-            "radial-gradient(circle at 88% 12%, #6475ff 0, transparent 35%), linear-gradient(135deg, #080b14 0%, #12182d 100%)",
-          fontFamily: "sans-serif",
+          alignItems: "center",
+          gap: "14px",
+          fontSize: 28,
+          fontWeight: 700,
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: "14px", fontSize: 28, fontWeight: 700 }}>
-          <div style={{ display: "flex", width: 46, height: 46, borderRadius: 14, alignItems: "center", justifyContent: "center", background: "#6475ff" }}>L</div>
-          LessonMap
+        <img
+          src={logoSrc}
+          alt=""
+          width={56}
+          height={56}
+          style={{ borderRadius: 14 }}
+        />
+        LessonMap
+      </div>
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: "20px",
+          maxWidth: 980,
+        }}
+      >
+        <div
+          style={{
+            fontSize: 61,
+            lineHeight: 1.08,
+            fontWeight: 760,
+            letterSpacing: "-2px",
+          }}
+        >
+          {summarizeForMetadata(title, 90)}
         </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: "20px", maxWidth: 980 }}>
-          <div style={{ fontSize: 61, lineHeight: 1.08, fontWeight: 760, letterSpacing: "-2px" }}>
-            {summarizeForMetadata(title, 90)}
+        {course?.description ? (
+          <div style={{ fontSize: 25, lineHeight: 1.35, color: "#e5e5e5" }}>
+            {summarizeForMetadata(course.description, 150)}
           </div>
-          {course?.description ? (
-            <div style={{ fontSize: 25, lineHeight: 1.35, color: "#c8cde2" }}>
-              {summarizeForMetadata(course.description, 150)}
-            </div>
-          ) : null}
-          <div style={{ display: "flex", gap: "24px", fontSize: 22, color: "#aeb6d7" }}>
-            <span>By {creator}</span>
-            <span>•</span>
-            <span>{moduleCount} modules</span>
-            <span>•</span>
-            <span>{lessonCount} lessons</span>
-          </div>
+        ) : null}
+        <div
+          style={{
+            display: "flex",
+            gap: "24px",
+            fontSize: 22,
+            color: "#d4d4d4",
+          }}
+        >
+          <span>By {creator}</span>
+          <span>•</span>
+          <span>{moduleCount} modules</span>
+          <span>•</span>
+          <span>{lessonCount} lessons</span>
         </div>
       </div>
-    ),
+    </div>,
     size,
   );
 }

@@ -1,3 +1,4 @@
+import { BRAND_COLORS } from "@/constants/brand";
 import {
   buildCourseGraph,
   NODE_WIDTH,
@@ -126,10 +127,7 @@ export function renderFlowExport(
     ]),
   );
   const moduleLessonCounts = new Map(
-    data.outline.modules.map((module) => [
-      module.id,
-      module.lessons.length,
-    ]),
+    data.outline.modules.map((module) => [module.id, module.lessons.length]),
   );
   const nodeHeight = Math.max(
     NODE_HEIGHT,
@@ -161,24 +159,24 @@ export function renderFlowExport(
   const colors =
     appearance === "dark"
       ? {
-          background: "#111827",
-          text: "#f8fafc",
-          module: "#1f2937",
-          lesson: "#111827",
-          border: "#475569",
-          edge: "#a5b4fc",
-          label: "#c4b5fd",
-          secondary: "#cbd5e1",
+          background: "#171717",
+          text: "#fafafa",
+          module: "#262626",
+          lesson: "#171717",
+          border: "#525252",
+          edge: BRAND_COLORS.primary,
+          label: BRAND_COLORS.primary,
+          secondary: "#d4d4d4",
         }
       : {
           background: "#ffffff",
-          text: "#172033",
-          module: "#f2f3ff",
+          text: "#171717",
+          module: BRAND_COLORS.tint,
           lesson: "#ffffff",
-          border: "#cdd1e5",
-          edge: "#7779e8",
-          label: "#5055c9",
-          secondary: "#596579",
+          border: "#e5e5e5",
+          edge: BRAND_COLORS.ink,
+          label: BRAND_COLORS.ink,
+          secondary: "#737373",
         };
   // Bound browser canvas allocation. Never crop or silently omit course nodes.
   const scale = Math.min(

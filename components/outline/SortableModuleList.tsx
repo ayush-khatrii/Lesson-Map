@@ -72,7 +72,7 @@ function SortableModuleItem({ module, index }: SortableModuleItemProps) {
         <GripVertical className="h-5 w-5" />
       </div>
 
-      <div className="flex-shrink-0 w-8 h-8 bg-primary/10 text-primary rounded-md flex items-center justify-center text-sm font-semibold">
+      <div className="flex-shrink-0 w-8 h-8 bg-primary/10 text-primary-text rounded-md flex items-center justify-center text-sm font-semibold">
         {index + 1}
       </div>
 

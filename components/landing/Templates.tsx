@@ -12,7 +12,7 @@ export default function Templates() {
         className={`${shell} grid items-center gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:gap-16`}
       >
         <Reveal>
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary">
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary-text">
             Choose how to begin
           </p>
           <h2 className="mt-4 max-w-lg text-balance text-3xl font-semibold tracking-[-0.04em] sm:text-5xl">

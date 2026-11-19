@@ -84,7 +84,7 @@ export function PricingSkeleton() {
     <LoadingRegion label="Loading pricing" className="relative pb-10 pt-24">
       <div className="mx-auto w-full max-w-5xl px-4 sm:px-6">
         <div className="mx-auto mb-6 max-w-xl text-center">
-          <h1 className="text-3xl font-semibold tracking-tight text-primary sm:text-4xl">A plan for your next course</h1>
+          <h1 className="text-3xl font-semibold tracking-tight text-primary-text sm:text-4xl">A plan for your next course</h1>
           <p className="mt-2 text-sm leading-6 text-muted-foreground">Start free. Choose Creator when you need more.</p>
         </div>
         <div className="grid gap-4 md:grid-cols-2">
@@ -182,7 +182,10 @@ export function OutlineSkeleton() {
 
 export function PublicCourseSkeleton() {
   return (
-    <LoadingRegion label="Loading shared course" className="min-h-screen bg-background text-foreground">
+    <LoadingRegion
+      label="Loading shared course"
+      className="min-h-screen bg-background text-foreground"
+    >
       {/* Share bar */}
       <div className="mx-auto flex w-full max-w-7xl justify-end px-4 pt-5 sm:px-6 lg:px-8">
         <Skeleton className="h-9 w-24 rounded-xl" />
@@ -203,7 +206,10 @@ export function PublicCourseSkeleton() {
           {/* Stat cards row */}
           <div className="grid grid-cols-2 gap-3 border-b border-border py-5">
             {["Modules", "Lessons"].map((label) => (
-              <div key={label} className="rounded-2xl border border-border bg-card p-4">
+              <div
+                key={label}
+                className="rounded-2xl border border-border bg-card p-4"
+              >
                 <div className="flex items-center gap-3">
                   <Skeleton className="size-9 shrink-0 rounded-xl" />
                   <div className="min-w-0 flex-1">
@@ -220,26 +226,68 @@ export function PublicCourseSkeleton() {
           {/* Progress bar */}
           <div className="border-b border-border px-6 py-4 md:px-8">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold text-foreground">Your progress</span>
+              <span className="text-sm font-semibold text-foreground">
+                Your progress
+              </span>
               <Skeleton className="h-4 w-10" />
             </div>
             <Skeleton className="mt-2 h-2 w-full rounded-full" />
             <Skeleton className="mt-2 h-3 w-52 max-w-full" />
           </div>
 
-          {/* Curriculum: view toggle + two-column body */}
-          <div className="py-6">
-            <div className="mb-5 flex items-center justify-between">
-              <h2 className="text-base font-bold text-foreground">Course curriculum</h2>
+          {/* Curriculum: bounded desktop reader and mobile drawer trigger */}
+          <div className="my-6 lg:flex lg:h-[calc(100dvh-2rem)] lg:min-h-0 lg:flex-col">
+            <div className="mb-5 flex shrink-0 items-center justify-between">
+              <h2 className="text-base font-bold text-foreground">
+                Course curriculum
+              </h2>
               <Skeleton className="h-9 w-32 rounded-xl" />
             </div>
-            <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(280px,340px)_1fr]">
-              <div className="space-y-2.5 pr-1">
-                {[0, 1, 2].map((i) => (
-                  <Skeleton key={i} className="h-16 w-full rounded-2xl" />
-                ))}
+            <div className="mb-4 flex items-center justify-between rounded-xl border border-border p-3 lg:hidden">
+              <Skeleton className="h-8 w-28 rounded-md" />
+              <Skeleton className="h-3 w-24" />
+            </div>
+            <div className="grid min-h-0 flex-1 grid-cols-1 gap-5 lg:grid-cols-[340px_minmax(0,1fr)]">
+              <div className="hidden min-h-0 flex-col overflow-hidden rounded-2xl border border-border bg-card lg:flex">
+                <div className="flex shrink-0 items-center justify-between border-b border-border p-4">
+                  <span className="text-sm font-semibold">
+                    Modules &amp; lessons
+                  </span>
+                  <Skeleton className="h-5 w-16" />
+                </div>
+                <div className="min-h-0 overflow-hidden">
+                  <Skeleton className="h-24 w-full rounded-none border-b border-border" />
+                  {Array.from({ length: 8 }, (_, i) => (
+                    <div
+                      key={i}
+                      className="flex gap-3 border-b border-border px-4 py-4"
+                    >
+                      <Skeleton className="size-4 shrink-0 rounded-full" />
+                      <div className="flex-1 space-y-2">
+                        <Skeleton className="h-3 w-full" />
+                        <Skeleton className="h-3 w-2/3" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <Skeleton className="h-[420px] w-full rounded-2xl" />
+              <div className="flex min-h-[420px] min-w-0 flex-col overflow-hidden rounded-2xl border border-border bg-card lg:min-h-0">
+                <div className="shrink-0 space-y-3 border-b border-border px-6 py-5">
+                  <Skeleton className="h-3 w-20" />
+                  <Skeleton className="h-5 w-3/4" />
+                </div>
+                <div className="shrink-0 border-b border-border px-6 py-3">
+                  <Skeleton className="h-9 w-44 rounded-lg" />
+                </div>
+                <div className="min-h-0 flex-1 space-y-3 overflow-hidden px-6 py-5">
+                  {Array.from({ length: 8 }, (_, i) => (
+                    <Skeleton key={i} className="h-4 w-full" />
+                  ))}
+                </div>
+                <div className="shrink-0 border-t border-border p-4">
+                  <Skeleton className="h-9 w-full rounded-md" />
+                </div>
+              </div>
             </div>
           </div>
 

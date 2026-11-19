@@ -121,14 +121,14 @@ export default async function SettingsPage({ searchParams }: {
                 <section aria-label="Account overview" className="overflow-hidden rounded-lg border border-border">
                   <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
                     <div className="flex min-w-0 items-start gap-3">
-                      <span className="grid size-10 shrink-0 place-items-center rounded-lg border border-border text-primary">
+                      <span className="grid size-10 shrink-0 place-items-center rounded-lg border border-border text-primary-text">
                         <Settings2 className="size-4" />
                       </span>
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
                           <h2 className="min-w-0 max-w-full break-words text-lg font-semibold tracking-tight">{user.name}</h2>
                           <Badge variant="outline" className="gap-1 text-[10px] uppercase tracking-wide">
-                            <Sparkles className="size-3 text-primary" />{plan}
+                            <Sparkles className="size-3 text-primary-text" />{plan}
                           </Badge>
                         </div>
                         <p className="mt-1 flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
@@ -219,7 +219,7 @@ export default async function SettingsPage({ searchParams }: {
                                 <span>{course.Module.length} modules</span><span>{lessonCount} lessons</span><span>Created {formatDate(course.createdAt)}</span>
                               </div>
                               {course.isPublic && course.shareSlug && (
-                                <Link href={`/p/${course.shareSlug}`} className="mt-2 inline-flex max-w-full items-center gap-1 text-xs text-primary hover:underline">
+                                <Link href={`/p/${course.shareSlug}`} className="mt-2 inline-flex max-w-full items-center gap-1 text-xs text-primary-text hover:underline">
                                   <Globe2 className="size-3 shrink-0" /><span className="truncate">{appUrl}/p/{course.shareSlug}</span>
                                 </Link>
                               )}

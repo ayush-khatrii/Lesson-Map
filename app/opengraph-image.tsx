@@ -1,3 +1,4 @@
+import { BRAND_COLORS } from "@/constants/brand";
 import { ImageResponse } from "next/og";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
@@ -19,8 +20,8 @@ export default async function OpenGraphImage() {
         flexDirection: "column",
         justifyContent: "space-between",
         padding: "72px",
-        color: "#171d24",
-        background: "linear-gradient(135deg, #ffffff 0%, #f0edff 100%)",
+        color: "#171717",
+        background: `linear-gradient(135deg, #ffffff 0%, ${BRAND_COLORS.tint} 100%)`,
         fontFamily: "sans-serif",
       }}
     >
@@ -56,12 +57,12 @@ export default async function OpenGraphImage() {
         >
           Plan courses clearly. Share them beautifully.
         </div>
-        <div style={{ fontSize: 29, color: "#53596b", lineHeight: 1.35 }}>
+        <div style={{ fontSize: 29, color: "#525252", lineHeight: 1.35 }}>
           Organize modules, lessons, and resources in one visual course
           workspace.
         </div>
       </div>
-      <div style={{ fontSize: 24, color: "#53596b" }}>lessonmap.org</div>
+      <div style={{ fontSize: 24, color: "#525252" }}>lessonmap.org</div>
     </div>,
     size,
   );

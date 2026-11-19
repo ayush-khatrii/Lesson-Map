@@ -27,7 +27,7 @@ const EditCoursePage = async ({
     return (
       <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 flex items-center justify-center text-center my-20">
         <h1 className="font-medium text-sm md:text-xl max-w-xs mx-auto md:w-full">
-          Course with id <span className="text-primary px-2">{id}</span> not
+          Course with id <span className="text-primary-text px-2">{id}</span> not
           found!
         </h1>
       </div>

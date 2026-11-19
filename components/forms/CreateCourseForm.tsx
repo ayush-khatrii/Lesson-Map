@@ -114,7 +114,7 @@ export default function CreateCourseForm({ errors }: CourseFormProps) {
             </>
           ) : (
             <>
-              <IoSparklesSharp className="h-3 w-3 text-primary" /> AI Assist
+              <IoSparklesSharp className="h-3 w-3 text-primary-text" /> AI Assist
             </>
           )}
         </Button>

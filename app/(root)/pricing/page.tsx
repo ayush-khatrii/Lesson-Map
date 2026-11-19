@@ -118,7 +118,7 @@ const PricingPage = () => {
     <section className="relative pb-10 pt-24">
       <div className="mx-auto w-full max-w-5xl px-4 sm:px-6">
         <div className="mx-auto mb-6 max-w-xl text-center">
-          <h1 className="text-3xl font-semibold tracking-tight text-primary sm:text-4xl">
+          <h1 className="text-3xl font-semibold tracking-tight text-primary-text sm:text-4xl">
             Try and share. Then grow your audience.
           </h1>
           <p className="mt-2 text-sm leading-6 text-muted-foreground">
@@ -225,7 +225,7 @@ const PricingPage = () => {
                   <ul className="space-y-2 border-t border-border pt-4">
                     {plan.features.map((feature, i) => (
                       <li key={i} className="flex items-start gap-2 text-sm">
-                        <div className="mt-0.5 flex size-4 shrink-0 items-center justify-center text-primary">
+                        <div className="mt-0.5 flex size-4 shrink-0 items-center justify-center text-primary-text">
                           <Check className="h-3.5 w-3.5" />
                         </div>
                         <span className="leading-5 text-muted-foreground">
@@ -286,9 +286,9 @@ const PricingPage = () => {
               </p>
             </div>
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <ShieldCheck className="h-4 w-4 text-primary" /> Included
+              <ShieldCheck className="h-4 w-4 text-primary-text" /> Included
               <span className="text-border">|</span>
-              <Sparkles className="h-4 w-4 text-violet-500" /> Creator-focused
+              <Sparkles className="h-4 w-4 text-primary-text" /> Creator-focused
             </div>
           </div>
 
@@ -298,7 +298,7 @@ const PricingPage = () => {
                 <tr>
                   <th className="px-4 py-3 font-medium">
                     <span className="inline-flex items-center gap-2">
-                      <span className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 text-primary">
+                      <span className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 text-primary-text">
                         <Layers3 className="h-3.5 w-3.5" />
                       </span>
                       Feature
@@ -314,7 +314,7 @@ const PricingPage = () => {
                   </th>
                   <th className="px-4 py-3 font-medium">
                     <span className="inline-flex items-center gap-2">
-                      <span className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-violet-500/10 text-violet-600 dark:text-violet-300">
+                      <span className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 text-primary-text">
                         <Sparkles className="h-3.5 w-3.5" />
                       </span>
                       Creator Plan
@@ -350,7 +350,7 @@ const PricingPage = () => {
           <div className="mt-6 grid gap-4 md:grid-cols-2">
             <div className="rounded-2xl border border-border bg-background/70 p-4">
               <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-foreground">
-                <Workflow className="h-4 w-4 text-primary" /> Free plan
+                <Workflow className="h-4 w-4 text-primary-text" /> Free plan
               </div>
               <p className="text-sm text-muted-foreground">
                 Best for testing the idea, creating a few public maps, and
@@ -359,7 +359,7 @@ const PricingPage = () => {
             </div>
             <div className="rounded-2xl border border-border bg-background/70 p-4">
               <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-foreground">
-                <Sparkles className="h-4 w-4 text-violet-500" /> Creator plan
+                <Sparkles className="h-4 w-4 text-primary-text" /> Creator plan
               </div>
               <p className="text-sm text-muted-foreground">
                 Best for creators who want full multi-module AI generation, Flow maps,

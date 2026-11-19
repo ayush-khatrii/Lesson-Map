@@ -19,10 +19,10 @@ export function MagicCard({
   children,
   className,
   gradientSize = 200,
-  gradientColor = "#262626",
+  gradientColor = "var(--muted)",
   gradientOpacity = 0.8,
-  gradientFrom = "#9E7AFF",
-  gradientTo = "#FE8BBB",
+  gradientFrom = "var(--primary)",
+  gradientTo = "color-mix(in oklab, var(--primary) 40%, transparent)",
 }: MagicCardProps) {
   const mouseX = useMotionValue(-gradientSize)
   const mouseY = useMotionValue(-gradientSize)

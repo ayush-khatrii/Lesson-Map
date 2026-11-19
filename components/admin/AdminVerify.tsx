@@ -82,7 +82,7 @@ export function AdminVerify() {
     <div className="flex min-h-svh items-center justify-center bg-background p-5">
       <div className="w-full max-w-md">
         <div className="mb-7 flex items-center justify-center gap-2 text-sm font-semibold">
-          <BookOpen className="size-5 text-primary" />
+          <BookOpen className="size-5 text-primary-text" />
           LessonMap
         </div>
         <div className="rounded-lg border bg-card p-6">

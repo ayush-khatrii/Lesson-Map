@@ -141,7 +141,7 @@ export function AiCourseGenerator({ disabled, onGeneratingChange }: {
     <Card className="rounded-2xl border bg-card py-2 shadow-none sm:py-4" id="ai-course">
       <CardHeader className="space-y-3 px-6 pt-6 sm:px-9">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="flex items-center gap-2 text-xl font-semibold"><Sparkles className="h-4 w-4 text-primary" /> Create a course with AI</h2>
+          <h2 className="flex items-center gap-2 text-xl font-semibold"><Sparkles className="h-4 w-4 text-primary-text" /> Create a course with AI</h2>
           {allowance && <Badge variant="secondary">{isFree ? "Complimentary AI outline" : "Creator full course"}</Badge>}
         </div>
         <p className="text-sm text-muted-foreground">

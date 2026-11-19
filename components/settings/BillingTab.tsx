@@ -124,7 +124,7 @@ export default function BillingTab({
       <section className="overflow-hidden rounded-lg border border-border">
         <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
           <div className="flex min-w-0 items-start gap-3">
-            <span className="grid size-10 shrink-0 place-items-center rounded-lg border border-border text-primary">
+            <span className="grid size-10 shrink-0 place-items-center rounded-lg border border-border text-primary-text">
               <CreditCard className="size-4" />
             </span>
             <div className="min-w-0">
@@ -173,7 +173,7 @@ export default function BillingTab({
 
       <section className="rounded-lg border border-border p-4 sm:p-5">
         <div className="mb-4">
-          <span className="grid size-8 place-items-center rounded-md border border-border text-primary">
+          <span className="grid size-8 place-items-center rounded-md border border-border text-primary-text">
             <Sparkles className="size-4" />
           </span>
           <h2 className="mt-3 text-sm font-semibold">What your plan includes</h2>
@@ -207,7 +207,7 @@ export default function BillingTab({
 
       <section className="rounded-lg border border-border p-4 sm:p-5">
         <div className="mb-4">
-          <span className="grid size-8 place-items-center rounded-md border border-border text-primary">
+          <span className="grid size-8 place-items-center rounded-md border border-border text-primary-text">
             <ReceiptText className="size-4" />
           </span>
           <h2 className="mt-3 text-sm font-semibold">Invoices &amp; payment method</h2>

@@ -48,7 +48,7 @@ export function AdminLogin({ configured }: { configured: boolean }) {
           href="/"
           className="mb-8 flex items-center justify-center gap-2 text-sm font-semibold"
         >
-          <BookOpen className="size-5 text-primary" />
+          <BookOpen className="size-5 text-primary-text" />
           LessonMap
         </Link>
         <div className="rounded-lg border bg-card p-6 shadow-sm">

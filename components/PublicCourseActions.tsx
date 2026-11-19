@@ -125,12 +125,12 @@ export default function PublicCourseActions({
           <Dialog open={signupOpen} onOpenChange={setSignupOpen}>
             <DialogTrigger asChild>
               <Button variant="outline" className="gap-2">
-                <Mail aria-hidden="true" className="size-4 text-primary" />
+                <Mail aria-hidden="true" className="size-4 text-primary-text" />
                 {signedUp ? "You're signed up" : "Stay in touch"}
               </Button>
             </DialogTrigger>
             <DialogContent className="gap-6 rounded-2xl p-6 pr-6 shadow-2xl sm:max-w-md sm:p-8 sm:pr-8">
-              <div className="flex size-12 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 text-primary">
+              <div className="flex size-12 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 text-primary-text">
                 {signedUp ? (
                   <Check aria-hidden="true" className="size-6" />
                 ) : (

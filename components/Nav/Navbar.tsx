@@ -231,7 +231,7 @@ export default function Navbar({ className }: { className?: string }) {
                         className={cn(
                           "group flex min-h-12 items-center justify-between rounded-lg px-3 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-ring motion-reduce:transition-none",
                           isActive(link.href)
-                            ? "bg-primary/8 text-primary"
+                            ? "bg-primary/8 text-primary-text"
                             : "text-muted-foreground hover:bg-muted hover:text-foreground",
                         )}
                       >

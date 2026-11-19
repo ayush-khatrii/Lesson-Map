@@ -3,7 +3,7 @@ import { POLICY_LINKS } from "@/components/legal/config";
 import { SITE_NAME } from "@/lib/site";
 
 export const FOOTER = {
-  brand: { name: SITE_NAME, href: "/", logoSrc: "/lm-logo.png" },
+  brand: { name: SITE_NAME, href: "/", logoSrc: "/logo-2.png" },
   description:
     "A clear workspace for planning courses, organizing learning resources, and sharing knowledge.",
   sections: [

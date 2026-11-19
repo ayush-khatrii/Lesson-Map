@@ -211,9 +211,9 @@ const FileUpload = ({
         <div className="flex w-full min-w-0 items-center gap-2 sm:gap-3">
           <div className="flex-shrink-0 w-10 h-10 rounded-lg border bg-background flex items-center justify-center">
             {isUploading ? (
-              <Loader2 className="w-5 h-5 text-primary animate-spin" />
+              <Loader2 className="w-5 h-5 text-primary-text animate-spin" />
             ) : (
-              <Icon className="w-5 h-5 text-primary" />
+              <Icon className="w-5 h-5 text-primary-text" />
             )}
           </div>
           <div className="flex-1 min-w-0">
