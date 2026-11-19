@@ -76,11 +76,13 @@ function importFixture({
   count = 0,
   failFetch = false,
   signedOut = false,
+  failCache = false,
 } = {}) {
   let user = { ...plan, youtubeImports: used };
   let created = 0;
   let fetched = 0;
   const imports = new Map();
+  const youtube = load("lib/youtube.ts");
   const db = {
     user: {
       findUnique: async () => user,
@@ -98,6 +100,9 @@ function importFixture({
       count: async () => count + created,
       create: async () => ({ id: `course-${++created}` }),
     },
+    module: { create: async () => ({ id: "module-1" }) },
+    lesson: { createMany: async () => ({ count: 1 }) },
+    resource: { createMany: async () => ({ count: 1 }) },
   };
   let queue = Promise.resolve();
   db.$transaction = (fn) => {
@@ -109,11 +114,23 @@ function importFixture({
     "@/lib/prisma": { db },
     "@/lib/launch-access": access(signedOut ? null : "user-1"),
     "@/lib/course-access": { lockCourseOwner: async () => user },
+    "@/lib/youtube-course": load("lib/youtube-course.ts"),
+    "next/cache": {
+      revalidateTag() {
+        if (failCache) throw new Error("Cache unavailable");
+      },
+    },
     "@/lib/youtube": {
+      YouTubeImportError: youtube.YouTubeImportError,
       playlistIdFromUrl: () => "playlist-1",
       fetchPlaylist: async () => {
         fetched++;
-        if (failFetch) throw new Error("YouTube unavailable");
+        if (failFetch)
+          throw new youtube.YouTubeImportError(
+            "YouTube unavailable",
+            "YOUTUBE_ACCESS_DENIED",
+            503,
+          );
         return {
           title: "Playlist",
           description: "Description",
@@ -156,9 +173,23 @@ test("two concurrent Free imports cannot consume more than one allowance", async
 });
 test("failed imports do not consume the allowance or create partial courses", async () => {
   const f = importFixture({ failFetch: true });
-  assert.equal((await f.route.POST(f.body())).status, 400);
+  const response = await f.route.POST(f.body());
+  assert.equal(response.status, 503);
+  const body = await response.json();
+  assert.equal(body.code, "YOUTUBE_ACCESS_DENIED");
+  assert.equal(body.requestId, "00000000-0000-4000-8000-000000000001");
   assert.equal(f.user.youtubeImports, 0);
   assert.equal(f.stats().created, 0);
+});
+test("cache invalidation failure preserves success and safe request replay", async () => {
+  const f = importFixture({ failCache: true });
+  const first = await f.route.POST(f.body());
+  assert.equal(first.status, 200);
+  const replay = await f.route.POST(f.body());
+  assert.equal(replay.status, 200);
+  assert.equal((await replay.json()).courseId, (await first.json()).courseId);
+  assert.equal(f.user.youtubeImports, 1);
+  assert.equal(f.stats().created, 1);
 });
 test("Free course and import limits and authentication are enforced by the route", async () => {
   for (const options of [{ count: 3 }, { used: 1 }, { signedOut: true }]) {
@@ -538,6 +569,7 @@ test("new cookie-authenticated writes reject a foreign origin before reading the
       "@/lib/payments/request-security": { isSameOriginRequest: () => false },
       "@/lib/course-access": {},
       "@/lib/youtube": {},
+      "@/lib/youtube-course": {},
       "@/lib/subdomain": {},
     });
     assert.equal(

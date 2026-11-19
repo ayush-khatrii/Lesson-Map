@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/prisma";
 import { sessionUserId, allowRequest, launchError } from "@/lib/launch-access";
+import { createYouTubeCourse } from "@/lib/youtube-course";
 import { lockCourseOwner } from "@/lib/course-access";
 import { effectiveAiPlan } from "@/lib/ai/schema";
 import { COURSE_LIMITS, hasReachedCourseLimit } from "@/lib/plans";
@@ -17,6 +18,8 @@ import { isSameOriginRequest } from "@/lib/payments/request-security";
 export const maxDuration = 120;
 
 export async function POST(request: Request) {
+  let requestId: string = crypto.randomUUID();
+  let stage = "authenticate";
   try {
     if (!isSameOriginRequest(request))
       return NextResponse.json({ error: "Invalid origin." }, { status: 403 });
@@ -31,6 +34,7 @@ export async function POST(request: Request) {
         { error: "Enter a playlist URL." },
         { status: 400 },
       );
+    requestId = input.data.requestId;
     let playlistId: string;
     try {
       playlistId = playlistIdFromUrl(input.data.url);
@@ -40,6 +44,7 @@ export async function POST(request: Request) {
         { status: 400 },
       );
     }
+    stage = "check_previous_import";
     const previous = await db.playlistImport.findUnique({
       where: { userId_requestId: { userId, requestId: input.data.requestId } },
     });
@@ -50,11 +55,13 @@ export async function POST(request: Request) {
             { error: "Start a new import for a different playlist." },
             { status: 409 },
           );
+    stage = "check_rate_limit";
     if (!(await allowRequest(`youtube:${userId}`, 5)))
       return NextResponse.json(
         { error: "Please wait a minute before importing again." },
         { status: 429 },
       );
+    stage = "check_course_allowance";
     const owner = await db.user.findUnique({ where: { id: userId } });
     if (!owner)
       return NextResponse.json({ error: "User not found." }, { status: 401 });
@@ -77,6 +84,7 @@ export async function POST(request: Request) {
         { status: 403 },
       );
     }
+    stage = "fetch_youtube_playlist";
     let playlist;
     try {
       playlist = await fetchPlaylist(playlistId);
@@ -96,75 +104,72 @@ export async function POST(request: Request) {
         { status: error.status },
       );
     }
-    const result = await db.$transaction(async (tx) => {
-      const user = await lockCourseOwner(tx, userId);
-      if (!user) return { error: "User not found." };
-      const existing = await tx.playlistImport.findUnique({
-        where: {
-          userId_requestId: { userId, requestId: input.data.requestId },
-        },
-      });
-      if (existing)
-        return existing.playlistId === playlistId
-          ? { courseId: existing.courseId }
-          : { error: "Start a new import." };
-      const usage = await tx.user.findUniqueOrThrow({ where: { id: userId } });
-      const plan = effectiveAiPlan(user);
-      if (plan === "FREE" && usage.youtubeImports >= 1)
-        return { error: "Your free playlist import has been used." };
-      if (
-        hasReachedCourseLimit(
-          await tx.course.count({ where: { userId } }),
-          COURSE_LIMITS[plan],
-        )
-      )
-        return { error: "Your course limit has been reached." };
-      const course = await tx.course.create({
-        data: {
-          userId,
-          courseName: playlist.title,
-          description: playlist.description || "Imported from YouTube",
-          Module: {
-            create: {
-              moduleName: playlist.title,
-              description: "YouTube playlist",
-              order: 1,
-              Lesson: {
-                create: playlist.videos.map((video, index) => ({
-                  lessonName: video.title,
-                  description: video.description,
-                  order: index + 1,
-                  resources: {
-                    create: {
-                      name: "Watch on YouTube",
-                      type: "Link",
-                      url: `https://www.youtube.com/watch?v=${video.videoId}`,
-                    },
-                  },
-                })),
-              },
-            },
+    stage = "save_course";
+    const result = await db.$transaction(
+      async (tx) => {
+        stage = "lock_course_owner";
+        const user = await lockCourseOwner(tx, userId);
+        if (!user) return { error: "User not found." };
+        stage = "check_locked_import_replay";
+        const existing = await tx.playlistImport.findUnique({
+          where: {
+            userId_requestId: { userId, requestId: input.data.requestId },
           },
-        },
-      });
-      await tx.playlistImport.create({
-        data: {
+        });
+        if (existing)
+          return existing.playlistId === playlistId
+            ? { courseId: existing.courseId }
+            : { error: "Start a new import." };
+        stage = "check_locked_course_allowance";
+        const usage = await tx.user.findUniqueOrThrow({
+          where: { id: userId },
+        });
+        const plan = effectiveAiPlan(user);
+        if (plan === "FREE" && usage.youtubeImports >= 1)
+          return { error: "Your free playlist import has been used." };
+        if (
+          hasReachedCourseLimit(
+            await tx.course.count({ where: { userId } }),
+            COURSE_LIMITS[plan],
+          )
+        )
+          return { error: "Your course limit has been reached." };
+        const course = await createYouTubeCourse(
+          tx,
           userId,
-          requestId: input.data.requestId,
-          playlistId,
-          courseId: course.id,
-        },
-      });
-      await tx.user.update({
-        where: { id: userId },
-        data: { youtubeImports: { increment: 1 } },
-      });
-      return { courseId: course.id };
-    });
+          playlist,
+          (value) => {
+            stage = value;
+          },
+        );
+        stage = "record_import";
+        await tx.playlistImport.create({
+          data: {
+            userId,
+            requestId: input.data.requestId,
+            playlistId,
+            courseId: course.id,
+          },
+        });
+        stage = "increment_import_usage";
+        await tx.user.update({
+          where: { id: userId },
+          data: { youtubeImports: { increment: 1 } },
+        });
+        stage = "commit_import";
+        return { courseId: course.id };
+      },
+      { timeout: 30000 },
+    );
     if ("error" in result) return NextResponse.json(result, { status: 403 });
-    revalidateTag(userCoursesTag(userId), { expire: 0 });
+    // The import is committed. Cache invalidation must not report it as failed.
+    try {
+      revalidateTag(userCoursesTag(userId), { expire: 0 });
+    } catch {
+      console.error("YouTube import cache refresh failed", { requestId });
+    }
     return NextResponse.json({ ...result, skipped: playlist.skipped });
   } catch (error) {
-    return launchError(error);
+    return launchError(error, { requestId, stage });
   }
 }
