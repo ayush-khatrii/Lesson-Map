@@ -4,26 +4,24 @@ import Reveal from "@/components/marketing/Reveal";
 import { shell } from "./styles";
 import { Button } from "@/components/ui/button";
 
-//iOS-style liquid glass effect.
-
 export default function FinalCTA() {
   return (
     <section className={`${shell} pb-20 sm:pb-24`}>
-      <div className="relative isolate ">
+      <div className="relative isolate">
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute -top-24 left-1/2 -z-10 h-72 w-[38rem] -translate-x-1/2 rounded-full bg-primary/35 blur-[110px]"
+          className="pointer-events-none absolute -top-24 left-1/2 -z-10 h-72 w-[38rem] max-w-full -translate-x-1/2 rounded-full bg-primary/15 blur-[110px] dark:bg-primary/35"
         />
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute -bottom-24 -left-8 -z-10 h-64 w-72 rounded-full bg-primary/25 blur-[100px]"
+          className="pointer-events-none absolute -bottom-24 -left-8 -z-10 h-64 w-72 rounded-full bg-primary/10 blur-[100px] dark:bg-primary/25"
         />
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute -bottom-16 -right-4 -z-10 h-64 w-64 rounded-full bg-primary/20 blur-[100px]"
+          className="pointer-events-none absolute -bottom-16 -right-4 -z-10 h-64 w-64 rounded-full bg-primary/10 blur-[100px] dark:bg-primary/20"
         />
 
-        <Reveal className="relative overflow-hidden rounded-[2rem] border border-primary/10 bg-black/60 shadow-xl shadow-black/10 backdrop-blur-2xl backdrop-saturate-150 sm:rounded-[2.5rem] dark:border-border dark:bg-black/5 dark:shadow-black/40">
+        <Reveal className="relative overflow-hidden rounded-[2rem] border border-black/10 bg-white/65 shadow-[0_20px_60px_-24px_rgba(120,90,0,0.18),inset_0_1px_0_rgba(255,255,255,0.95)] backdrop-blur-2xl backdrop-saturate-150 sm:rounded-[2.5rem] dark:border-border dark:bg-black/5 dark:shadow-xl dark:shadow-black/40">
           <div
             aria-hidden="true"
             className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/80 to-transparent dark:via-white/40"
