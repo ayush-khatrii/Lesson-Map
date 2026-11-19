@@ -1,4 +1,5 @@
 import Hero from "@/components/landing/Hero";
+import YouTubeImportShowcase from "@/components/landing/YouTubeImportShowcase";
 import HowItWorks from "@/components/landing/HowItWorks";
 import FeaturesGrid from "@/components/landing/FeaturesGrid";
 import Templates from "@/components/landing/Templates";
@@ -9,6 +10,7 @@ export default function LandingPage() {
   return (
     <div className="relative">
       <Hero />
+      <YouTubeImportShowcase />
       <HowItWorks />
       <FeaturesGrid />
       <Templates />

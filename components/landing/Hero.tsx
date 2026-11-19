@@ -15,7 +15,7 @@ export default function Hero() {
   const shouldReduce = mounted && reduceMotion;
 
   return (
-    <section className="relative overflow-hidden pb-20 pt-28 sm:pb-24 sm:pt-32 lg:pt-36">
+    <section className="relative flex min-h-dvh items-center overflow-hidden pb-8 pt-24 sm:pb-12 sm:pt-28">
       <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[700px] bg-[radial-gradient(ellipse_60%_50%_at_50%_0%,color-mix(in_oklab,var(--primary)_20%,transparent),transparent_72%)]" />
       <div
         className={`${shell} grid items-center gap-14 lg:grid-cols-2 lg:gap-14`}

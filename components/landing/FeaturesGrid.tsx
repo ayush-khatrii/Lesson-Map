@@ -5,12 +5,19 @@ import {
   FileStack,
   GripVertical,
   Link2,
+  Youtube,
 } from "lucide-react";
 import Reveal from "@/components/marketing/Reveal";
 import { Card } from "@/components/ui/card";
 import { shell } from "./styles";
 
 const features = [
+  {
+    icon: Youtube,
+    title: "YouTube playlist import",
+    description:
+      "Turn a public YouTube playlist into an editable course draft, with each available video added as a lesson.",
+  },
   {
     icon: GripVertical,
     title: "Drag-and-drop builder",
@@ -32,12 +39,6 @@ const features = [
     title: "Learner progress",
     description: "Let learners track completion directly in their browser.",
   },
-  {
-    icon: FileStack,
-    title: "Pro publishing controls",
-    description:
-      "Remove LessonMap branding and export your course as Markdown or PDF.",
-  },
 ];
 
 export default function FeaturesGrid() {
@@ -52,7 +53,7 @@ export default function FeaturesGrid() {
             Everything you need to build and share a course.
           </h2>
           <p className="mx-auto mt-5 max-w-xl text-base leading-7 text-muted-foreground">
-            Six focused tools help you organize the course, add learning material, and publish it.
+            Import videos, organize your course, add learning material, and publish it.
           </p>
         </Reveal>
 
