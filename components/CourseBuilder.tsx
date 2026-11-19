@@ -53,6 +53,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
   Eye,
+  Youtube,
   Save,
   GripVertical,
   ChevronDown,
@@ -90,6 +91,7 @@ import { isFileResourceType } from "@/lib/r2/upload-policy";
 import FileUpload, {
   type UploadedResource,
 } from "@/components/forms/FileUpload";
+import YouTubeImport from "@/components/forms/YouTubeImport";
 import { AiCourseGenerator } from "@/components/forms/AiCourseGenerator";
 import { AiCourseEditor } from "@/components/forms/AiCourseEditor";
 import { CourseExportTab } from "@/components/flow/CourseExportTab";
@@ -2066,6 +2068,8 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [activeTab, setActiveTab] = useState("outline");
+  const [creationMethod, setCreationMethod] = useState(initialData ? "manual" : "youtube");
+  const [isImporting, setIsImporting] = useState(false);
   const [outlineView, setOutlineView] = useState<OutlineView>("accordion");
   const [aiAssistOpen, setAiAssistOpen] = useState(false);
 
@@ -2326,11 +2330,11 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
               {courseId ? title || "Untitled course" : "Create your next course"}
             </h1>
             <p className="mx-auto mt-3 max-w-2xl whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground [overflow-wrap:anywhere]">
-              {courseId ? description || "Add a description to help learners understand what this course covers." : "Shape your ideas into a clear learning journey. Start with AI or build your outline below."}
+              {courseId ? description || "Add a description to help learners understand what this course covers." : "One great course. Three ways to start. Choose the approach that works for you."}
             </p>
             {courseId && initialData?.audience && <p className="mt-2 text-xs text-muted-foreground [overflow-wrap:anywhere]">For {initialData.audience}</p>}
           </div>
-          <div className="flex flex-wrap items-center justify-center gap-2">
+          {courseId && <div className="flex flex-wrap items-center justify-center gap-2">
             {courseId && <Button size="sm" variant="outline" className="h-9 gap-1.5" onClick={() => setAiAssistOpen(true)} disabled={isGenerating || isSaving}><Sparkles className="size-3.5 text-primary" />AI Assist</Button>}
             <PreviewDialog title={title} description={description} modules={modules} resources={resources} />
             {courseId ? (
@@ -2338,10 +2342,10 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
             ) : (
               <Button size="sm" className="h-9 gap-1.5" onClick={handleSave} disabled={isSaving || isGenerating}>
                 {isSaving ? <Loader2 className="size-3.5 animate-spin" /> : <Save className="size-3.5" />}
-                {isSaving ? "Saving?" : "Save draft"}
+                {isSaving ? "Saving…" : "Save draft"}
               </Button>
             )}
-          </div>
+          </div>}
           {courseId && (
             <div className="grid grid-cols-3 divide-x divide-border overflow-hidden rounded-xl border border-border bg-card">
               <StatPill icon={Layers} label="Modules" value={modules.length} />
@@ -2351,19 +2355,51 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
           )}
         </header>
 
-        {!courseId && (
-          <AiCourseGenerator
-            disabled={isSaving}
-            onGeneratingChange={setIsGenerating}
-          />
-        )}
+        <Tabs value={courseId ? "manual" : creationMethod} onValueChange={setCreationMethod} className="gap-6">
+          {!courseId && (
+            <TabsList aria-label="How would you like to create your course?" className="grid h-auto w-full grid-cols-1 gap-3 border-0 bg-transparent p-0 sm:grid-cols-3">
+              {[
+                { value: "youtube", icon: Youtube, title: "Import from YouTube", description: "Turn a playlist into a learning journey", detail: "Have videos ready? Start here." },
+                { value: "manual", icon: PenLine, title: "Build it yourself", description: "Create your course, your way", detail: "Full control, from the first lesson." },
+                { value: "ai", icon: Sparkles, title: "Create with AI", description: "Turn an idea into a course outline", detail: "A little inspiration. A head start." },
+              ].map(({ value, icon: Icon, title: methodTitle, description: methodDescription, detail }) => (
+                <TabsTrigger key={value} value={value} disabled={isSaving || isGenerating || isImporting}
+                  className="group relative h-full min-w-0 items-start justify-start gap-4 whitespace-normal rounded-2xl border border-border bg-card p-5 text-left transition-all hover:border-primary/50 hover:bg-primary/5 data-[state=active]:border-primary data-[state=active]:bg-primary/5 data-[state=active]:text-foreground data-[state=active]:shadow-none dark:data-[state=active]:border-primary dark:data-[state=active]:bg-primary/10 dark:data-[state=active]:text-foreground sm:flex-col sm:p-6">
+                  <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground group-data-[state=active]:bg-primary group-data-[state=active]:text-primary-foreground"><Icon className="size-5" /></span>
+                  <span className="block space-y-1 pr-4">
+                    <span className="block text-base font-semibold text-foreground">{methodTitle}</span>
+                    <span className="block text-sm font-normal leading-relaxed text-muted-foreground">{methodDescription}</span>
+                    <span className="hidden pt-2 text-xs font-normal text-muted-foreground lg:block">{detail}</span>
+                  </span>
+                  <Check className="absolute right-4 top-4 size-4 text-primary opacity-0 group-data-[state=active]:opacity-100" />
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          )}
+          {!courseId && <TabsContent value="youtube" forceMount hidden={creationMethod !== "youtube"}>
+            <YouTubeImport onBusyChange={setIsImporting} />
+          </TabsContent>}
+          {!courseId && <TabsContent value="ai" forceMount hidden={creationMethod !== "ai"}>
+            <AiCourseGenerator disabled={isSaving} onGeneratingChange={setIsGenerating} />
+          </TabsContent>}
+          <TabsContent value="manual" forceMount hidden={!courseId && creationMethod !== "manual"} className="min-w-0">
+          {!courseId && <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div><h2 className="text-xl font-semibold">Make it your own</h2><p className="mt-1 text-sm text-muted-foreground">Start with the essentials, then build your curriculum below.</p></div>
+            <div className="flex shrink-0 gap-2">
+              <PreviewDialog title={title} description={description} modules={modules} resources={resources} />
+              <Button onClick={handleSave} disabled={isSaving || isGenerating}>
+                {isSaving ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
+                {isSaving ? "Saving…" : "Save draft"}
+              </Button>
+            </div>
+          </div>}
 
         {/* ── Course Info Card ──────────────────────────────────────── */}
         {!courseId && (
           <Card className="mb-6 border shadow-none">
             <CardHeader className="pb-3 pt-5 px-5">
               <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-                Or create a course manually
+                Course details
               </p>
             </CardHeader>
             <CardContent className="px-5 pb-5 space-y-4">
@@ -2563,6 +2599,8 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
               onTogglePublic={handleTogglePublic}
               isToggling={isTogglingPublic}
             />
+          </TabsContent>
+        </Tabs>
           </TabsContent>
         </Tabs>
       </div>

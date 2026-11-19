@@ -138,10 +138,10 @@ export function AiCourseGenerator({ disabled, onGeneratingChange }: {
   const isFree = allowance?.plan === "FREE";
 
   return (
-    <Card className="mb-6 border-primary/25 bg-primary/[0.03] shadow-none" id="ai-course">
-      <CardHeader className="space-y-2">
+    <Card className="rounded-2xl border bg-card py-2 shadow-none sm:py-4" id="ai-course">
+      <CardHeader className="space-y-3 px-6 pt-6 sm:px-9">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="flex items-center gap-2 font-semibold"><Sparkles className="h-4 w-4 text-primary" /> Create a course with AI</h2>
+          <h2 className="flex items-center gap-2 text-xl font-semibold"><Sparkles className="h-4 w-4 text-primary" /> Create a course with AI</h2>
           {allowance && <Badge variant="secondary">{isFree ? "Complimentary AI outline" : "Creator full course"}</Badge>}
         </div>
         <p className="text-sm text-muted-foreground">
@@ -149,12 +149,12 @@ export function AiCourseGenerator({ disabled, onGeneratingChange }: {
           draft with a course description, modules, and lesson titles for you to edit.
         </p>
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-6 pb-6 sm:px-9">
         {loading && !generating ? <p role="status" className="text-sm text-muted-foreground">Checking your AI allowance…</p> :
           !session?.user ? <Button asChild variant="outline"><Link href="/sign-in">Sign in to generate</Link></Button> :
             createdCourseId ? <Button asChild><Link href={`/dashboard/${encodeURIComponent(createdCourseId)}/edit`}>Open generated course</Link></Button> :
-              <form onSubmit={handleGenerate} className="space-y-4" aria-busy={generating}>
-                <fieldset disabled={disabled || generating} className="space-y-4 disabled:opacity-70">
+              <form onSubmit={handleGenerate} className="space-y-6" aria-busy={generating}>
+                <fieldset disabled={disabled || generating} className="space-y-6 disabled:opacity-70">
                   <div className="space-y-1.5">
                     <Label htmlFor="ai-topic">What will you teach?</Label>
                     <Textarea id="ai-topic" placeholder="JavaScript for beginners" required minLength={3} maxLength={500}
@@ -188,7 +188,7 @@ export function AiCourseGenerator({ disabled, onGeneratingChange }: {
                 </fieldset>
                 {generating && <p role="status" className="text-sm text-muted-foreground">Building your outline and saving the draft. Large courses can take up to five minutes.</p>}
                 {allowance && <p className="text-xs text-muted-foreground">{isFree ? (allowance.remaining > 0 ? "Your complimentary AI outline is available. This one-time allowance does not renew." : "Your complimentary AI outline has been used. Continue editing manually or upgrade for more AI generations.") : `${allowance.remaining} of ${allowance.limits.generations} AI generations left this month.${allowance.resetsAt ? ` Resets ${new Date(allowance.resetsAt).toLocaleDateString()}.` : ""}`} Only successful generations count — failed attempts are never deducted.</p>}
-                {allowance && !allowance.enabled && <p className="text-sm text-muted-foreground">AI generation is not available yet. You can still create a course manually below.</p>}
+                {allowance && !allowance.enabled && <p className="text-sm text-muted-foreground">AI generation is not available yet. Select Build it yourself to create a course manually.</p>}
               </form>}
         {error && <p role="alert" className="mt-3 text-sm text-destructive">{error}</p>}
         {!loading && !allowance && session?.user && <Button variant="outline" className="mt-3" onClick={() => { setError(""); void loadAllowance(); }}>Retry availability check</Button>}
