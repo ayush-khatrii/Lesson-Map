@@ -5,7 +5,11 @@ import { sessionUserId, allowRequest, launchError } from "@/lib/launch-access";
 import { lockCourseOwner } from "@/lib/course-access";
 import { effectiveAiPlan } from "@/lib/ai/schema";
 import { COURSE_LIMITS, hasReachedCourseLimit } from "@/lib/plans";
-import { fetchPlaylist, playlistIdFromUrl } from "@/lib/youtube";
+import {
+  fetchPlaylist,
+  playlistIdFromUrl,
+  YouTubeImportError,
+} from "@/lib/youtube";
 import { revalidateTag } from "next/cache";
 import { userCoursesTag } from "@/lib/course-cache";
 import { isSameOriginRequest } from "@/lib/payments/request-security";
@@ -73,19 +77,23 @@ export async function POST(request: Request) {
         { status: 403 },
       );
     }
-    if (!process.env.YOUTUBE_API_KEY) {
-      return NextResponse.json(
-        { error: "YouTube import is not configured yet." },
-        { status: 503 },
-      );
-    }
     let playlist;
     try {
       playlist = await fetchPlaylist(playlistId);
     } catch (error) {
+      if (!(error instanceof YouTubeImportError)) throw error;
+      console.error("YouTube import failed", {
+        requestId: input.data.requestId,
+        code: error.code,
+        status: error.status,
+      });
       return NextResponse.json(
-        { error: (error as Error).message },
-        { status: 400 },
+        {
+          error: error.message,
+          code: error.code,
+          requestId: input.data.requestId,
+        },
+        { status: error.status },
       );
     }
     const result = await db.$transaction(async (tx) => {
