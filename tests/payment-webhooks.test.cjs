@@ -34,7 +34,7 @@ function fixture(options = {}) {
   }).outputText;
   vm.runInNewContext(source, {
     module, exports: module.exports,
-    process: { env: { DODO_PAYMENTS_WEBHOOK_SECRET: secret, DODO_PRODUCT_CREATOR_EARLY_BIRD: "pdt_creator_15" } },
+    process: { env: { DODO_PAYMENTS_ENVIRONMENT: options.environment ?? "test_mode", DODO_PAYMENTS_WEBHOOK_SECRET: secret, DODO_PRODUCT_CREATOR_EARLY_BIRD: "pdt_creator_15" } },
     console: { info() {}, error() {}, warn() {} },
     require(id) {
       if (id === "standardwebhooks") return { Webhook };
@@ -74,6 +74,21 @@ function fixture(options = {}) {
   }
   return { user, events, deliver, emails };
 }
+
+for (const [environment, expected] of [["test_mode", "TEST"], ["live_mode", "LIVE"]]) {
+  test(`verified activation records ${environment} billing provenance`, async () => {
+    const h = fixture({ environment });
+    assert.equal((await h.deliver("subscription.active", "activation")).status, 200);
+    assert.equal(h.user.paymentEnvironment, expected);
+  });
+}
+
+test("invalid billing mode cannot classify or activate a subscription", async () => {
+  const h = fixture({ environment: "invalid" });
+  assert.equal((await h.deliver("subscription.active", "activation")).status, 500);
+  assert.equal(h.user.plan, "FREE");
+  assert.equal(h.events.size, 0);
+});
 
 test("activation and renewal email the matched database user only after commit", async () => {
   const { deliver, user, emails } = fixture();

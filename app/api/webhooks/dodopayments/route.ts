@@ -106,6 +106,12 @@ export async function POST(req: NextRequest) {
 
   try {
     let emailEvent: EmailEvent | undefined;
+    // This mode must correspond to the configured endpoint signing secret.
+    const mode = process.env.DODO_PAYMENTS_ENVIRONMENT?.trim();
+    if (mode !== "test_mode" && mode !== "live_mode") {
+      throw new Error("DODO_PAYMENTS_ENVIRONMENT must be test_mode or live_mode");
+    }
+    const paymentEnvironment = mode === "live_mode" ? "LIVE" : "TEST";
     const processed = await db.$transaction(async (tx) => {
       const existing = await tx.webhookEvent.findUnique({
         where: { id: webhookId },
@@ -247,6 +253,7 @@ export async function POST(req: NextRequest) {
           where: { id: userId },
           data: {
             plan,
+            paymentEnvironment,
             subscriptionId,
             customerId,
             subscriptionProductId: data.product_id,
@@ -274,6 +281,7 @@ export async function POST(req: NextRequest) {
           where: { id: userId },
           data: {
             ...(data.status === "active" && plan && !shouldRevoke ? { plan } : {}),
+            paymentEnvironment,
             ...(shouldRevoke ? { plan: "FREE" as const } : {}),
             ...(subscriptionId ? { subscriptionId } : {}),
             ...(customerId ? { customerId } : {}),

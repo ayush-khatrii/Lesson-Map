@@ -48,6 +48,7 @@ test("verified active subscription repairs missing webhook activation", async ()
   assert.equal((await response.json()).subscriptionStatus, "active");
   assert.equal(h.writes[0].where.id, "user-1");
   assert.equal(h.writes[0].data.plan, "CREATOR");
+  assert.equal(h.writes[0].data.paymentEnvironment, "TEST");
   assert.equal(h.writes[0].data.subscriptionId, "sub_example");
   assert.equal(JSON.stringify(h.writes[0].where.OR), JSON.stringify([
     { subscriptionId: "sub_example" },

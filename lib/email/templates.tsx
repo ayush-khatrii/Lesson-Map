@@ -51,12 +51,32 @@ export function emailContent(event: EmailEvent, origin: string) {
       <html lang="en">
         <head>
           <meta charSet="utf-8" />
+          <meta name="color-scheme" content="light dark" />
+          <meta name="supported-color-schemes" content="light dark" />
           <title>{heading}</title>
+          <style>{`
+            :root { color-scheme: light dark; }
+            .email-button, .email-button span {
+              color: #171717 !important;
+              -webkit-text-fill-color: #171717 !important;
+            }
+            @media (prefers-color-scheme: dark) {
+              .email-body { color: #f5f5f5 !important; }
+              .email-brand { color: ${BRAND_COLORS.primary} !important; }
+              .email-footer { color: #d4d4d4 !important; }
+              .email-support { color: #93c5fd !important; }
+            }
+            [data-ogsc] .email-body { color: #f5f5f5 !important; }
+            [data-ogsc] .email-brand { color: ${BRAND_COLORS.primary} !important; }
+            [data-ogsc] .email-footer { color: #d4d4d4 !important; }
+            [data-ogsc] .email-support { color: #93c5fd !important; }
+          `}</style>
         </head>
         <body
+          className="email-body"
           style={{
             margin: 0,
-            backgroundColor: "#f5f5f5",
+            backgroundColor: "transparent",
             color: "#171717",
             fontFamily: "Arial, sans-serif",
           }}
@@ -66,11 +86,14 @@ export function emailContent(event: EmailEvent, origin: string) {
               maxWidth: 560,
               margin: "32px auto",
               padding: 32,
-              backgroundColor: "#ffffff",
+              backgroundColor: "transparent",
               borderRadius: 12,
             }}
           >
-            <p style={{ fontWeight: 700, color: BRAND_COLORS.ink }}>
+            <p
+              className="email-brand"
+              style={{ fontWeight: 700, color: BRAND_COLORS.ink }}
+            >
               LessonMap
             </p>
             <h1 style={{ fontSize: 26 }}>{heading}</h1>
@@ -78,22 +101,37 @@ export function emailContent(event: EmailEvent, origin: string) {
             <p style={{ lineHeight: 1.6 }}>{message}</p>
             <p style={{ margin: "28px 0" }}>
               <a
+                className="email-button"
                 href={href}
                 style={{
                   display: "inline-block",
                   padding: "12px 20px",
                   backgroundColor: BRAND_COLORS.primary,
-                  color: BRAND_COLORS.onPrimary,
+                  // The solid gradient helps preserve yellow in clients that
+                  // automatically recolor backgrounds for dark mode.
+                  backgroundImage: `linear-gradient(${BRAND_COLORS.primary}, ${BRAND_COLORS.primary})`,
+                  color: "#171717",
+                  WebkitTextFillColor: "#171717",
+                  fontWeight: 700,
                   borderRadius: 6,
                   textDecoration: "none",
                 }}
               >
-                {button}
+                <span
+                  style={{ color: "#171717", WebkitTextFillColor: "#171717" }}
+                >
+                  {button}
+                </span>
               </a>
             </p>
-            <p style={{ fontSize: 13, color: "#525252" }}>
+            <p
+              className="email-footer"
+              style={{ fontSize: 13, color: "#525252" }}
+            >
               Need help?{" "}
-              <a href={`mailto:${EMAIL_REPLY_TO}`}>{EMAIL_REPLY_TO}</a>
+              <a className="email-support" href={`mailto:${EMAIL_REPLY_TO}`}>
+                {EMAIL_REPLY_TO}
+              </a>
             </p>
           </main>
         </body>

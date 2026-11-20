@@ -32,6 +32,7 @@ model User {
   subscriptionId                String?   @unique
   customerId                    String?   @unique
   subscriptionStatus            String?
+  paymentEnvironment            PaymentEnvironment?
   subscriptionProductId         String?
   subscriptionCurrentPeriodEnd  DateTime?
   subscriptionCancelAtPeriodEnd Boolean   @default(false)
@@ -212,6 +213,11 @@ enum Plan {
   FREE
   CREATOR
   PROFESSIONAL
+}
+
+enum PaymentEnvironment {
+  TEST
+  LIVE
 }
 
 enum ResourceType {

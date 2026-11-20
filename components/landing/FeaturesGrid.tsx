@@ -37,7 +37,7 @@ const features = [
   {
     icon: ChartNoAxesColumnIncreasing,
     title: "Learner progress",
-    description: "Let learners track completion directly in their browser.",
+    description: "Learners can mark lessons complete and follow their progress",
   },
 ];
 

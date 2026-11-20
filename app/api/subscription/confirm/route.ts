@@ -63,6 +63,7 @@ export async function POST(req: NextRequest) {
       },
       data: {
         plan: body.plan,
+        paymentEnvironment: config.environment === "live_mode" ? "LIVE" : "TEST",
         subscriptionId: body.subscriptionId,
         customerId: subscription.customer.customer_id,
         subscriptionProductId: subscription.product_id,
