@@ -34,7 +34,7 @@ function fixture(options = {}) {
   }).outputText;
   vm.runInNewContext(source, {
     module, exports: module.exports,
-    process: { env: { DODO_PAYMENTS_ENVIRONMENT: options.environment ?? "test_mode", DODO_PAYMENTS_WEBHOOK_SECRET: secret, DODO_PRODUCT_CREATOR_EARLY_BIRD: "pdt_creator_15" } },
+    process: { env: { DODO_PAYMENTS_ENVIRONMENT: options.environment ?? "test_mode", DODO_PAYMENTS_WEBHOOK_SECRET: secret } },
     console: { info() {}, error() {}, warn() {} },
     require(id) {
       if (id === "standardwebhooks") return { Webhook };
@@ -257,9 +257,9 @@ test("activation with scheduled cancellation keeps the purchased plan", async ()
   assert.equal(require("./helpers/ai-schema.cjs").effectiveAiPlan(user), "CREATOR");
 });
 
-test("new $15 Creator product activates Creator just like legacy subscriptions", async () => {
+test("configured Creator product activates Creator access", async () => {
   const f = fixture();
-  const response = await f.deliver("subscription.active", "event-15", false, { product_id: "pdt_creator_15" });
+  const response = await f.deliver("subscription.active", "event-15", false, { product_id: "pdt_creator" });
   assert.equal(response.status, 200);
   assert.equal(f.user.plan, "CREATOR");
 });

@@ -55,11 +55,9 @@ export function checkoutConfiguration(plan: PaidPlan): {
     throw new PaymentConfigurationError("Missing DODO_PAYMENTS_WEBHOOK_SECRET.");
   }
 
-  const productId = plan === "CREATOR"
-    ? process.env.DODO_PRODUCT_CREATOR_EARLY_BIRD?.trim()
-    : productIdForPlan(plan);
+  const productId = productIdForPlan(plan);
   if (!productId) {
-    throw new PaymentConfigurationError(`Missing checkout product: set DODO_PRODUCT_CREATOR_EARLY_BIRD for Creator.`);
+    throw new PaymentConfigurationError(`Missing checkout product: set DODO_PRODUCT_${plan}.`);
   }
 
   return {

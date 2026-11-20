@@ -17,9 +17,9 @@ Lesson progress is now account-based. Opening a lesson records its first start; 
 
 ## Creator price
 
-Create a new **$15 USD/month recurring** Creator product in Dodo Payments. Set `DODO_PRODUCT_CREATOR_EARLY_BIRD` to that product's ID, in the same mode as your payment key. New checkout deliberately stays unavailable until this setting exists; it does not fall back to charging $12.
+Set `DODO_PRODUCT_CREATOR` to the Creator recurring product ID, in the same mode as your payment key. Checkout, subscription webhooks, and admin revenue reports use this product. Manage pricing and offer timing in Dodo Payments; there is no separate early-bird product variable or automatic offer timer in the app.
 
-Keep `DODO_PRODUCT_CREATOR` pointing to the old product so existing subscriptions and their webhooks continue working. Do not edit the old product price or change existing subscriptions. Both products grant Creator access and appear in admin revenue reports. Account billing uses the provider portal for the subscriber's actual price.
+The public pricing copy is maintained separately from Dodo and must be updated when the advertised offer changes. Account billing uses the provider portal for the subscriber's actual price. Before replacing the product ID, account for existing subscriptions: their webhooks and reports still reference the original product.
 
 ## YouTube
 

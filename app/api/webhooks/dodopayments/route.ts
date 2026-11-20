@@ -33,10 +33,7 @@ function paidPlanForProduct(productId: string | undefined): PaidPlan | null {
   const creatorProductId = productIdForPlan("CREATOR");
   const professionalProductId = productIdForPlan("PROFESSIONAL");
 
-  if (
-    productId === process.env.DODO_PRODUCT_CREATOR_EARLY_BIRD?.trim() ||
-    (creatorProductId && productId === creatorProductId)
-  ) return "CREATOR";
+  if (creatorProductId && productId === creatorProductId) return "CREATOR";
   if (professionalProductId && productId === professionalProductId) {
     return "PROFESSIONAL";
   }

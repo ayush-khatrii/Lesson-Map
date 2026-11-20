@@ -19,7 +19,7 @@ export function emailAuthOptions(
     try {
       await sendEmail?.(event);
     } catch {
-      // Delivery must not interrupt authentication, token consumption, or
+      // Delivery must not interrupt authentication, token consuGFmption, or
       // session cleanup, even if an unexpected transport failure escapes.
       console.error("Authentication email action failed", {
         action: event.action,
