@@ -31,6 +31,7 @@ function load(file, overrides = {}, globals = {}) {
       crypto,
       require(id) {
         if (id in overrides) return overrides[id];
+        if (id === "node:crypto") return require(id);
         if (id === "zod") return { z };
         if (id === "next/server")
           return { NextResponse: { json: Response.json.bind(Response) } };
@@ -494,6 +495,51 @@ test("email capture requires an active paid owner, consent and an empty honeypot
     200,
   );
   assert.equal(writes, 1);
+});
+
+test("lead limits isolate visitors and courses, with a shared 100-request backup", async () => {
+  const counts = new Map();
+  let writes = 0;
+  const route = load("app/api/public/[slug]/leads/route.ts", {
+    "@/lib/prisma": { db: {
+      course: { findFirst: async ({ where }) => ({ id: where.shareSlug, user: paid }) },
+      lead: { upsert: async () => { writes++; } },
+    } },
+    "@/lib/launch-access": {
+      ...access(),
+      allowRequest: async (key, limit) => {
+        const count = (counts.get(key) || 0) + 1;
+        counts.set(key, count);
+        return count <= limit;
+      },
+    },
+  }, { process: { env: { VERCEL: "1" } } });
+  const submit = (ip, slug = "course-a", forwarded = "spoofed") => route.POST({
+    ...request({ email: "person@example.com", consent: true, website: "" }),
+    headers: new Headers({
+      ...(ip ? { "x-vercel-forwarded-for": ip } : {}),
+      "x-forwarded-for": forwarded,
+    }),
+  }, context("slug", slug));
+
+  for (let i = 0; i < 5; i++) assert.equal((await submit("192.0.2.1")).status, 200);
+  const blocked = await submit("192.0.2.1", "course-a", "different-spoof");
+  assert.equal(blocked.status, 429);
+  assert.equal((await blocked.json()).error, "Please try again in a minute.");
+  assert.equal(counts.get("lead:course-a"), 5);
+  assert.equal(writes, 5);
+  assert.equal((await submit("192.0.2.2")).status, 200);
+  assert.equal((await submit("192.0.2.1", "course-b")).status, 200);
+
+  for (let i = 0; i < 94; i++) {
+    assert.equal((await submit(`198.51.100.${i + 1}`)).status, 200);
+  }
+  assert.equal(counts.get("lead:course-a"), 100);
+  assert.equal((await submit("203.0.113.1")).status, 429);
+  assert.equal(writes, 101); // 100 for course-a, plus one for course-b.
+
+  for (let i = 0; i < 5; i++) assert.equal((await submit(null, "course-c")).status, 200);
+  assert.equal((await submit(null, "course-c", "new-spoof")).status, 429);
 });
 
 test("migration applies and database uniqueness enforces events, leads and per-user progress", async () => {

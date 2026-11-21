@@ -40,12 +40,12 @@ export const metadata: Metadata = {
     siteName: "LessonMap",
     type: "website",
     locale: "en_US",
-    images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: "LessonMap — Visual course planning for creators" }],
+    images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: SITE_TITLE }],
   },
 
   twitter: {
     card: "summary_large_image",
-    images: [{ url: "/opengraph-image", alt: "LessonMap — Visual course planning for creators" }],
+    images: [{ url: "/opengraph-image", alt: SITE_TITLE }],
     title: SITE_TITLE,
     description: SITE_DESCRIPTION,
   },

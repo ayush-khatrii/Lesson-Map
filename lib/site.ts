@@ -21,7 +21,7 @@ export const SITE_URL = resolveSiteUrl();
 
 export const SITE_NAME = "LessonMap";
 
-export const SITE_TITLE = "LessonMap — Create and Share Visual Course Outlines";
+export const SITE_TITLE = "LessonMap — Plan and Share Your Courses";
 
 export const SITE_DESCRIPTION =
   "Create course outlines with AI, organize modules and lessons, add learning resources, and share clear, visual learning paths with LessonMap.";

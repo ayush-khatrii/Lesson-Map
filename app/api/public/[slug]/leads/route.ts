@@ -3,6 +3,7 @@ import { z } from "zod";
 import { db } from "@/lib/prisma";
 import { allowRequest, launchError } from "@/lib/launch-access";
 import { effectiveAiPlan } from "@/lib/ai/schema";
+import { createHash } from "node:crypto";
 
 export async function POST(
   request: Request,
@@ -33,7 +34,17 @@ export async function POST(
         { error: "Email signup is unavailable." },
         { status: 404 },
       );
-    if (!(await allowRequest(`lead:${course.id}`, 30)))
+    // Vercel supplies this IP header. Do not trust caller-controlled forwarding
+    // headers on other hosts; missing IPs share a conservative fallback bucket.
+    const ip = process.env.VERCEL === "1"
+      ? request.headers.get("x-vercel-forwarded-for")?.split(",")[0].trim()
+      : undefined;
+    const visitor = createHash("sha256").update(ip || "unknown").digest("hex");
+    // Check the visitor first so blocked retries do not consume the course limit.
+    if (
+      !(await allowRequest(`lead-visitor:${course.id}:${visitor}`, 5)) ||
+      !(await allowRequest(`lead:${course.id}`, 100))
+    )
       return NextResponse.json(
         { error: "Please try again in a minute." },
         { status: 429 },

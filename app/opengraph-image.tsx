@@ -1,9 +1,10 @@
 import { BRAND_COLORS } from "@/constants/brand";
+import { SITE_TITLE } from "@/lib/site";
 import { ImageResponse } from "next/og";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 
-export const alt = "LessonMap — Visual course planning for creators";
+export const alt = SITE_TITLE;
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -55,7 +56,7 @@ export default async function OpenGraphImage() {
             letterSpacing: "-3px",
           }}
         >
-          Plan courses clearly. Share them beautifully.
+          Plan and Share Your Courses
         </div>
         <div style={{ fontSize: 29, color: "#525252", lineHeight: 1.35 }}>
           Organize modules, lessons, and resources in one visual course
