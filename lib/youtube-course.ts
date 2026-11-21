@@ -29,6 +29,7 @@ export async function createYouTubeCourse(
     moduleId: module.id,
     lessonName: video.title,
     description: video.description,
+    videoDurationSeconds: video.videoDurationSeconds ?? null,
     order: index + 1,
   }));
   // Explicit ordering ensures every referenced lesson exists before resources

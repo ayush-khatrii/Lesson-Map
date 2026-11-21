@@ -184,6 +184,101 @@ test(
     });
     db = new PrismaClient({ adapter: new PrismaPg(pool), log: [] });
 
+    await t.test(
+      "timing persists, clears, clones, and replays with the saved missing-duration count",
+      async () => {
+        await seed(db, true);
+        const videos = playlist(3);
+        videos.videos[0].videoDurationSeconds = 125;
+        videos.videos[1].videoDurationSeconds = 720;
+        const f = fixture(db, videos);
+        const response = await f.post();
+        const body = await response.json();
+        assert.equal(response.status, 200, JSON.stringify(body));
+        assert.equal(body.missingDurationCount, 1);
+        const lessons = await db.lesson.findMany({
+          where: { module: { courseId: body.courseId } },
+          orderBy: { order: "asc" },
+        });
+        assert.deepEqual(
+          lessons.map((lesson) => lesson.videoDurationSeconds),
+          [125, 720, null],
+        );
+        assert.ok(
+          lessons.every((lesson) => lesson.estimatedCompletionSeconds === null),
+        );
+        await db.lesson.update({
+          where: { id: lessons[0].id },
+          data: { estimatedCompletionSeconds: 1800 },
+        });
+        await db.lesson.update({
+          where: { id: lessons[0].id },
+          data: { lessonName: "Renamed" },
+        });
+        const saved = await db.lesson.findUniqueOrThrow({
+          where: { id: lessons[0].id },
+        });
+        assert.equal(saved.estimatedCompletionSeconds, 1800);
+        assert.equal(saved.videoDurationSeconds, 125);
+        await assert.rejects(
+          db.lesson.update({
+            where: { id: saved.id },
+            data: { videoDurationSeconds: 0 },
+          }),
+        );
+        await assert.rejects(
+          db.lesson.update({
+            where: { id: saved.id },
+            data: { estimatedCompletionSeconds: -1 },
+          }),
+        );
+
+        await db.course.update({
+          where: { id: body.courseId },
+          data: { isPublic: true, shareSlug: "timed-course" },
+        });
+        const clone = load("app/api/public/[slug]/clone/route.ts", {
+          "@/lib/prisma": { db },
+          "@/lib/launch-access": {
+            sessionUserId: async () => "owner",
+            allowRequest: async () => true,
+            launchError: (error) => {
+              throw error;
+            },
+          },
+          "next/cache": { revalidateTag() {} },
+        });
+        const cloned = await clone.POST(
+          new Request("https://lessonmap.org/api/public/timed-course/clone", {
+            method: "POST",
+            headers: { Origin: "https://lessonmap.org" },
+          }),
+          { params: Promise.resolve({ slug: "timed-course" }) },
+        );
+        const clonedBody = await cloned.json();
+        assert.equal(cloned.status, 200, JSON.stringify(clonedBody));
+        const clonedLessons = await db.lesson.findMany({
+          where: { module: { courseId: clonedBody.courseId } },
+          orderBy: { order: "asc" },
+        });
+        assert.equal(clonedLessons[0].estimatedCompletionSeconds, 1800);
+        assert.equal(clonedLessons[0].videoDurationSeconds, 125);
+        assert.deepEqual(
+          clonedLessons.map((lesson) => lesson.videoDurationSeconds),
+          [125, 720, null],
+        );
+
+        await db.lesson.update({
+          where: { id: saved.id },
+          data: { videoDurationSeconds: null },
+        });
+        const replay = await (await f.post()).json();
+        assert.equal(replay.courseId, body.courseId);
+        assert.equal(replay.missingDurationCount, 2);
+        assert.equal(f.fetches(), 1);
+      },
+    );
+
     await t.test("original nested create reproduction", async (t) => {
       await seed(db);
       const original = playlist(2);

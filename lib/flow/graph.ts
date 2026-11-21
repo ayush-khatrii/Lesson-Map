@@ -1,10 +1,20 @@
+import {
+  lessonTimingLines,
+  summarizeLessonTimes,
+  timingSummaryLines,
+  type LessonTiming,
+  type TimeSummary,
+} from "@/lib/lesson-time";
+
 export interface CourseOutline {
   id: string;
   title: string;
+  timeSummary?: TimeSummary;
   modules: {
     id: string;
     title: string;
-    lessons: { id: string; title: string }[];
+    timeSummary?: TimeSummary;
+    lessons: ({ id: string; title: string } & LessonTiming)[];
   }[];
 }
 
@@ -21,6 +31,8 @@ export interface OutlineNodeData extends Record<string, unknown> {
   lessonCount?: number;
   completedCount?: number;
   onToggle?: () => void;
+  timingLines?: string[];
+  nodeHeight?: number;
 }
 
 export const NODE_WIDTH = 240;
@@ -33,8 +45,12 @@ const COLUMN_STEP = 340;
 export function buildCourseGraph(
   outline: CourseOutline,
   collapsedModules: ReadonlySet<string> = new Set(),
-  nodeHeight = NODE_HEIGHT,
+  nodeHeight?: number,
 ) {
+  const courseTime =
+    outline.timeSummary ??
+    summarizeLessonTimes(outline.modules.flatMap((module) => module.lessons));
+  nodeHeight ??= timingSummaryLines(courseTime).length ? 200 : NODE_HEIGHT;
   const nodes: {
     id: string;
     type: "outline";
@@ -76,6 +92,10 @@ export function buildCourseGraph(
         moduleId: module.id,
         collapsed,
         lessonCount: module.lessons.length,
+        timingLines: timingSummaryLines(
+          module.timeSummary ?? summarizeLessonTimes(module.lessons),
+        ),
+        nodeHeight,
       },
     });
     connect(rootId, moduleId);
@@ -94,6 +114,8 @@ export function buildCourseGraph(
           label: `${moduleIndex + 1}.${lessonIndex + 1}`,
           moduleId: module.id,
           lessonId: lesson.id,
+          timingLines: lessonTimingLines(lesson),
+          nodeHeight,
         },
       });
       connect(moduleId, lessonId);
@@ -111,6 +133,8 @@ export function buildCourseGraph(
       kind: "course",
       title: outline.title || "Untitled course",
       label: "Course",
+      timingLines: timingSummaryLines(courseTime),
+      nodeHeight,
     },
   });
   return { nodes, edges };

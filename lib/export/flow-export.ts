@@ -1,4 +1,5 @@
 import { BRAND_COLORS } from "@/constants/brand";
+import { summarizeLessonTimes } from "@/lib/lesson-time";
 import {
   buildCourseGraph,
   NODE_WIDTH,
@@ -33,8 +34,18 @@ export function flowDetailPages(outline: CourseOutline): CourseOutline[] {
     ) {
       pages.push({
         ...outline,
+        timeSummary:
+          outline.timeSummary ??
+          summarizeLessonTimes(
+            outline.modules.flatMap((module) => module.lessons),
+          ),
         modules: [
-          { ...module, lessons: module.lessons.slice(start, start + 4) },
+          {
+            ...module,
+            timeSummary:
+              module.timeSummary ?? summarizeLessonTimes(module.lessons),
+            lessons: module.lessons.slice(start, start + 4),
+          },
         ],
       });
     }
@@ -60,7 +71,17 @@ export function flowPdfPages(outline: CourseOutline): FlowPdfPage[] {
     overviewPages.push({
       outline: {
         ...outline,
-        modules: modules.map((module) => ({ ...module, lessons: [] })),
+        timeSummary:
+          outline.timeSummary ??
+          summarizeLessonTimes(
+            outline.modules.flatMap((module) => module.lessons),
+          ),
+        modules: modules.map((module) => ({
+          ...module,
+          timeSummary:
+            module.timeSummary ?? summarizeLessonTimes(module.lessons),
+          lessons: [],
+        })),
       },
       collapsedModules: new Set(modules.map((module) => module.id)),
     });
@@ -129,9 +150,24 @@ export function renderFlowExport(
   const moduleLessonCounts = new Map(
     data.outline.modules.map((module) => [module.id, module.lessons.length]),
   );
+  // Use full-course totals on overview/detail pages, even when lessons are sliced.
+  const timingLines = new Map(
+    original.nodes.map((node) => [
+      node.id,
+      (node.data.timingLines ?? []).flatMap((line) => {
+        context.font = "11px sans-serif";
+        return wrapText(context, line, NODE_WIDTH - 28);
+      }),
+    ]),
+  );
   const nodeHeight = Math.max(
     NODE_HEIGHT,
-    ...[...titleLines.values()].map((lines) => 68 + lines.length * 18),
+    ...initial.nodes.map(
+      (node) =>
+        68 +
+        (titleLines.get(node.id)?.length ?? 0) * 18 +
+        (timingLines.get(node.id)?.length ?? 0) * 14,
+    ),
   );
   const graph = buildCourseGraph(outline, collapsedModules, nodeHeight);
   const padding = 40;
@@ -262,6 +298,19 @@ export function renderFlowExport(
         y + 50 + titleLines.get(node.id)!.length * 18,
       );
     }
+    context.font = "11px sans-serif";
+    context.fillStyle = colors.secondary;
+    (timingLines.get(node.id) ?? []).forEach((line, index) => {
+      context.fillText(
+        line,
+        x + 14,
+        y +
+          50 +
+          titleLines.get(node.id)!.length * 18 +
+          (node.data.kind === "module" ? 16 : 0) +
+          index * 14,
+      );
+    });
   }
   return canvas;
 }

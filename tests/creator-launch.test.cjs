@@ -39,6 +39,7 @@ function load(file, overrides = {}, globals = {}) {
         if (id === "@/lib/course-cache")
           return { userCoursesTag: (id) => `user-courses:${id}` };
         if (id === "@/lib/ai/schema") return require("./helpers/ai-schema.cjs");
+        if (id === "@/lib/lesson-time") return load("lib/lesson-time.ts");
         if (id === "@/lib/plans") return load("lib/plans.ts");
         if (id === "@/lib/csv") return load("lib/csv.ts");
         if (id === "@/lib/payments/request-security")
@@ -102,7 +103,7 @@ function importFixture({
       create: async () => ({ id: `course-${++created}` }),
     },
     module: { create: async () => ({ id: "module-1" }) },
-    lesson: { createMany: async () => ({ count: 1 }) },
+    lesson: { createMany: async () => ({ count: 1 }), count: async () => 1 },
     resource: { createMany: async () => ({ count: 1 }) },
   };
   let queue = Promise.resolve();
@@ -220,6 +221,8 @@ test("YouTube helper follows pagination, skips unavailable videos and preserves 
           return Response.json({
             items: [{ snippet: { title: "Course", description: "Test" } }],
           });
+        if (parsed.pathname.endsWith("/videos"))
+          return Response.json({ items: [{ id: "two", contentDetails: { duration: "PT2M5S" } }, { id: "one", contentDetails: { duration: "PT1M" } }] });
         if (!parsed.searchParams.get("pageToken"))
           return Response.json({
             items: [
@@ -255,7 +258,9 @@ test("YouTube helper follows pagination, skips unavailable videos and preserves 
   );
   assert.equal(result.skipped, 1);
   assert.equal(result.videos.map((v) => v.videoId).join(","), "one,two");
-  assert.equal(calls.length, 3);
+  assert.equal(calls.length, 4);
+  assert.equal(result.videos[0].videoDurationSeconds, 60);
+  assert.equal(result.videos[1].videoDurationSeconds, 125);
   assert.ok(calls.every((url) => url.searchParams.get("key") === "test-key"));
 });
 

@@ -41,7 +41,7 @@ export default function Hero() {
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <Button asChild size="lg">
               <Link href="/start" prefetch={false}>
-                Create a course
+                Start now
                 <ArrowRight aria-hidden="true" />
               </Link>
             </Button>

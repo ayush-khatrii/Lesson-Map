@@ -269,7 +269,7 @@ export function AiCourseEditor({
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
             <p className="text-xs leading-relaxed text-muted-foreground">
               AI replaces the current modules and lessons. Resources attached to lessons are
-              removed too. Only run this on a draft you are happy to regenerate.
+              removed too, and lesson completion estimates and video durations are reset. Only run this on a draft you are happy to regenerate.
             </p>
           </div>
 

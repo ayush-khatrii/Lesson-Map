@@ -181,6 +181,8 @@ export default async function CoursePreviewPage({ params, searchParams }: Course
       description: mod.description,
       lessons: mod.Lesson.map((lesson) => ({
         id: lesson.id,
+        estimatedCompletionSeconds: lesson.estimatedCompletionSeconds,
+        videoDurationSeconds: lesson.videoDurationSeconds,
         title: lesson.lessonName,
         description: lesson.description,
         done: false,

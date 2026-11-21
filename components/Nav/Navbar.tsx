@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import Brand from "@/components/Brand";
 import { usePathname } from "next/navigation";
@@ -44,12 +44,155 @@ const publicLinks = [
   { label: "Pricing", href: "/pricing" },
 ];
 
-export default function Navbar({ className }: { className?: string }) {
+type NavbarProps = {
+  className?: string;
+  mode?: "public" | "account";
+};
+
+function StartLink() {
+  return (
+    <Button asChild size="sm" className="h-9 shrink-0 px-3 sm:h-8">
+      <Link href="/start" prefetch={false}>
+        Start now <ArrowUpRight aria-hidden="true" />
+      </Link>
+    </Button>
+  );
+}
+
+export default function Navbar({ className, mode = "account" }: NavbarProps) {
+  // Public pages never mount the component that subscribes to the session.
+  if (mode === "public") {
+    return (
+      <NavbarShell
+        className={className}
+        links={publicLinks}
+        accountControls={<StartLink />}
+      />
+    );
+  }
+
+  return <AccountNavbar className={className} />;
+}
+
+function AccountNavbar({ className }: Pick<NavbarProps, "className">) {
   const { data: session, isPending } = useSession();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => setMounted(true), []);
+
+  const links =
+    mounted && session?.user
+      ? [...publicLinks, { label: "Dashboard", href: "/dashboard" }]
+      : publicLinks;
+  const initials =
+    session?.user.name
+      ?.trim()
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((part) => part[0])
+      .join("")
+      .toUpperCase() || "U";
+  const handleSignOut = async () => {
+    try {
+      const result = await signOut();
+      if (result.error)
+        return toast.error("Unable to sign out. Please try again.");
+      window.location.assign("/sign-in");
+    } catch {
+      toast.error("Unable to sign out. Please try again.");
+    }
+  };
+
+  const accountControls =
+    !mounted || isPending ? (
+      <div
+        role="status"
+        className="size-9 shrink-0 rounded-full bg-muted motion-safe:animate-pulse"
+      >
+        <span className="sr-only">Loading account</span>
+      </div>
+    ) : session?.user ? (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="rounded-full"
+            aria-label="Open profile menu"
+          >
+            <Avatar className="size-8 border border-border">
+              <AvatarImage
+                src={session.user.image ?? undefined}
+                alt=""
+                className="object-cover"
+              />
+              <AvatarFallback className="text-xs font-medium">
+                {initials}
+              </AvatarFallback>
+            </Avatar>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-56 rounded-xl">
+          <DropdownMenuLabel>
+            <p className="truncate text-sm">{session.user.name}</p>
+            <p className="truncate text-xs font-normal text-muted-foreground">
+              {session.user.email}
+            </p>
+          </DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem asChild>
+            <Link href="/dashboard">
+              <LayoutDashboard />
+              Dashboard
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link href="/settings?tab=profile">
+              <UserRound />
+              Profile
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link href="/settings?tab=settings">
+              <Settings />
+              Settings
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            onClick={handleSignOut}
+            className="text-destructive focus:bg-destructive/10 focus:text-destructive"
+          >
+            <LogOut />
+            Sign out
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    ) : (
+      <StartLink />
+    );
+
+  return (
+    <NavbarShell
+      className={className}
+      links={links}
+      accountControls={accountControls}
+    />
+  );
+}
+
+function NavbarShell({
+  className,
+  links,
+  accountControls,
+}: {
+  className?: string;
+  links: typeof publicLinks;
+  accountControls: ReactNode;
+}) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [mounted, setMounted] = useState(false);
   const reduceMotion = useReducedMotion();
 
   useEffect(() => {
@@ -71,28 +214,11 @@ export default function Navbar({ className }: { className?: string }) {
       : pathname === href || pathname.startsWith(`${href}/`);
 
   useEffect(() => {
-    setMounted(true);
     const onScroll = () => setScrolled(window.scrollY > 8);
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
-
-  const links =
-    mounted && session?.user
-      ? [...publicLinks, { label: "Dashboard", href: "/dashboard" }]
-      : publicLinks;
-  const initials = session?.user.name?.trim().split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase() || "U";
-  const handleSignOut = async () => {
-    try {
-      const result = await signOut();
-      if (result.error)
-        return toast.error("Unable to sign out. Please try again.");
-      window.location.assign("/sign-in");
-    } catch {
-      toast.error("Unable to sign out. Please try again.");
-    }
-  };
 
   return (
     <header
@@ -135,63 +261,7 @@ export default function Navbar({ className }: { className?: string }) {
         </div>
         <div className="ml-auto flex items-center gap-1 lg:gap-2">
           <ThemeToggle />
-          {!mounted || isPending ? (
-            <div role="status" className="size-9 shrink-0 rounded-full bg-muted motion-safe:animate-pulse">
-              <span className="sr-only">Loading account</span>
-            </div>
-          ) : session?.user ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="rounded-full" aria-label="Open profile menu">
-                  <Avatar className="size-8 border border-border">
-                    <AvatarImage src={session.user.image ?? undefined} alt="" className="object-cover" />
-                    <AvatarFallback className="text-xs font-medium">{initials}</AvatarFallback>
-                  </Avatar>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56 rounded-xl">
-                <DropdownMenuLabel>
-                  <p className="truncate text-sm">{session.user.name}</p>
-                  <p className="truncate text-xs font-normal text-muted-foreground">
-                    {session.user.email}
-                  </p>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link href="/dashboard">
-                    <LayoutDashboard />
-                    Dashboard
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/settings?tab=profile">
-                    <UserRound />
-                    Profile
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/settings?tab=settings">
-                    <Settings />
-                    Settings
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={handleSignOut}
-                  className="text-destructive focus:bg-destructive/10 focus:text-destructive"
-                >
-                  <LogOut />
-                  Sign out
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          ) : (
-            <Button asChild size="sm" className="size-9 p-0 sm:h-8 sm:w-auto sm:px-3">
-              <Link href="/start" prefetch={false}>
-                <span className="sr-only sm:not-sr-only">Get started</span> <ArrowUpRight aria-hidden="true" />
-              </Link>
-            </Button>
-          )}
+          {accountControls}
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="lg:hidden">

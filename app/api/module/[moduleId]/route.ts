@@ -1,6 +1,6 @@
 import { db } from "@/lib/prisma";
 import { userCoursesTag } from "@/lib/course-cache";
-import { revalidateTag } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
@@ -124,6 +124,7 @@ export async function DELETE(_: Request, context: Context) {
   try {
     const moduleExists = await db.module.findFirst({
       where: { id: moduleId, course: { userId } },
+      include: { course: { select: { shareSlug: true } } },
     });
 
     if (!moduleExists) {
@@ -137,6 +138,9 @@ export async function DELETE(_: Request, context: Context) {
       where: { id: moduleId },
     });
 
+    revalidatePath(`/p/${moduleExists.courseId}`);
+    if (moduleExists.course.shareSlug) revalidatePath(`/p/${moduleExists.course.shareSlug}`);
+    revalidatePath(`/dashboard/${moduleExists.courseId}/edit`);
     revalidateTag(userCoursesTag(userId), { expire: 0 });
     return NextResponse.json(
       { message: "Module deleted successfully" },

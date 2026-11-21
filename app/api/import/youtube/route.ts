@@ -50,7 +50,16 @@ export async function POST(request: Request) {
     });
     if (previous)
       return previous.playlistId === playlistId
-        ? NextResponse.json({ courseId: previous.courseId, skipped: 0 })
+        ? NextResponse.json({
+            courseId: previous.courseId,
+            skipped: 0,
+            missingDurationCount: await db.lesson.count({
+              where: {
+                module: { courseId: previous.courseId },
+                videoDurationSeconds: null,
+              },
+            }),
+          })
         : NextResponse.json(
             { error: "Start a new import for a different playlist." },
             { status: 409 },
@@ -118,7 +127,15 @@ export async function POST(request: Request) {
         });
         if (existing)
           return existing.playlistId === playlistId
-            ? { courseId: existing.courseId }
+            ? {
+                courseId: existing.courseId,
+                missingDurationCount: await tx.lesson.count({
+                  where: {
+                    module: { courseId: existing.courseId },
+                    videoDurationSeconds: null,
+                  },
+                }),
+              }
             : { error: "Start a new import." };
         stage = "check_locked_course_allowance";
         const usage = await tx.user.findUniqueOrThrow({
@@ -157,7 +174,12 @@ export async function POST(request: Request) {
           data: { youtubeImports: { increment: 1 } },
         });
         stage = "commit_import";
-        return { courseId: course.id };
+        return {
+          courseId: course.id,
+          missingDurationCount: playlist.videos.filter(
+            (video) => !video.videoDurationSeconds,
+          ).length,
+        };
       },
       { timeout: 30000 },
     );

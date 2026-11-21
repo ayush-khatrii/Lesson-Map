@@ -1,5 +1,7 @@
 "use client";
 
+import { LessonTime, TotalTime } from "@/components/LessonTiming";
+import type { LessonTiming } from "@/lib/lesson-time";
 import React from "react";
 import {
   Accordion,
@@ -11,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { BookOpen, FileText, Layers, ChevronRight } from "lucide-react";
 
 // ── Types ────────────────────────────────────────────────────────────────────
-interface Lesson {
+interface Lesson extends LessonTiming {
   id: string;
   lessonName?: string;
   description?: string;
@@ -102,6 +104,7 @@ export default function FullCourseOutline({
                   <div className="flex-1 min-w-0 text-left">
                     <p className="break-words text-xs font-semibold leading-snug [overflow-wrap:anywhere] sm:text-sm">
                       {course.courseName}
+                      <TotalTime lessons={course.Module.flatMap((module) => module.Lesson)} />
                     </p>
                     <div className="flex items-center gap-2 mt-0.5">
                       <span className="text-[10px] text-muted-foreground">
@@ -151,6 +154,7 @@ export default function FullCourseOutline({
                               <div className="flex-1 min-w-0 text-left">
                                 <p className="break-words text-[11px] font-semibold leading-snug [overflow-wrap:anywhere] sm:text-xs">
                                   {module.moduleName}
+                                  <TotalTime lessons={module.Lesson} />
                                 </p>
                                 {module.description && (
                                   <p className="text-[10px] text-muted-foreground line-clamp-1 mt-0.5">
@@ -183,6 +187,7 @@ export default function FullCourseOutline({
                                     </div>
                                     <p className="min-w-0 flex-1 break-words text-[11px] font-medium leading-snug [overflow-wrap:anywhere] sm:text-xs">
                                       {lesson.lessonName || `Lesson ${li + 1}`}
+                                      <LessonTime lesson={lesson} />
                                     </p>
                                   </div>
                                 ))}

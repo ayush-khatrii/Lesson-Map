@@ -17,18 +17,16 @@ export const OutlineNode = memo(function OutlineNode({
     <>
       <span className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-primary-text">
         {data.label}
-        {data.kind === "module" &&
-          Boolean(data.lessonCount) &&
-          (
-            <span className="flex items-center gap-1 normal-case tracking-normal">
-              {data.collapsed ? "Expand" : "Collapse"}
-              {data.collapsed ? (
-                <ChevronRight className="h-3.5 w-3.5" />
-              ) : (
-                <ChevronDown className="h-3.5 w-3.5" />
-              )}
-            </span>
-          )}
+        {data.kind === "module" && Boolean(data.lessonCount) && (
+          <span className="flex items-center gap-1 normal-case tracking-normal">
+            {data.collapsed ? "Expand" : "Collapse"}
+            {data.collapsed ? (
+              <ChevronRight className="h-3.5 w-3.5" />
+            ) : (
+              <ChevronDown className="h-3.5 w-3.5" />
+            )}
+          </span>
+        )}
         {data.completed && (
           <CheckCircle2 aria-label="Completed" className="h-4 w-4" />
         )}
@@ -48,6 +46,14 @@ export const OutlineNode = memo(function OutlineNode({
             : "No lessons"}
         </span>
       )}
+      {data.timingLines?.map((line) => (
+        <span
+          key={line}
+          className="mt-1 block text-[10px] leading-3 text-muted-foreground"
+        >
+          {line}
+        </span>
+      ))}
     </>
   );
   const classes = cn(
@@ -56,7 +62,7 @@ export const OutlineNode = memo(function OutlineNode({
     data.completed && "bg-primary/10",
   );
   return (
-    <div style={{ width: NODE_WIDTH, height: NODE_HEIGHT }}>
+    <div style={{ width: NODE_WIDTH, height: data.nodeHeight ?? NODE_HEIGHT }}>
       {data.kind !== "course" && (
         <Handle type="target" position={Position.Left} isConnectable={false} />
       )}

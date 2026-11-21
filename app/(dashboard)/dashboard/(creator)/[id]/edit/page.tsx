@@ -73,6 +73,8 @@ const EditCoursePage = async ({
       lessons: mod.Lesson.sort((a, b) => (a.order || 0) - (b.order || 0)).map(
         (lesson) => ({
           id: lesson.id,
+          estimatedCompletionSeconds: lesson.estimatedCompletionSeconds,
+          videoDurationSeconds: lesson.videoDurationSeconds,
           name: lesson.lessonName,
           description: lesson.description ?? "",
           resources: lesson.resources,

@@ -1,5 +1,12 @@
 "use client";
 
+import {
+  lessonTimingLines,
+  summarizeLessonTimes,
+  timingSummaryLines,
+  type LessonTiming,
+} from "@/lib/lesson-time";
+
 // Client-side PDF export. The document is built in the browser from the course
 // data already loaded on the page, so the download starts instantly and no
 // server round-trip (or storage) is required.
@@ -14,7 +21,7 @@ export type CourseExportResource = {
   url?: string | null;
 };
 
-export type CourseExportLesson = {
+export type CourseExportLesson = LessonTiming & {
   name: string;
   description?: string;
   resources?: CourseExportResource[];
@@ -71,7 +78,11 @@ export async function downloadCoursePdf(data: CourseExportData) {
     value: string,
     size: number,
     style: Style = "normal",
-    options: { gapAfter?: number; color?: [number, number, number]; font?: string } = {},
+    options: {
+      gapAfter?: number;
+      color?: [number, number, number];
+      font?: string;
+    } = {},
   ) => {
     const font = options.font ?? "helvetica";
     const lineHeight = size * 1.34;
@@ -97,8 +108,14 @@ export async function downloadCoursePdf(data: CourseExportData) {
     write(data.description, 11, "normal", { color: [70, 70, 70], gapAfter: 4 });
   }
   if (data.audience) {
-    write(`For: ${data.audience}`, 10, "italic", { color: [110, 110, 110], gapAfter: 4 });
+    write(`For: ${data.audience}`, 10, "italic", {
+      color: [110, 110, 110],
+      gapAfter: 4,
+    });
   }
+  timingSummaryLines(
+    summarizeLessonTimes(data.modules.flatMap((module) => module.lessons)),
+  ).forEach((line) => write(line, 10, "normal", { gapAfter: 3 }));
 
   doc.setDrawColor(210, 210, 210);
   doc.setLineWidth(0.75);
@@ -112,20 +129,38 @@ export async function downloadCoursePdf(data: CourseExportData) {
 
   // ── Modules ────────────────────────────────────────────────────────
   if (data.modules.length === 0) {
-    write("This course has no modules yet.", 11, "italic", { color: [120, 120, 120] });
+    write("This course has no modules yet.", 11, "italic", {
+      color: [120, 120, 120],
+    });
   }
 
   data.modules.forEach((module, moduleIndex) => {
     if (moduleIndex > 0) y += 10;
     write(`${moduleIndex + 1}. ${module.name}`, 15, "bold", { gapAfter: 3 });
+    timingSummaryLines(summarizeLessonTimes(module.lessons)).forEach((line) =>
+      write(line, 10, "normal", { gapAfter: 3 }),
+    );
     if (module.description) {
-      write(module.description, 10.5, "normal", { color: [80, 80, 80], gapAfter: 4 });
+      write(module.description, 10.5, "normal", {
+        color: [80, 80, 80],
+        gapAfter: 4,
+      });
     }
 
     module.lessons.forEach((lesson, lessonIndex) => {
-      write(`${moduleIndex + 1}.${lessonIndex + 1}  ${lesson.name}`, 11.5, "bold", { gapAfter: 1 });
+      write(
+        `${moduleIndex + 1}.${lessonIndex + 1}  ${lesson.name}`,
+        11.5,
+        "bold",
+        { gapAfter: 1 },
+      );
+      const timing = lessonTimingLines(lesson).join(" - ");
+      if (timing) write(timing, 10, "normal", { gapAfter: 2 });
       if (lesson.description) {
-        write(lesson.description, 10, "normal", { color: [90, 90, 90], gapAfter: 2 });
+        write(lesson.description, 10, "normal", {
+          color: [90, 90, 90],
+          gapAfter: 2,
+        });
       }
       (lesson.resources ?? []).forEach((resource) => {
         const label = resource.meta
@@ -135,7 +170,9 @@ export async function downloadCoursePdf(data: CourseExportData) {
         const body = (resource.content ?? resource.url ?? "").trim();
         if (body) {
           const clipped =
-            body.length > MAX_RESOURCE_CHARS ? `${body.slice(0, MAX_RESOURCE_CHARS)}…` : body;
+            body.length > MAX_RESOURCE_CHARS
+              ? `${body.slice(0, MAX_RESOURCE_CHARS)}…`
+              : body;
           write(clipped, 9, "normal", {
             font: resource.type === "Code" ? "courier" : "helvetica",
             color: [60, 60, 60],
@@ -154,9 +191,14 @@ export async function downloadCoursePdf(data: CourseExportData) {
     doc.setFontSize(8);
     doc.setTextColor(150, 150, 150);
     doc.text(clean(data.title || "Course"), MARGIN, pageHeight - 24);
-    doc.text(`Page ${page} of ${pageCount}`, pageWidth - MARGIN, pageHeight - 24, {
-      align: "right",
-    });
+    doc.text(
+      `Page ${page} of ${pageCount}`,
+      pageWidth - MARGIN,
+      pageHeight - 24,
+      {
+        align: "right",
+      },
+    );
   }
 
   doc.save(`${slugify(data.title)}.pdf`);

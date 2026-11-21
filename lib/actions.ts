@@ -1,6 +1,7 @@
 "use server";
 
 import {
+  lessonTimingFields,
   createCourseSchema,
   createLessonsBulkSchema,
   createModulesBulkSchema,
@@ -19,6 +20,11 @@ import z from "zod";
 import { lockCourseOwner } from "@/lib/course-access";
 import { effectiveAiPlan } from "@/lib/ai/schema";
 import { COURSE_LIMITS, hasReachedCourseLimit } from "@/lib/plans";
+
+function refreshPublicCourse(courseId: string, shareSlug: string | null) {
+  revalidatePath(`/p/${courseId}`);
+  if (shareSlug) revalidatePath(`/p/${shareSlug}`);
+}
 
 async function createCourseAction(data: unknown) {
   const session = await auth.api.getSession({
@@ -72,6 +78,7 @@ const courseOutlineSchema = createCourseSchema.extend({
       description: z.string().min(1),
       lessons: z.array(
         z.object({
+          ...lessonTimingFields,
           lessonName: z.string().min(1),
           description: z.string().max(20000).optional(),
         }),
@@ -113,6 +120,8 @@ async function createCourseWithOutlineAction(data: unknown) {
                   order: moduleIndex + 1,
                   Lesson: {
                     create: module.lessons.map((lesson, lessonIndex) => ({
+                      estimatedCompletionSeconds: lesson.estimatedCompletionSeconds,
+                      videoDurationSeconds: lesson.videoDurationSeconds,
                       lessonName: lesson.lessonName,
                       description: lesson.description?.trim() || null,
                       order: lessonIndex + 1,
@@ -251,6 +260,7 @@ async function createLessonsAction(data: unknown) {
         id: moduleId,
         course: { userId },
       },
+      include: { course: { select: { shareSlug: true } } },
     });
 
     if (!module) {
@@ -260,6 +270,8 @@ async function createLessonsAction(data: unknown) {
     const created = await db.lesson.createManyAndReturn({
       data: lessons.map((l) => ({
         moduleId,
+        estimatedCompletionSeconds: l.estimatedCompletionSeconds,
+        videoDurationSeconds: l.videoDurationSeconds,
         lessonName: l.lessonName,
         description: l.description?.trim() || null,
         order: l.order,
@@ -267,6 +279,7 @@ async function createLessonsAction(data: unknown) {
     });
 
     updateTag(userCoursesTag(userId));
+    refreshPublicCourse(module.courseId, module.course.shareSlug);
     revalidatePath("/dashboard/create/new");
     revalidatePath("/");
     return {
@@ -665,10 +678,11 @@ async function deleteModuleAction(moduleId: string) {
 
     const module = await db.module.findFirst({
       where: { id: moduleId, course: { userId } },
-      select: { id: true, courseId: true },
+      select: { id: true, courseId: true, course: { select: { shareSlug: true } } },
     });
     if (!module) throw new Error("Module not found or not owned by user.");
     await db.module.delete({ where: { id: module.id } });
+    refreshPublicCourse(module.courseId, module.course.shareSlug);
     updateTag(userCoursesTag(userId));
     revalidatePath(`/dashboard/${module.courseId}/edit`);
     revalidatePath("/dashboard");
@@ -689,13 +703,14 @@ async function updateLessonAction(lessonId: string, data: unknown) {
 
     const lesson = await db.lesson.findFirst({
       where: { id: lessonId, module: { course: { userId } } },
-      select: { id: true, module: { select: { courseId: true } } },
+      select: { id: true, module: { select: { courseId: true, course: { select: { shareSlug: true } } } } },
     });
     if (!lesson) throw new Error("Lesson not found or not owned by user.");
 
     const updated = await db.lesson.update({ where: { id: lessonId }, data: result.data });
     updateTag(userCoursesTag(userId));
     revalidatePath(`/dashboard/${lesson.module.courseId}/edit`);
+    refreshPublicCourse(lesson.module.courseId, lesson.module.course.shareSlug);
     revalidatePath("/dashboard");
     return { success: true, data: updated };
   } catch (error) {
@@ -711,12 +726,13 @@ async function deleteLessonAction(lessonId: string) {
 
     const lesson = await db.lesson.findFirst({
       where: { id: lessonId, module: { course: { userId } } },
-      select: { id: true, module: { select: { courseId: true } } },
+      select: { id: true, module: { select: { courseId: true, course: { select: { shareSlug: true } } } } },
     });
     if (!lesson) throw new Error("Lesson not found or not owned by user.");
     await db.lesson.delete({ where: { id: lesson.id } });
     updateTag(userCoursesTag(userId));
     revalidatePath(`/dashboard/${lesson.module.courseId}/edit`);
+    refreshPublicCourse(lesson.module.courseId, lesson.module.course.shareSlug);
     revalidatePath("/dashboard");
     return { success: true };
   } catch (error) {

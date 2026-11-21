@@ -13,7 +13,7 @@ export const FOOTER = {
         { label: "Examples", href: "/examples" },
         { label: "Pricing", href: "/pricing" },
         { label: "About LessonMap", href: "/about" },
-        { label: "Get started", href: "/start" },
+        { label: "Start now", href: "/start" },
       ],
     },
     { title: "Legal", links: POLICY_LINKS },

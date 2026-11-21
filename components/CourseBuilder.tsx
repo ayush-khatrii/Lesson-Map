@@ -7,6 +7,10 @@ import {
 } from "@/components/flow/FlowViewControls";
 import { useSubscriptionPlan } from "@/lib/flow/useSubscriptionPlan";
 
+import { LessonTime, TotalTime } from "@/components/LessonTiming";
+import { LessonTimeFields, timeFieldValues, readTimeFields } from "@/components/forms/LessonTimeFields";
+import type { LessonTiming, LessonTimeValues } from "@/lib/lesson-time";
+
 import React, { useState, useCallback, useEffect, useMemo } from "react";
 import Link from "next/link";
 import {
@@ -141,7 +145,7 @@ export interface Resource {
   size?: number | null;
 }
 
-export interface Lesson {
+export interface Lesson extends LessonTiming {
   id: string;
   name: string;
   description: string;
@@ -189,17 +193,20 @@ function getTypeConfig(type: ResourceType) {
 function AddLessonDialog({
   onAdd,
 }: {
-  onAdd: (name: string, description: string) => void;
+  onAdd: (name: string, description: string, timing: LessonTimeValues) => void;
 }) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [times, setTimes] = useState(timeFieldValues());
+  const timing = readTimeFields(times);
 
   const handleSubmit = () => {
-    if (!name.trim()) return;
-    onAdd(name.trim(), description.trim());
+    if (!name.trim() || !timing) return;
+    onAdd(name.trim(), description.trim(), timing);
     setName("");
     setDescription("");
+    setTimes(timeFieldValues());
     setOpen(false);
   };
 
@@ -211,7 +218,7 @@ function AddLessonDialog({
           Add Lesson
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Add lesson</DialogTitle>
           <DialogDescription>
@@ -242,12 +249,13 @@ function AddLessonDialog({
               className="min-h-20"
             />
           </div>
+          <LessonTimeFields value={times} onChange={setTimes} />
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>
             Cancel
           </Button>
-          <Button onClick={handleSubmit} disabled={!name.trim()}>
+          <Button onClick={handleSubmit} disabled={!name.trim() || !timing}>
             Add lesson
           </Button>
         </DialogFooter>
@@ -396,25 +404,29 @@ function EditLessonDialog({
   onSave,
 }: {
   lesson: Lesson;
-  onSave: (name: string, description: string) => Promise<boolean>;
+  onSave: (name: string, description: string, timing: LessonTimeValues) => Promise<boolean>;
 }) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState(lesson.name);
   const [description, setDescription] = useState(lesson.description ?? "");
   const [saving, setSaving] = useState(false);
+  const [times, setTimes] = useState(timeFieldValues(lesson));
+  const timing = readTimeFields(times);
+  if (timing && times.completionMinutes === timeFieldValues(lesson).completionMinutes) timing.estimatedCompletionSeconds = lesson.estimatedCompletionSeconds ?? null;
 
   useEffect(() => {
     if (open) {
       setName(lesson.name);
       setDescription(lesson.description ?? "");
+      setTimes(timeFieldValues(lesson));
     }
-  }, [open, lesson.name, lesson.description]);
+  }, [open, lesson.name, lesson.description, lesson.estimatedCompletionSeconds, lesson.videoDurationSeconds]);
 
   const handleSubmit = async () => {
-    if (!name.trim()) return;
+    if (!name.trim() || !timing) return;
     setSaving(true);
     try {
-      if (await onSave(name.trim(), description.trim())) setOpen(false);
+      if (await onSave(name.trim(), description.trim(), timing)) setOpen(false);
     } finally {
       setSaving(false);
     }
@@ -427,7 +439,7 @@ function EditLessonDialog({
           <PenLine className="h-3.5 w-3.5" />
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Edit lesson</DialogTitle>
           <DialogDescription>
@@ -451,10 +463,11 @@ function EditLessonDialog({
               className="min-h-24"
             />
           </div>
+          <LessonTimeFields value={times} onChange={setTimes} disabled={saving} />
         </div>
         <DialogFooter>
           <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={saving}>Cancel</Button>
-          <Button type="button" onClick={handleSubmit} disabled={!name.trim() || saving}>
+          <Button type="button" onClick={handleSubmit} disabled={!name.trim() || !timing || saving}>
             {saving && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
             Save changes
           </Button>
@@ -1149,6 +1162,7 @@ function OutlineTab({
     moduleId: string,
     name: string,
     description: string,
+    timing: LessonTimeValues,
   ) => {
     if (!courseId) {
       setModules((previous) =>
@@ -1160,6 +1174,7 @@ function OutlineTab({
                   ...module.lessons,
                   {
                     id: `draft-lesson-${crypto.randomUUID()}`,
+                    ...timing,
                     name,
                     description,
                     resources: [],
@@ -1180,6 +1195,7 @@ function OutlineTab({
         moduleId,
         lessons: [
           {
+            ...timing,
             lessonName: name,
             description: description.trim() || undefined,
             order: lessonCount + 1,
@@ -1196,6 +1212,7 @@ function OutlineTab({
                   lessons: [
                     ...m.lessons,
                     {
+                      ...timing,
                       id: created.id,
                       name: created.lessonName,
                       description: created.description ?? description,
@@ -1272,18 +1289,20 @@ function OutlineTab({
     lessonId: string,
     name: string,
     description: string,
+    timing: LessonTimeValues,
   ) => {
     const nextDescription = description.trim();
     if (!courseId) {
       setModules((previous) => previous.map((module) => ({
         ...module,
         lessons: module.lessons.map((lesson) => lesson.id === lessonId
-          ? { ...lesson, name, description: nextDescription }
+          ? { ...lesson, ...timing, name, description: nextDescription }
           : lesson),
       })));
       return true;
     }
     const result = await updateLessonAction(lessonId, {
+      ...timing,
       lessonName: name,
       description: nextDescription,
     });
@@ -1297,7 +1316,7 @@ function OutlineTab({
     setModules((previous) => previous.map((module) => ({
       ...module,
       lessons: module.lessons.map((lesson) => lesson.id === lessonId
-        ? { ...lesson, name, description: savedDescription ?? "" }
+        ? { ...lesson, ...timing, name, description: savedDescription ?? "" }
         : lesson),
     })));
     toast.success("Lesson updated.");
@@ -1432,6 +1451,7 @@ function OutlineTab({
                       <IndexBadge index={moduleIndex + 1} />
                       <p className="min-w-0 flex-1 break-words text-left text-xs font-semibold leading-snug [overflow-wrap:anywhere] sm:text-sm">
                         {module.name}
+                        <TotalTime lessons={module.lessons} />
                       </p>
                       <Badge
                         variant="secondary"
@@ -1490,6 +1510,7 @@ function OutlineTab({
                                     <div className="flex-1 min-w-0">
                                       <p className="break-words text-sm font-semibold leading-snug">
                                         {lesson.name}
+                                        <LessonTime lesson={lesson} showUnset />
                                       </p>
                                       {lesson.description && (
                                         <p className="mt-0.5 break-words text-xs text-muted-foreground">
@@ -1504,7 +1525,7 @@ function OutlineTab({
                                     />
                                     <EditLessonDialog
                                       lesson={lesson}
-                                      onSave={(name, description) => handleEditLesson(lesson.id, name, description)}
+                                      onSave={(name, description, timing) => handleEditLesson(lesson.id, name, description, timing)}
                                     />
                                     <DeleteItemButton
                                       itemType="lesson"
@@ -1553,8 +1574,8 @@ function OutlineTab({
                       </DndContext>
 
                       <AddLessonDialog
-                        onAdd={(name, description) =>
-                          handleAddLesson(module.id, name, description)
+                        onAdd={(name, description, timing) =>
+                          handleAddLesson(module.id, name, description, timing)
                         }
                       />
                       {addingLessonFor === module.id && (
@@ -1988,12 +2009,14 @@ function PreviewDialog({
             {resources.length} resources
           </Badge>
         </div>
+        <TotalTime lessons={modules.flatMap((module) => module.lessons)} />
         <Separator />
         <div className="space-y-4">
           {modules.map((module, mi) => (
             <div key={module.id}>
               <p className="mb-2 break-words text-xs font-semibold [overflow-wrap:anywhere] sm:text-sm">
                 {module.name}
+                <TotalTime lessons={module.lessons} />
               </p>
               <div className="space-y-1.5 pl-3 border-l">
                 {module.lessons.map((lesson, li) => (
@@ -2001,6 +2024,7 @@ function PreviewDialog({
                     <span className="font-medium">
                       {mi + 1}.{li + 1} {lesson.name}
                     </span>
+                    <LessonTime lesson={lesson} />
                     {lesson.description && (
                       <p className="text-muted-foreground mt-0.5">
                         {lesson.description}
@@ -2103,6 +2127,8 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
         title: module.name,
         lessons: module.lessons.map((lesson) => ({
           id: lesson.id,
+          estimatedCompletionSeconds: lesson.estimatedCompletionSeconds,
+          videoDurationSeconds: lesson.videoDurationSeconds,
           title: lesson.name,
         })),
       })),
@@ -2162,6 +2188,8 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
             description:
               module.description?.trim() || "No description provided.",
             lessons: module.lessons.map((lesson) => ({
+              estimatedCompletionSeconds: lesson.estimatedCompletionSeconds,
+              videoDurationSeconds: lesson.videoDurationSeconds,
               lessonName: lesson.name.trim(),
               description: lesson.description?.trim() || undefined,
             })),
@@ -2178,6 +2206,8 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
               description: module.description,
               lessons: module.Lesson.map((lesson) => ({
                 id: lesson.id,
+                estimatedCompletionSeconds: lesson.estimatedCompletionSeconds,
+                videoDurationSeconds: lesson.videoDurationSeconds,
                 name: lesson.lessonName,
                 description: lesson.description ?? "",
                 resources: [],
@@ -2353,6 +2383,7 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
               <StatPill icon={Paperclip} label="Resources" value={resources.length} />
             </div>
           )}
+          <TotalTime lessons={modules.flatMap((module) => module.lessons)} className="text-center" />
         </header>
 
         <Tabs value={courseId ? "manual" : creationMethod} onValueChange={setCreationMethod} className="gap-6">
@@ -2510,6 +2541,7 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
                   <div className="rounded-xl border bg-card p-5">
                     <h3 className="break-words font-semibold">
                       {flowLesson.name}
+                      <LessonTime lesson={flowLesson} />
                     </h3>
                     <p className="mt-2 whitespace-pre-wrap break-words text-sm text-muted-foreground">
                       {flowLesson.description ||
@@ -2582,6 +2614,8 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
                   name: module.name,
                   description: module.description,
                   lessons: module.lessons.map(lesson => ({
+                    estimatedCompletionSeconds: lesson.estimatedCompletionSeconds,
+                    videoDurationSeconds: lesson.videoDurationSeconds,
                     name: lesson.name,
                     description: lesson.description,
                     resources: resources.filter(resource => resource.lessonId === lesson.id).map(resource => ({ name: resource.name, type: resource.type, meta: resource.meta, content: resource.content, url: resource.url })),

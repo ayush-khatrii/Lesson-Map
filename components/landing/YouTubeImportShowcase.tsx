@@ -138,7 +138,7 @@ export default function YouTubeImportShowcase() {
               className="min-h-11 w-full focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-foreground sm:w-auto"
             >
               <Link href="/start" prefetch={false}>
-                Import a playlist
+                Start now
               </Link>
             </Button>
             <p className="mt-3 text-sm leading-5 text-muted-foreground">

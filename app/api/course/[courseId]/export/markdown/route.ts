@@ -3,6 +3,7 @@ import { effectiveAiPlan } from "@/lib/ai/schema";
 import { db } from "@/lib/prisma";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
+import { lessonTimingLines, summarizeLessonTimes, timingSummaryLines } from "@/lib/lesson-time";
 
 export async function GET(
   _request: Request,
@@ -48,14 +49,18 @@ export async function GET(
   }
 
   const lines = [`# ${course.courseName}`, "", course.description, ""];
+  lines.push(...timingSummaryLines(summarizeLessonTimes(course.Module.flatMap((module) => module.Lesson))), "");
   for (const [moduleIndex, module] of course.Module.entries()) {
     lines.push(`## ${moduleIndex + 1}. ${module.moduleName}`, "");
+    lines.push(...timingSummaryLines(summarizeLessonTimes(module.Lesson)), "");
     if (module.description) lines.push(module.description, "");
     for (const [lessonIndex, lesson] of module.Lesson.entries()) {
       lines.push(
         `### ${moduleIndex + 1}.${lessonIndex + 1} ${lesson.lessonName}`,
         "",
       );
+      const timing = lessonTimingLines(lesson).join(" · ");
+      if (timing) lines.push(timing, "");
     }
   }
 

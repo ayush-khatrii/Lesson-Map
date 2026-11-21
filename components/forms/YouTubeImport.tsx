@@ -64,6 +64,8 @@ export default function YouTubeImport({
             );
           if (result.skipped)
             toast.info(`Skipped ${result.skipped} unavailable videos.`);
+          if (result.missingDurationCount)
+            toast.info(`Video duration was unavailable for ${result.missingDurationCount} lessons. You can enter it in the lesson editor.`);
           router.push(`/outline/${result.courseId}`);
           router.refresh();
         } catch (error) {

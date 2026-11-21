@@ -140,6 +140,10 @@ model Lesson {
   order       Int
   moduleId    String
   module      Module     @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  // Completion includes videos, reading, and practice. Null means not provided.
+  estimatedCompletionSeconds Int?
+  // The combined video runtime, kept separate from the completion estimate.
+  videoDurationSeconds       Int?
   resources   Resource[]
   progress LessonProgress[]
   createdAt   DateTime   @default(now())

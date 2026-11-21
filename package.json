@@ -13,6 +13,7 @@
     "test:flow": "node --import tsx --test tests/flow*.test.ts",
     "test:uploads": "node --test tests/resource-uploads.test.cjs",
     "test:auth": "node --import tsx --test tests/auth.test.ts",
+    "test:timing": "node --import tsx --test tests/lesson-time*.test.*",
     "typecheck": "tsc --noEmit --incremental false",
     "postinstall": "prisma generate",
     "admin:bootstrap": "node --import tsx scripts/admin-bootstrap.ts",

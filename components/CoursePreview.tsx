@@ -1,5 +1,7 @@
 "use client";
 
+import { LessonTime, TotalTime } from "@/components/LessonTiming";
+import type { LessonTiming } from "@/lib/lesson-time";
 import { trackCourseEvent } from "@/components/PublicCourseActions";
 import {
   useState,
@@ -25,7 +27,6 @@ import {
   Share2,
   Layers,
   List,
-  Clock,
   Heart,
   Trophy,
   BookOpen,
@@ -92,7 +93,7 @@ export interface Resource {
   content?: string | null;
 }
 
-export interface Lesson {
+export interface Lesson extends LessonTiming {
   id: string;
   title: string;
   description?: string | null;
@@ -685,6 +686,7 @@ function ModuleSidebar({
                   </p>
                   <p className="break-words text-xs font-semibold leading-snug text-foreground [overflow-wrap:anywhere] sm:text-sm">
                     {mod.title}
+                    <TotalTime lessons={mod.lessons} />
                   </p>
                   <p className="mt-1.5 text-xs font-normal text-muted-foreground">
                     {completed} of {total} {total === 1 ? "lesson" : "lessons"}{" "}
@@ -744,6 +746,7 @@ function ModuleSidebar({
                             {li + 1}.{" "}
                           </span>
                           {lesson.title}
+                          <LessonTime lesson={lesson} />
                         </span>
                       </button>
                     </div>
@@ -913,6 +916,7 @@ function LessonContentPanel({
             className="scroll-mt-24 break-words text-lg font-bold leading-snug text-foreground [overflow-wrap:anywhere] sm:text-xl"
           >
             {lesson.title}
+            <LessonTime lesson={lesson} />
           </h2>
         </div>
 
@@ -1248,13 +1252,9 @@ export default function LessonMapPublicPage({
               value={course.stats.lessons}
               label="Lessons"
             />
-            {course.stats.hours && (
-              <StatCard
-                icon={Clock}
-                value={`${course.stats.hours}h`}
-                label="Content"
-              />
-            )}
+            <div className="col-span-2 px-4 sm:px-6">
+              <TotalTime lessons={course.modules.flatMap((module) => module.lessons)} />
+            </div>
           </div>
 
           {/* Progress bar */}

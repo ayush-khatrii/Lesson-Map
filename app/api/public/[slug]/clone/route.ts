@@ -62,6 +62,8 @@ export async function POST(
               order: module.order,
               Lesson: {
                 create: module.Lesson.map((lesson) => ({
+                  estimatedCompletionSeconds: lesson.estimatedCompletionSeconds,
+                  videoDurationSeconds: lesson.videoDurationSeconds,
                   lessonName: lesson.lessonName,
                   description: lesson.description,
                   order: lesson.order,

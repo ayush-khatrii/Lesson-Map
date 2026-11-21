@@ -1,6 +1,6 @@
 import { db } from "@/lib/prisma";
 import { userCoursesTag } from "@/lib/course-cache";
-import { revalidateTag } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
@@ -63,6 +63,7 @@ export async function PUT(req: Request, context: Context) {
 
     const lessonExists = await db.lesson.findFirst({
       where: { id: lessonId, module: { course: { userId } } },
+      include: { module: { select: { course: { select: { id: true, shareSlug: true } } } } },
     });
 
     if (!lessonExists)
@@ -74,11 +75,19 @@ export async function PUT(req: Request, context: Context) {
     const updated = await db.lesson.update({
       where: { id: lessonId },
       data: {
+        estimatedCompletionSeconds: result.data.estimatedCompletionSeconds,
+        videoDurationSeconds: result.data.videoDurationSeconds,
         lessonName: result.data.lessonName,
         order: result.data.order,
       },
     });
 
+    const course = lessonExists.module.course;
+    if (course) {
+      revalidatePath(`/p/${course.id}`);
+      if (course.shareSlug) revalidatePath(`/p/${course.shareSlug}`);
+      revalidatePath(`/dashboard/${course.id}/edit`);
+    }
     revalidateTag(userCoursesTag(userId), { expire: 0 });
     return NextResponse.json(updated, { status: 200 });
   } catch (error) {
@@ -101,6 +110,7 @@ export async function DELETE(_: Request, context: Context) {
   try {
     const lessonExists = await db.lesson.findFirst({
       where: { id: lessonId, module: { course: { userId } } },
+      include: { module: { select: { course: { select: { id: true, shareSlug: true } } } } },
     });
 
     if (!lessonExists)
@@ -111,6 +121,12 @@ export async function DELETE(_: Request, context: Context) {
 
     await db.lesson.delete({ where: { id: lessonId } });
 
+    const course = lessonExists.module.course;
+    if (course) {
+      revalidatePath(`/p/${course.id}`);
+      if (course.shareSlug) revalidatePath(`/p/${course.shareSlug}`);
+      revalidatePath(`/dashboard/${course.id}/edit`);
+    }
     revalidateTag(userCoursesTag(userId), { expire: 0 });
     return NextResponse.json(
       { message: "Lesson deleted successfully" },

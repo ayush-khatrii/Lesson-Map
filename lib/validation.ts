@@ -1,4 +1,22 @@
 import * as z from "zod";
+import { MAX_LESSON_SECONDS } from "@/lib/lesson-time";
+
+export const lessonTimingFields = {
+  estimatedCompletionSeconds: z
+    .number()
+    .int()
+    .positive()
+    .max(MAX_LESSON_SECONDS)
+    .nullable()
+    .optional(),
+  videoDurationSeconds: z
+    .number()
+    .int()
+    .positive()
+    .max(MAX_LESSON_SECONDS)
+    .nullable()
+    .optional(),
+};
 
 // Lesson body text is optional: a lesson may have a title only. Capped so a
 // single lesson cannot store unbounded content, and blank input is normalised
@@ -32,6 +50,7 @@ export const moduleSchema = z.object({
 });
 
 export const lessonSchema = z.object({
+  ...lessonTimingFields,
   lessonName: z.string().min(1, "Lesson name is required"),
   description: lessonDescriptionField,
   order: z.number().int().min(1, "Order is required"),
@@ -47,7 +66,7 @@ export const createModulesBulkSchema = z.object({
         moduleName: z.string().min(1, "Module name is required"),
         description: z.string().min(1, "Description is required"),
         order: z.number().int().min(1, "Order must be at least 1"),
-      })
+      }),
     )
     .min(1, "At least one module is required"),
 });
@@ -58,10 +77,11 @@ export const createLessonsBulkSchema = z.object({
   lessons: z
     .array(
       z.object({
+        ...lessonTimingFields,
         lessonName: z.string().min(1, "Lesson name is required"),
         description: lessonDescriptionField,
         order: z.number().int().min(1, "Order must be at least 1"),
-      })
+      }),
     )
     .min(1, "At least one lesson is required"),
 });
@@ -74,6 +94,7 @@ export const updateModuleSchema = z.object({
 });
 
 export const updateLessonSchema = z.object({
+  ...lessonTimingFields,
   lessonName: z.string().min(1, "Lesson name is required"),
   description: lessonDescriptionField,
   order: z.number().int().min(1, "Order must be at least 1").optional(),
@@ -137,13 +158,22 @@ export const updateSocialLinksSchema = z.object({
 export type SocialLinkField = keyof z.infer<typeof updateSocialLinksSchema>;
 
 // Resource types — must match the Prisma ResourceType enum
-const resourceTypes = ["Code", "PDF", "Link", "Note", "Image", "Document", "Spreadsheet"] as const;
+const resourceTypes = [
+  "Code",
+  "PDF",
+  "Link",
+  "Note",
+  "Image",
+  "Document",
+  "Spreadsheet",
+] as const;
 
 // Schema for creating a resource attached to a lesson
 export const createResourceSchema = z.object({
   name: z.string().min(1, "Name is required"),
   type: z.enum(resourceTypes, {
-    error: "Type must be one of: Code, PDF, Link, Note, Image, Document, Spreadsheet",
+    error:
+      "Type must be one of: Code, PDF, Link, Note, Image, Document, Spreadsheet",
   }),
   meta: z.string().nullable().optional(),
   content: z.string().nullable().optional(),

@@ -1,4 +1,6 @@
 "use client";
+import { LessonTime, TotalTime } from "@/components/LessonTiming";
+import type { LessonTiming } from "@/lib/lesson-time";
 import CourseLeads from "@/components/dashboard/CourseLeads";
 
 import { useState, useMemo } from "react";
@@ -53,7 +55,7 @@ import {
   Trash2,
 } from "lucide-react";
 
-type Lesson = {
+type Lesson = LessonTiming & {
   id: string;
   lessonName: string;
   order: number;
@@ -160,7 +162,7 @@ function CourseAccordionItem({
           title: mod.moduleName,
           lessons: [...mod.Lesson]
             .sort((a, b) => a.order - b.order)
-            .map((lesson) => ({ id: lesson.id, title: lesson.lessonName })),
+            .map((lesson) => ({ id: lesson.id, title: lesson.lessonName, estimatedCompletionSeconds: lesson.estimatedCompletionSeconds, videoDurationSeconds: lesson.videoDurationSeconds })),
         })),
     }),
     [course],
@@ -201,6 +203,7 @@ function CourseAccordionItem({
             <div className="flex items-center gap-2 flex-wrap">
               <h2 className="break-words text-sm font-semibold leading-snug text-foreground [overflow-wrap:anywhere] sm:text-base">
                 {course.courseName}
+                <TotalTime lessons={course.Module.flatMap((module) => module.Lesson)} />
               </h2>
               {course.Module.length === 0 && (
                 <Badge
@@ -442,6 +445,7 @@ function CourseAccordionItem({
                       <div className="flex-1 min-w-0 text-left">
                         <p className="break-words text-sm font-medium leading-snug text-foreground [overflow-wrap:anywhere]">
                           {module.moduleName}
+                          <TotalTime lessons={module.Lesson} />
                         </p>
                         {module.description && (
                           <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">
@@ -480,6 +484,7 @@ function CourseAccordionItem({
 
                               <p className="min-w-0 flex-1 break-words text-sm leading-snug text-foreground [overflow-wrap:anywhere]">
                                 {lesson.lessonName || `Lesson ${lessonIdx + 1}`}
+                                <LessonTime lesson={lesson} />
                               </p>
 
                               <PenLine className="h-3.5 w-3.5 text-transparent transition-colors group-hover/lesson:text-muted-foreground" />

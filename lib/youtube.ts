@@ -1,3 +1,5 @@
+import { parseVideoDuration } from "@/lib/lesson-time";
+
 export class YouTubeImportError extends Error {
   constructor(
     message: string,
@@ -110,14 +112,18 @@ export async function fetchPlaylist(playlistId: string) {
       "YOUTUBE_NOT_CONFIGURED",
       503,
     );
-  async function get(path: string, params: Record<string, string>) {
+  async function get(
+    path: string,
+    params: Record<string, string>,
+    signal = AbortSignal.timeout(10000),
+  ) {
     const query = new URLSearchParams({ ...params, key: key! });
     let response: Response;
     let body;
     try {
       response = await fetch(
         `https://www.googleapis.com/youtube/v3/${path}?${query}`,
-        { cache: "no-store", signal: AbortSignal.timeout(10000) },
+        { cache: "no-store", signal },
       );
       body = await response.json().catch(() => null);
     } catch (error) {
@@ -143,7 +149,12 @@ export async function fetchPlaylist(playlistId: string) {
   }
   const details = await get("playlists", { part: "snippet", id: playlistId });
   if (!details.items?.length) throw youtubeApiError(404, null);
-  const videos: { title: string; description: string; videoId: string }[] = [];
+  const videos: {
+    title: string;
+    description: string;
+    videoId: string;
+    videoDurationSeconds?: number | null;
+  }[] = [];
   let pageToken = "";
   let skipped = 0;
   do {
@@ -184,6 +195,39 @@ export async function fetchPlaylist(playlistId: string) {
       "YOUTUBE_PLAYLIST_EMPTY",
       400,
     );
+  // Optional enrichment must never prevent a valid playlist from importing.
+  // One shared signal bounds all workers, including batches not yet started.
+  const durationSignal = AbortSignal.timeout(10000);
+  const ids = [...new Set(videos.map((video) => video.videoId))];
+  const durations = new Map<string, number | null>();
+  let nextBatch = 0;
+  async function worker() {
+    while (nextBatch < ids.length && !durationSignal.aborted) {
+      const batch = ids.slice(nextBatch, nextBatch + 50);
+      nextBatch += 50;
+      try {
+        const response = await get(
+          "videos",
+          { part: "contentDetails", id: batch.join(",") },
+          durationSignal,
+        );
+        for (const item of response.items) {
+          if (typeof item.id === "string")
+            durations.set(
+              item.id,
+              parseVideoDuration(item.contentDetails?.duration),
+            );
+        }
+      } catch {
+        // Unknown remains null; do not turn a provider failure into zero time.
+      }
+    }
+  }
+  await Promise.all(
+    Array.from({ length: Math.min(3, Math.ceil(ids.length / 50)) }, worker),
+  );
+  for (const video of videos)
+    video.videoDurationSeconds = durations.get(video.videoId) ?? null;
   return {
     title: details.items[0].snippet.title as string,
     description: details.items[0].snippet.description as string,

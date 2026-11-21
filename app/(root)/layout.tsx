@@ -10,7 +10,7 @@ export default function RootLayout({
 }>) {
   return (
     <section className="min-h-screen bg-background text-foreground overflow-hidden">
-      <Navbar />
+      <Navbar mode="public" />
       {children}
       <Footer />
     </section>

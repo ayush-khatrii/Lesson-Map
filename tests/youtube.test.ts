@@ -110,3 +110,161 @@ test("fetchPlaylist handles provider errors, transport failures, and successful 
   assert.equal(playlist.videos.length, 1);
   assert.equal(playlist.skipped, 1);
 });
+
+test("duration lookup batches unique IDs, preserves duplicates/order, and matches unordered results", async (t) => {
+  const previous = process.env.YOUTUBE_API_KEY;
+  process.env.YOUTUBE_API_KEY = "test-key";
+  t.after(() => {
+    if (previous === undefined) delete process.env.YOUTUBE_API_KEY;
+    else process.env.YOUTUBE_API_KEY = previous;
+  });
+  const ids = [
+    ...Array.from({ length: 102 }, (_, i) => `video-${i}`),
+    "video-0",
+    "video-1",
+  ];
+  const batches: string[][] = [];
+  const signals: AbortSignal[] = [];
+  let active = 0;
+  let maxActive = 0;
+  t.mock.method(
+    globalThis,
+    "fetch",
+    async (input: string | URL | Request, options?: RequestInit) => {
+      const url = new URL(String(input));
+      if (url.pathname.endsWith("/playlists"))
+        return Response.json({
+          items: [{ snippet: { title: "Course", description: "" } }],
+        });
+      if (url.pathname.endsWith("/playlistItems")) {
+        const offset = Number(url.searchParams.get("pageToken") || 0);
+        return Response.json({
+          items: ids.slice(offset, offset + 50).map((id) => ({
+            contentDetails: { videoId: id },
+            snippet: { title: id },
+          })),
+          ...(offset + 50 < ids.length
+            ? { nextPageToken: String(offset + 50) }
+            : {}),
+        });
+      }
+      assert.equal(url.searchParams.get("part"), "contentDetails");
+      const batch = url.searchParams.get("id")!.split(",");
+      batches.push(batch);
+      signals.push(options!.signal!);
+      active++;
+      maxActive = Math.max(maxActive, active);
+      await new Promise((resolve) => setTimeout(resolve, 1));
+      active--;
+      return Response.json({
+        items: batch
+          .slice()
+          .reverse()
+          .filter((id) => id !== "video-2")
+          .map((id) => ({
+            id,
+            contentDetails: {
+              duration:
+                id === "video-3"
+                  ? "PT0S"
+                  : id === "video-4"
+                    ? "invalid"
+                    : "PT1M5S",
+            },
+          })),
+      });
+    },
+  );
+  const playlist = await fetchPlaylist("abcdefghijk");
+  assert.deepEqual(
+    playlist.videos.map((video) => video.videoId),
+    ids,
+  );
+  assert.equal(batches.length, 3);
+  assert.ok(batches.every((batch) => batch.length <= 50));
+  assert.equal(new Set(batches.flat()).size, 102);
+  assert.equal(maxActive, 3);
+  assert.ok(signals.every((signal) => signal === signals[0]));
+  assert.deepEqual(
+    playlist.videos.slice(0, 6).map((video) => video.videoDurationSeconds),
+    [65, 65, null, null, null, 65],
+  );
+  assert.equal(playlist.videos[102].videoDurationSeconds, 65);
+});
+
+test("duration failures and the shared budget leave successful playlist imports intact", async (t) => {
+  const previous = process.env.YOUTUBE_API_KEY;
+  process.env.YOUTUBE_API_KEY = "test-key";
+  t.after(() => {
+    if (previous === undefined) delete process.env.YOUTUBE_API_KEY;
+    else process.env.YOUTUBE_API_KEY = previous;
+  });
+  const controllers: AbortController[] = [];
+  t.mock.method(AbortSignal, "timeout", (milliseconds: number) => {
+    assert.equal(milliseconds, 10000);
+    const controller = new AbortController();
+    controllers.push(controller);
+    return controller.signal;
+  });
+  let durationCalls = 0;
+  t.mock.method(
+    globalThis,
+    "fetch",
+    async (input: string | URL | Request, options?: RequestInit) => {
+      const url = new URL(String(input));
+      if (url.pathname.endsWith("/playlists"))
+        return Response.json({
+          items: [{ snippet: { title: "Course", description: "" } }],
+        });
+      if (url.pathname.endsWith("/playlistItems"))
+        return Response.json({
+          items: Array.from({ length: 200 }, (_, i) => ({
+            contentDetails: { videoId: `v${i}` },
+            snippet: { title: `Lesson ${i}` },
+          })),
+        });
+      durationCalls++;
+      const pending = new Promise<Response>((_, reject) =>
+        options!.signal!.addEventListener(
+          "abort",
+          () => reject(new DOMException("timeout", "AbortError")),
+          { once: true },
+        ),
+      );
+      if (durationCalls === 3) controllers.at(-1)!.abort();
+      return pending;
+    },
+  );
+  const playlist = await fetchPlaylist("abcdefghijk");
+  assert.equal(durationCalls, 3);
+  assert.equal(controllers.length, 3);
+  assert.equal(playlist.videos.length, 200);
+  assert.ok(
+    playlist.videos.every((video) => video.videoDurationSeconds === null),
+  );
+});
+
+test("a duration request error still imports the lesson with no guessed time", async (t) => {
+  const previous = process.env.YOUTUBE_API_KEY;
+  process.env.YOUTUBE_API_KEY = "test-key";
+  t.after(() => {
+    if (previous === undefined) delete process.env.YOUTUBE_API_KEY;
+    else process.env.YOUTUBE_API_KEY = previous;
+  });
+  t.mock.method(globalThis, "fetch", async (input: string | URL | Request) => {
+    const url = new URL(String(input));
+    if (url.pathname.endsWith("/playlists"))
+      return Response.json({
+        items: [{ snippet: { title: "Course", description: "" } }],
+      });
+    if (url.pathname.endsWith("/playlistItems"))
+      return Response.json({
+        items: [
+          { contentDetails: { videoId: "one" }, snippet: { title: "One" } },
+        ],
+      });
+    throw new TypeError("network failure");
+  });
+  const playlist = await fetchPlaylist("abcdefghijk");
+  assert.equal(playlist.videos[0].videoDurationSeconds, null);
+});
