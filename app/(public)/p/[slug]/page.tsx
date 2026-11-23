@@ -24,7 +24,6 @@ type CoursePageProps = {
 
 export async function generateMetadata({ params }: CoursePageProps): Promise<Metadata> {
   const { slug } = await params;
-  const tenant = (await headers()).get("x-lessonmap-subdomain");
   const course = await db.course.findFirst({
     where: { shareSlug: slug, isPublic: true },
     select: {
@@ -33,11 +32,11 @@ export async function generateMetadata({ params }: CoursePageProps): Promise<Met
       shareSlug: true,
       createdAt: true,
       updatedAt: true,
-      user: { select: { name: true, subdomain: true, plan: true, subscriptionStatus: true, subscriptionCancelAtPeriodEnd: true, subscriptionCurrentPeriodEnd: true } },
+      user: { select: { name: true, plan: true, subscriptionStatus: true, subscriptionCancelAtPeriodEnd: true, subscriptionCurrentPeriodEnd: true } },
     },
   });
 
-  if (!course?.shareSlug || (tenant && (course.user.subdomain !== tenant || effectiveAiPlan(course.user) === "FREE"))) {
+  if (!course?.shareSlug) {
     return {
       title: "Course Preview",
       robots: { index: false, follow: false },
@@ -74,7 +73,6 @@ export async function generateMetadata({ params }: CoursePageProps): Promise<Met
 
 export default async function CoursePreviewPage({ params, searchParams }: CoursePageProps) {
   const { slug } = await params;
-  const tenant = (await headers()).get("x-lessonmap-subdomain");
 
   // Public courses are resolved by their stable share slug. The course ID is
   // also accepted for an authenticated owner so the dashboard can use this
@@ -95,7 +93,6 @@ export default async function CoursePreviewPage({ params, searchParams }: Course
       user: {
         select: {
           name: true,
-          subdomain: true,
           image: true,
           plan: true,
           subscriptionStatus: true,
@@ -123,7 +120,7 @@ export default async function CoursePreviewPage({ params, searchParams }: Course
     },
   });
 
-  if (!course || (tenant && (!course.isPublic || course.user.subdomain !== tenant || effectiveAiPlan(course.user) === "FREE"))) notFound();
+  if (!course) notFound();
 
   const totalLessons = course.Module.reduce(
     (acc, m) => acc + m.Lesson.length,

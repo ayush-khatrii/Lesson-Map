@@ -52,123 +52,19 @@ function request(url, headers = {}) {
   parsed.clone = () => new URL(url);
   return { nextUrl: parsed, url, headers: new Headers(headers) };
 }
-test("creator subdomain root rewrites to that creator's listing", async () => {
-  const result = await proxy()(request("https://alice.lessonmap.org/"));
-  assert.equal(result.type, "rewrite");
-  assert.equal(result.url.pathname, "/creators/alice");
-  assert.equal(
-    result.options.request.headers.get("x-lessonmap-subdomain"),
-    "alice",
-  );
+test("public course previews and activity endpoints remain accessible without authentication", async () => {
+  for (const path of ["/p/course", "/api/public/course/events", "/api/public/course/leads", "/pricing"])
+    assert.equal((await proxy()(request(`https://lessonmap.org${path}`))).type, "next");
 });
-test("tenant course pages receive a trusted host-derived name; spoofed main-domain headers are removed", async () => {
-  const route = proxy();
-  const tenant = await route(
-    request("https://alice.lessonmap.org/p/course", {
-      "x-lessonmap-subdomain": "bob",
-    }),
-  );
-  assert.equal(
-    tenant.options.request.headers.get("x-lessonmap-subdomain"),
-    "alice",
-  );
-  const main = await route(
-    request("https://lessonmap.org/p/course", {
-      "x-lessonmap-subdomain": "bob",
-    }),
-  );
-  assert.equal(main.options.request.headers.get("x-lessonmap-subdomain"), null);
-});
-test("login, dashboard and progress writes stay on the main domain", async () => {
-  for (const path of [
-    "/sign-in?callbackUrl=%2Fp%2Fcourse",
-    "/dashboard",
-    "/api/progress/course",
-    "/api/resource/file/open",
-  ]) {
-    const result = await proxy()(request(`https://alice.lessonmap.org${path}`));
+test("protected pages still redirect guests to sign in with a callback", async () => {
+  for (const path of ["/dashboard", "/outline/course", "/settings"]) {
+    const result = await proxy()(request(`https://lessonmap.org${path}`));
     assert.equal(result.type, "redirect");
-    assert.equal(result.url.origin, "https://lessonmap.org");
-    assert.equal(`${result.url.pathname}${result.url.search}`, path);
+    assert.equal(result.url.pathname, "/sign-in");
+    assert.equal(result.url.searchParams.get("callbackUrl"), path);
   }
 });
-test("public capture and analytics stay accessible on the creator's domain", async () => {
-  for (const path of [
-    "/api/public/course/events",
-    "/api/public/course/leads",
-  ]) {
-    assert.equal(
-      (await proxy()(request(`https://alice.lessonmap.org${path}`))).type,
-      "next",
-    );
-  }
-});
-test("reserved, invalid and nested subdomains are rejected", async () => {
-  const { validSubdomain } = load("lib/subdomain.ts");
-  for (const name of [
-    "www",
-    "admin",
-    "app",
-    "a",
-    "ab",
-    "-alice",
-    "alice-",
-    "ALICE",
-    "a.b",
-    "a".repeat(31),
-  ])
-    assert.equal(validSubdomain(name), false, name);
-  for (const name of ["alice", "alice-123", "a".repeat(30)])
-    assert.equal(validSubdomain(name), true, name);
-  assert.equal(
-    (await proxy()(request("https://one.two.lessonmap.org/"))).status,
-    404,
-  );
-});
-
-test("subdomain settings enforce paid access and report name collisions", async () => {
-  const free = { plan: "FREE", subscriptionStatus: null };
-  const paid = {
-    plan: "CREATOR",
-    subscriptionStatus: "active",
-    subscriptionCancelAtPeriodEnd: false,
-    subscriptionCurrentPeriodEnd: null,
-  };
-  let user = free;
-  let writes = 0;
-  const route = load("app/api/settings/subdomain/route.ts", {
-    "next/server": { NextResponse: { json: Response.json.bind(Response) } },
-    "@/lib/prisma": {
-      db: {
-        user: {
-          findUnique: async () => user,
-          update: async () => {
-            writes++;
-            throw { code: "P2002" };
-          },
-        },
-      },
-    },
-    "@/lib/launch-access": {
-      sessionUserId: async () => "user-1",
-      launchError: () => Response.json({}, { status: 500 }),
-    },
-    "@/lib/ai/schema": require("./helpers/ai-schema.cjs"),
-    "@/lib/subdomain": load("lib/subdomain.ts"),
-    "@/lib/payments/request-security": { isSameOriginRequest: () => true },
-  });
-  assert.equal(
-    (await route.POST({ json: async () => ({ subdomain: "alice" }) })).status,
-    403,
-  );
-  assert.equal(writes, 0);
-  user = paid;
-  assert.equal(
-    (await route.POST({ json: async () => ({ subdomain: "www" }) })).status,
-    400,
-  );
-  assert.equal(
-    (await route.POST({ json: async () => ({ subdomain: "alice" }) })).status,
-    409,
-  );
+test("protected course APIs reject guests while public authentication stays accessible", async () => {
+  assert.equal((await proxy()(request("https://lessonmap.org/api/course"))).status, 401);
+  assert.equal((await proxy()(request("https://lessonmap.org/api/auth/get-session"))).type, "next");
 });

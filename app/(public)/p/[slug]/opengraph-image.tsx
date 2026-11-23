@@ -1,8 +1,6 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { BRAND_COLORS } from "@/constants/brand";
-import { headers } from "next/headers";
-import { effectiveAiPlan } from "@/lib/ai/schema";
 import { db } from "@/lib/prisma";
 import { summarizeForMetadata } from "@/lib/site";
 import { ImageResponse } from "next/og";
@@ -25,7 +23,6 @@ export default async function CourseOpenGraphImage({
       user: {
         select: {
           name: true,
-          subdomain: true,
           plan: true,
           subscriptionStatus: true,
           subscriptionCancelAtPeriodEnd: true,
@@ -35,15 +32,6 @@ export default async function CourseOpenGraphImage({
       Module: { select: { _count: { select: { Lesson: true } } } },
     },
   });
-
-  const tenant = (await headers()).get("x-lessonmap-subdomain");
-  if (
-    tenant &&
-    (!course ||
-      course.user.subdomain !== tenant ||
-      effectiveAiPlan(course.user) === "FREE")
-  )
-    return new Response("Not found", { status: 404 });
 
   const logo = await readFile(join(process.cwd(), "public/logo-2.png"));
   const logoSrc = `data:image/png;base64,${logo.toString("base64")}`;

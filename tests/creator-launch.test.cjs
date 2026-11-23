@@ -607,7 +607,6 @@ test("new cookie-authenticated writes reject a foreign origin before reading the
     ["app/api/public/[slug]/clone/route.ts", "POST"],
     ["app/api/progress/[courseId]/route.ts", "POST"],
     ["app/api/course/[courseId]/leads/route.ts", "PATCH"],
-    ["app/api/settings/subdomain/route.ts", "POST"],
   ]) {
     let reads = 0;
     const route = load(file, {
@@ -623,7 +622,6 @@ test("new cookie-authenticated writes reject a foreign origin before reading the
       "@/lib/course-access": {},
       "@/lib/youtube": {},
       "@/lib/youtube-course": {},
-      "@/lib/subdomain": {},
     });
     assert.equal(
       (await route[method](request({}), context("courseId", "c"))).status,

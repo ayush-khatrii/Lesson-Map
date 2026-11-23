@@ -22,7 +22,8 @@ model User {
   adminAccess   AdminAccess?
   adminSessions AdminSession[]
 
-  subdomain String? @unique
+  // Retained only for database compatibility; excluded from the application client.
+  subdomain String? @unique @ignore
   youtubeImports Int @default(0)
   imports PlaylistImport[]
   lessonProgress LessonProgress[]

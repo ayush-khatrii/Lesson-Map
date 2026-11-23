@@ -52,29 +52,6 @@ function isPublicApiRoute(pathname: string): boolean {
 
 export default async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const mainOrigin = process.env.NEXT_PUBLIC_BASE_URL || "https://lessonmap.org";
-  const mainHost = new URL(mainOrigin).hostname;
-  const host = request.nextUrl.hostname;
-  const tenant = host.endsWith(`.${mainHost}`) && host !== `www.${mainHost}`
-    ? host.slice(0, -(mainHost.length + 1)) : null;
-  const requestHeaders = new Headers(request.headers);
-  requestHeaders.delete("x-lessonmap-subdomain");
-  if (tenant) {
-    if (!/^[a-z0-9-]+$/.test(tenant)) return new NextResponse("Not found", { status: 404 });
-    requestHeaders.set("x-lessonmap-subdomain", tenant);
-    if (pathname === "/") {
-      const url = request.nextUrl.clone();
-      url.pathname = `/creators/${tenant}`;
-      return NextResponse.rewrite(url, { request: { headers: requestHeaders } });
-    }
-    if (pathname.startsWith("/p/") || pathname.startsWith("/api/public/") || pathname === "/api/auth/get-session") {
-      return NextResponse.next({ request: { headers: requestHeaders } });
-    }
-    return NextResponse.redirect(new URL(`${pathname}${request.nextUrl.search}`, mainOrigin));
-  }
-  // Always overwrite the tenant header; callers cannot choose another tenant.
-  if (pathname.startsWith("/p/")) return NextResponse.next({ request: { headers: requestHeaders } });
-
   // Admin authentication uses a separate cookie and backend guard. In particular,
   // the public app's session cookie must never grant or gate dashboard access.
   if (pathname === "/dashboard/admin" || pathname.startsWith("/dashboard/admin/") || pathname === "/api/admin" || pathname.startsWith("/api/admin/")) {

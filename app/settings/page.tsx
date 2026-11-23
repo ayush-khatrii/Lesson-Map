@@ -1,4 +1,3 @@
-import SubdomainForm from "@/components/settings/SubdomainForm";
 import { SITE_URL } from "@/lib/site";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/prisma";
@@ -50,7 +49,6 @@ export default async function SettingsPage({ searchParams }: {
       where: { id: user.id },
       select: {
         plan: true,
-        subdomain: true,
         customerId: true,
         subscriptionStatus: true,
         subscriptionCurrentPeriodEnd: true,
@@ -177,7 +175,6 @@ export default async function SettingsPage({ searchParams }: {
             }
             settings={
               <>
-                <SubdomainForm initialValue={dbUser?.subdomain ?? ""} canEdit={plan !== "FREE"} />
                 <section aria-labelledby="social-heading" className="grid gap-4 rounded-lg border border-border p-4 sm:p-5 md:grid-cols-[200px_minmax(0,1fr)] md:gap-6">
                   <div>
                     <h2 id="social-heading" className="text-sm font-semibold">Social links</h2>
