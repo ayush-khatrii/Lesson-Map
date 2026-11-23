@@ -1,5 +1,7 @@
 "use client";
 import { useState } from "react";
+import { Eye, Play, Mail, MousePointerClick, RefreshCw } from "lucide-react";
+import { CourseAnalyticsDataSkeleton } from "@/components/dashboard/CourseAnalyticsSkeleton";
 import { useQuery } from "@tanstack/react-query";
 import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
 import {
@@ -25,6 +27,13 @@ import {
   type AnalyticsRange,
   type Metric,
 } from "@/lib/course-analytics";
+
+const metricIcons = {
+  visits: Eye,
+  starts: Play,
+  signups: Mail,
+  clicks: MousePointerClick,
+};
 
 const config = {
   visits: { label: "Visits", color: "#3b82f6" },
@@ -59,15 +68,18 @@ export default function CourseAnalytics({ courseId }: { courseId: string }) {
         : { day: "numeric" as const }),
     }).format(new Date(value));
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+    <div className="space-y-6" aria-busy={isFetching}>
+      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <p className="text-sm text-muted-foreground">Visitor activity · UTC</p>
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2">
           <Select
             value={range}
             onValueChange={(value) => setRange(value as AnalyticsRange)}
           >
-            <SelectTrigger aria-label="Analytics date range" className="w-40">
+            <SelectTrigger
+              aria-label="Analytics date range"
+              className="w-full sm:w-40"
+            >
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -81,38 +93,54 @@ export default function CourseAnalytics({ courseId }: { courseId: string }) {
             disabled={isFetching}
             onClick={() => void refetch()}
           >
+            <RefreshCw
+              aria-hidden="true"
+              className={
+                isFetching ? "size-4 motion-safe:animate-spin" : "size-4"
+              }
+            />
             Refresh
           </Button>
         </div>
       </div>
       {isPending ? (
-        <p role="status">Loading analytics…</p>
+        <CourseAnalyticsDataSkeleton />
       ) : error ? (
         <div role="alert" className="space-y-3 rounded-xl border p-6">
-          <p>{error.message}</p>
+          <h2 className="font-semibold">Unable to load analytics</h2>
+          <p className="text-sm text-muted-foreground">{error.message}</p>
           <Button onClick={() => void refetch()}>Try again</Button>
         </div>
       ) : (
         data && (
           <>
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-              {METRICS.map((metric) => (
-                <Card key={metric}>
-                  <CardHeader>
-                    <CardTitle className="text-sm font-medium text-muted-foreground">
-                      {config[metric].label}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-3xl font-semibold tabular-nums">
-                      {data.totals[metric].toLocaleString()}
-                    </p>
-                  </CardContent>
-                </Card>
-              ))}
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
+              {METRICS.map((metric) => {
+                const Icon = metricIcons[metric];
+                return (
+                  <Card key={metric} className="gap-4 bg-card py-5">
+                    <CardHeader className="flex min-h-10 flex-row items-center justify-between gap-3 px-5">
+                      <CardTitle className="text-sm font-medium leading-5 text-muted-foreground">
+                        {config[metric].label}
+                      </CardTitle>
+                      <span className="hidden size-8 shrink-0 items-center justify-center rounded-lg bg-muted sm:flex">
+                        <Icon
+                          aria-hidden="true"
+                          className="size-4 text-muted-foreground"
+                        />
+                      </span>
+                    </CardHeader>
+                    <CardContent className="px-5">
+                      <p className="text-3xl font-semibold tracking-tight tabular-nums">
+                        {data.totals[metric].toLocaleString()}
+                      </p>
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
-            <Card>
-              <CardHeader>
+            <Card className="gap-5 bg-card">
+              <CardHeader className="gap-3 px-4 sm:px-6">
                 <CardTitle>Curriculum performance</CardTitle>
                 <p className="text-sm text-muted-foreground">
                   {formatDate(data.interval.from)} –{" "}
@@ -126,7 +154,7 @@ export default function CourseAnalytics({ courseId }: { courseId: string }) {
                   activity
                 </p>
               </CardHeader>
-              <CardContent className="space-y-5">
+              <CardContent className="space-y-6 px-4 sm:px-6">
                 <div className="flex flex-wrap gap-2" aria-label="Chart series">
                   {METRICS.map((metric) => (
                     <Button
@@ -144,12 +172,17 @@ export default function CourseAnalytics({ courseId }: { courseId: string }) {
                         )
                       }
                     >
+                      <span
+                        aria-hidden="true"
+                        className="size-2 rounded-full"
+                        style={{ backgroundColor: config[metric].color }}
+                      />
                       {config[metric].label}
                     </Button>
                   ))}
                 </div>
                 {METRICS.every((metric) => data.totals[metric] === 0) && (
-                  <p className="text-sm text-muted-foreground">
+                  <p className="rounded-lg border border-dashed border-border bg-muted/20 p-5 text-sm leading-6 text-muted-foreground">
                     No recorded activity in this period. Share your public
                     curriculum to start reaching learners.
                   </p>
@@ -159,7 +192,10 @@ export default function CourseAnalytics({ courseId }: { courseId: string }) {
                     Select a metric to show its activity.
                   </p>
                 ) : (
-                  <ChartContainer config={config} className="h-[320px] w-full">
+                  <ChartContainer
+                    config={config}
+                    className="h-[280px] w-full sm:h-[340px]"
+                  >
                     <LineChart
                       accessibilityLayer
                       data={data.buckets}
@@ -188,7 +224,11 @@ export default function CourseAnalytics({ courseId }: { courseId: string }) {
                           />
                         }
                       />
-                      <ChartLegend content={<ChartLegendContent />} />
+                      <ChartLegend
+                        content={
+                          <ChartLegendContent className="flex-wrap gap-x-4 gap-y-2" />
+                        }
+                      />
                       {visible.map((metric) => (
                         <Line
                           key={metric}
@@ -216,14 +256,25 @@ export default function CourseAnalytics({ courseId }: { courseId: string }) {
           </>
         )
       )}
-      <p className="text-sm leading-relaxed text-muted-foreground">
-        Visits, learning starts, and paid-course clicks are counted once per
-        visitor session per course. Owner activity is excluded. Email signups
-        count distinct submitted addresses. These numbers reflect recorded
-        activity, not verified unique people or purchases. Click history starts
-        when paid-course click tracking is enabled; older clicks cannot be
-        recovered.
-      </p>
+      {data && !error && (
+        <details className="rounded-xl border border-border bg-muted/10 px-5 py-4">
+          <summary className="cursor-pointer text-sm font-medium focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-ring">
+            How metrics are counted
+          </summary>
+          <div className="mt-3 max-w-3xl space-y-2 text-sm leading-6 text-muted-foreground">
+            <p>
+              Visits, learning starts, and paid-course clicks are counted once
+              per visitor session per course. Owner activity is excluded. Email
+              signups count distinct submitted addresses.
+            </p>
+            <p>
+              These numbers reflect recorded activity, not verified unique
+              people or purchases. Click history starts when paid-course click
+              tracking is enabled. Older clicks cannot be recovered.
+            </p>
+          </div>
+        </details>
+      )}
     </div>
   );
 }

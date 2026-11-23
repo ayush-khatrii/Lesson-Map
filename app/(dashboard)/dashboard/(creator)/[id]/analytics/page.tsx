@@ -23,19 +23,19 @@ export default async function CourseAnalyticsPage({
   });
   if (!course) notFound();
   return (
-    <main className="mx-auto max-w-7xl space-y-6 px-4 py-10 sm:px-6">
-      <Link href="/dashboard" className="text-sm underline">
-        Back to courses
-      </Link>
-      <header className="flex flex-wrap items-center justify-between gap-4">
-        <div>
+    <main className="mx-auto w-full max-w-7xl space-y-8 px-4 pb-12 pt-28 sm:px-6 sm:pb-16 sm:pt-32 lg:px-8">
+      <Button asChild variant="outline" size="sm" className="w-fit">
+        <Link href="/dashboard">Back to courses</Link>
+      </Button>
+      <header className="flex flex-col justify-between gap-5 border-b border-border pb-8 sm:flex-row sm:items-end">
+        <div className="min-w-0 space-y-3">
           <p className="text-sm text-muted-foreground">Course analytics</p>
-          <h1 className="mt-1 break-words text-3xl font-semibold">
+          <h1 className="break-words text-3xl font-semibold tracking-tight sm:text-4xl">
             {course.courseName}
           </h1>
         </div>
         {course.isPublic && course.shareSlug && (
-          <Button asChild variant="outline">
+          <Button asChild variant="outline" className="self-start sm:self-auto">
             <Link href={`/p/${encodeURIComponent(course.shareSlug)}`}>
               View public curriculum
             </Link>
