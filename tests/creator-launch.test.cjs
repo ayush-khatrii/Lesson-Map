@@ -13,6 +13,7 @@ function load(file, overrides = {}, globals = {}) {
       module: ts.ModuleKind.CommonJS,
       target: ts.ScriptTarget.ES2022,
       esModuleInterop: true,
+      jsx: ts.JsxEmit.ReactJSX,
     },
   }).outputText;
   vm.runInNewContext(
@@ -31,6 +32,8 @@ function load(file, overrides = {}, globals = {}) {
       crypto,
       require(id) {
         if (id in overrides) return overrides[id];
+        if (id === "server-only") return {};
+        if (id === "react" || id === "react/jsx-runtime") return require(id);
         if (id === "node:crypto") return require(id);
         if (id === "zod") return { z };
         if (id === "next/server")
@@ -42,6 +45,8 @@ function load(file, overrides = {}, globals = {}) {
         if (id === "@/lib/lesson-time") return load("lib/lesson-time.ts");
         if (id === "@/lib/plans") return load("lib/plans.ts");
         if (id === "@/lib/course-analytics") return load("lib/course-analytics.ts");
+        if (id === "@/lib/course-analytics-server")
+          return load("lib/course-analytics-server.ts", overrides);
         if (id === "@/lib/course-offer") return load("lib/course-offer.ts");
         if (id === "@/lib/csv") return load("lib/csv.ts");
         if (id === "@/lib/payments/request-security")
@@ -745,6 +750,70 @@ test("analytics API enforces authentication, ownership, paid access and date ran
   assert.equal(result.status, 200);
   assert.equal(result.headers.get("cache-control"), "private, no-store");
   assert.equal((await result.json()).buckets.length, 30);
+  assert.equal(queried, 1);
+});
+
+test("analytics page streams initial metrics after one access check and preserves failure recovery", async () => {
+  const { Children, Suspense } = require("react");
+  let userId = "owner";
+  let course = { id: "c", courseName: "Exam prep", createdAt: new Date(), user: paid };
+  let sessions = 0;
+  let courseReads = 0;
+  let analyticsReads = 0;
+  let failAnalytics = false;
+  const report = { range: "30d", totals: { visits: 0, starts: 0, signups: 0, clicks: 0 }, buckets: [] };
+  const page = load("app/(dashboard)/dashboard/(creator)/[id]/analytics/page.tsx", {
+    "next/link": { default: "a" },
+    "next/navigation": {
+      redirect: () => { throw new Error("redirect"); },
+      notFound: () => { throw new Error("not found"); },
+    },
+    "@/lib/launch-access": { sessionUserId: async () => { sessions++; return userId; } },
+    "@/lib/prisma": { db: { course: { findFirst: async ({ where, select }) => {
+      courseReads++;
+      assert.equal(where.userId, "owner");
+      assert.equal(select.user.select.plan, true);
+      return course;
+    } } } },
+    "@/lib/course-analytics-server": { getCourseAnalytics: async (selected, range) => {
+      analyticsReads++;
+      assert.equal(selected.id, "c");
+      assert.equal(range, "30d");
+      if (failAnalytics) throw new Error("database unavailable");
+      return report;
+    } },
+    "@/components/dashboard/CourseAnalytics": { default: "analytics-report" },
+    "@/components/dashboard/CourseAnalyticsSkeleton": { CourseAnalyticsDataSkeleton: "analytics-skeleton" },
+    "@/components/ui/button": { Button: "button" },
+  }).default;
+  const render = () => page(context("id", "c"));
+  const content = await render();
+  const boundary = Children.toArray(content.props.children).find((child) => child.type === Suspense);
+  assert.ok(boundary);
+  assert.equal(analyticsReads, 0);
+  const initial = await boundary.props.children.type(boundary.props.children.props);
+  assert.equal(initial.props.initialData, report);
+  assert.equal(typeof initial.props.initialDataUpdatedAt, "number");
+  assert.equal(sessions, 1);
+  assert.equal(courseReads, 1);
+  assert.equal(analyticsReads, 1);
+
+  failAnalytics = true;
+  const fallback = await boundary.props.children.type(boundary.props.children.props);
+  assert.equal(fallback.props.courseId, "c");
+  assert.equal(fallback.props.initialData, undefined);
+
+  course = { ...course, user: free };
+  const freePage = await render();
+  assert.equal(Children.toArray(freePage.props.children).some((child) => child.type === Suspense), false);
+  assert.equal(analyticsReads, 2);
+  course = null;
+  await assert.rejects(render, /not found/);
+  userId = null;
+  const previousReads = courseReads;
+  await assert.rejects(render, /redirect/);
+  assert.equal(courseReads, previousReads);
+  assert.equal(analyticsReads, 2);
 });
 
 test("offer settings enforce paid ownership and reject unsafe writes", async () => {

@@ -41,12 +41,23 @@ const config = {
   signups: { label: "Email signups", color: "#f59e0b" },
   clicks: { label: "Paid-course clicks", color: "#a855f7" },
 } satisfies ChartConfig;
-export default function CourseAnalytics({ courseId }: { courseId: string }) {
+export default function CourseAnalytics({
+  courseId,
+  initialData,
+  initialDataUpdatedAt,
+}: {
+  courseId: string;
+  initialData?: AnalyticsData;
+  initialDataUpdatedAt?: number;
+}) {
   const [range, setRange] = useState<AnalyticsRange>("30d");
   const [visible, setVisible] = useState<Metric[]>([...METRICS]);
   const { data, error, isPending, refetch, isFetching } =
     useQuery<AnalyticsData>({
       queryKey: ["course-analytics", courseId, range],
+      initialData: range === "30d" ? initialData : undefined,
+      initialDataUpdatedAt,
+      staleTime: 30_000,
       queryFn: async ({ signal }) => {
         const response = await fetch(
           `/api/course/${encodeURIComponent(courseId)}/analytics?range=${range}`,

@@ -1,10 +1,34 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { notFound, redirect } from "next/navigation";
 import { sessionUserId } from "@/lib/launch-access";
 import { db } from "@/lib/prisma";
 import { effectiveAiPlan } from "@/lib/ai/schema";
 import CourseAnalytics from "@/components/dashboard/CourseAnalytics";
 import { Button } from "@/components/ui/button";
+import { CourseAnalyticsDataSkeleton } from "@/components/dashboard/CourseAnalyticsSkeleton";
+import { getCourseAnalytics } from "@/lib/course-analytics-server";
+
+async function InitialCourseAnalytics({
+  course,
+}: {
+  course: { id: string; createdAt: Date };
+}) {
+  try {
+    const initialData = await getCourseAnalytics(course, "30d");
+    return (
+      <CourseAnalytics
+        courseId={course.id}
+        initialData={initialData}
+        initialDataUpdatedAt={Date.now()}
+      />
+    );
+  } catch (error) {
+    console.error("Initial course analytics failed", error);
+    // Keep the report's existing API retry and error UI available.
+    return <CourseAnalytics courseId={course.id} />;
+  }
+}
 
 export default async function CourseAnalyticsPage({
   params,
@@ -19,7 +43,21 @@ export default async function CourseAnalyticsPage({
     );
   const course = await db.course.findFirst({
     where: { id, userId },
-    include: { user: true },
+    select: {
+      id: true,
+      courseName: true,
+      createdAt: true,
+      isPublic: true,
+      shareSlug: true,
+      user: {
+        select: {
+          plan: true,
+          subscriptionStatus: true,
+          subscriptionCancelAtPeriodEnd: true,
+          subscriptionCurrentPeriodEnd: true,
+        },
+      },
+    },
   });
   if (!course) notFound();
   return (
@@ -53,7 +91,9 @@ export default async function CourseAnalyticsPage({
           </Button>
         </section>
       ) : (
-        <CourseAnalytics courseId={id} />
+        <Suspense fallback={<CourseAnalyticsDataSkeleton />}>
+          <InitialCourseAnalytics course={course} />
+        </Suspense>
       )}
     </main>
   );
