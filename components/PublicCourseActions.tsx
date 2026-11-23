@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { ArrowRight, Check, Loader2, Mail } from "lucide-react";
 
-export function trackCourseEvent(slug: string, kind: "visit" | "start") {
+export function trackCourseEvent(slug: string, kind: "visit" | "start" | "paid_course_click") {
   try {
     let sessionId = sessionStorage.getItem("lessonmap-visitor");
     if (!sessionId) {
@@ -26,6 +26,7 @@ export function trackCourseEvent(slug: string, kind: "visit" | "start") {
     if (sessionStorage.getItem(sentKey)) return;
     void fetch(`/api/public/${encodeURIComponent(slug)}/events`, {
       method: "POST",
+      keepalive: true,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ sessionId, kind }),
     })

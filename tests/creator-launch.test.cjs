@@ -41,6 +41,8 @@ function load(file, overrides = {}, globals = {}) {
         if (id === "@/lib/ai/schema") return require("./helpers/ai-schema.cjs");
         if (id === "@/lib/lesson-time") return load("lib/lesson-time.ts");
         if (id === "@/lib/plans") return load("lib/plans.ts");
+        if (id === "@/lib/course-analytics") return load("lib/course-analytics.ts");
+        if (id === "@/lib/course-offer") return load("lib/course-offer.ts");
         if (id === "@/lib/csv") return load("lib/csv.ts");
         if (id === "@/lib/payments/request-security")
           return { isSameOriginRequest: () => true };
@@ -664,4 +666,111 @@ test("visit/start totals deduplicate a browser session and ignore owners", async
     context("slug", "s"),
   );
   assert.equal(events.size, 2);
+});
+
+test("offers reject unsafe destinations and require a URL only when enabled", () => {
+  const { courseOfferSchema, safeOfferUrl } = load("lib/course-offer.ts");
+  for (const url of ["javascript:alert(1)", "data:text/html,test", "https://user:pass@example.com", "/relative"]) assert.equal(safeOfferUrl(url), false);
+  const base = { offerEnabled: false, offerUrl: null, offerHeading: null, offerDescription: null, offerButtonLabel: null };
+  assert.equal(courseOfferSchema.safeParse(base).success, true);
+  assert.equal(courseOfferSchema.safeParse({ ...base, offerEnabled: true }).success, false);
+  assert.equal(courseOfferSchema.safeParse({ ...base, offerEnabled: true, offerUrl: "https://example.com/course" }).success, true);
+});
+
+test("analytics uses UTC windows, fills gaps, and preserves monthly totals", () => {
+  const { analyticsWindow, buildAnalytics } = load("lib/course-analytics.ts");
+  const now = new Date("2026-11-23T16:00:00Z");
+  const window = analyticsWindow("7d", new Date("2026-01-01"), now);
+  assert.equal(window.from.toISOString(), "2026-11-17T00:00:00.000Z");
+  assert.equal(window.to.toISOString(), "2026-11-24T00:00:00.000Z");
+  const data = buildAnalytics("7d", window, [{ date: "2026-11-17", metric: "visits", count: 2 }, { date: "2026-11-24", metric: "visits", count: 9 }]);
+  assert.equal(data.buckets.length, 7);
+  assert.equal(data.totals.visits, 2);
+  assert.equal(data.buckets[1].visits, 0);
+  assert.equal(buildAnalytics("30d", analyticsWindow("30d", new Date("2026-01-01"), now), []).buckets.length, 30);
+  const monthly = buildAnalytics("all", analyticsWindow("all", new Date("2026-01-15"), now), [{ date: "2026-01-20", metric: "clicks", count: 3 }, { date: "2026-01-21", metric: "clicks", count: 4 }]);
+  assert.equal(monthly.interval.granularity, "month");
+  assert.equal(monthly.buckets[0].clicks, 7);
+  assert.equal(monthly.totals.clicks, 7);
+});
+
+test("offer migration preserves existing courses and event data", async () => {
+  const pg = new PGlite();
+  try {
+    await pg.exec('CREATE TABLE "Course" (id TEXT PRIMARY KEY); CREATE TABLE "CourseEvent" ("courseId" TEXT, "createdAt" TIMESTAMP); CREATE TABLE "Lead" ("courseId" TEXT, "createdAt" TIMESTAMP); INSERT INTO "Course" VALUES (\'existing\');');
+    await pg.exec(fs.readFileSync("prisma/migrations/20261123000000_course_offers_analytics/migration.sql", "utf8"));
+    const result = await pg.query('SELECT "offerEnabled", "offerUrl" FROM "Course" WHERE id = \'existing\'');
+    assert.equal(result.rows[0].offerEnabled, false);
+    assert.equal(result.rows[0].offerUrl, null);
+  } finally { await pg.close(); }
+});
+
+test("paid course clicks require an active offer and deduplicate visitor sessions", async () => {
+  const events = new Map();
+  let owner = false;
+  let enabled = true;
+  const route = load("app/api/public/[slug]/events/route.ts", {
+    "@/lib/prisma": { db: {
+      course: { findFirst: async () => ({ id: "c", userId: "owner", offerEnabled: enabled, offerUrl: "https://example.com", user: paid }) },
+      courseEvent: { upsert: async ({ create }) => events.set(`${create.sessionId}:${create.kind}`, create) },
+    } },
+    "@/lib/launch-access": { ...access(), sessionUserId: async () => owner ? "owner" : null },
+  });
+  const body = { sessionId: "00000000-0000-4000-8000-000000000001", kind: "paid_course_click" };
+  for (let i = 0; i < 2; i++) assert.equal((await route.POST(request(body), context("slug", "s"))).status, 200);
+  assert.equal(events.size, 1);
+  owner = true;
+  await route.POST(request({ ...body, sessionId: "00000000-0000-4000-8000-000000000002" }), context("slug", "s"));
+  assert.equal(events.size, 1);
+  enabled = false;
+  assert.equal((await route.POST(request(body), context("slug", "s"))).status, 404);
+});
+
+test("analytics API enforces authentication, ownership, paid access and date ranges", async () => {
+  let userId = null;
+  let course = null;
+  let queried = 0;
+  const route = load("app/api/course/[courseId]/analytics/route.ts", {
+    "@/lib/prisma": { db: { course: { findFirst: async ({ where }) => { assert.equal(where.userId, userId); return course; } }, $queryRaw: async () => { queried++; return []; } } },
+    "@/lib/launch-access": { ...access(), sessionUserId: async () => userId },
+  });
+  const get = (range = "30d") => route.GET(new Request(`https://example.com/api/course/c/analytics?range=${range}`), context("courseId", "c"));
+  assert.equal((await get()).status, 401);
+  userId = "u";
+  assert.equal((await get()).status, 404);
+  course = { id: "c", createdAt: new Date("2026-01-01"), user: { plan: "FREE" } };
+  assert.equal((await get()).status, 403);
+  course.user = paid;
+  assert.equal((await get("invalid")).status, 400);
+  assert.equal(queried, 0);
+  const result = await get();
+  assert.equal(result.status, 200);
+  assert.equal(result.headers.get("cache-control"), "private, no-store");
+  assert.equal((await result.json()).buckets.length, 30);
+});
+
+test("offer settings enforce paid ownership and reject unsafe writes", async () => {
+  let userId = null;
+  let course = null;
+  let updates = 0;
+  const route = load("app/api/course/[courseId]/offer/route.ts", {
+    "@/lib/prisma": { db: { course: {
+      findFirst: async ({ where }) => { assert.equal(where.userId, userId); return course; },
+      update: async () => { updates++; },
+    } } },
+    "@/lib/launch-access": { ...access(), sessionUserId: async () => userId },
+  });
+  const ctx = context("courseId", "c");
+  const offer = { offerEnabled: true, offerUrl: "https://example.com", offerHeading: null, offerDescription: null, offerButtonLabel: null };
+  assert.equal((await route.PATCH(request(offer), ctx)).status, 401);
+  userId = "u";
+  assert.equal((await route.PATCH(request(offer), ctx)).status, 404);
+  course = { id: "c", user: { plan: "FREE" }, ...offer };
+  assert.equal((await route.PATCH(request(offer), ctx)).status, 403);
+  course.user = paid;
+  assert.equal((await route.PATCH(request({ ...offer, offerUrl: "javascript:alert(1)" }), ctx)).status, 400);
+  assert.equal(updates, 0);
+  assert.equal((await route.PATCH(request(offer), ctx)).status, 200);
+  assert.equal(updates, 1);
+  assert.equal((await route.GET(request({}), ctx)).status, 200);
 });

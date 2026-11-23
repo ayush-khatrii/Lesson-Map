@@ -1,4 +1,5 @@
 "use client";
+import CourseOfferSettings from "@/components/dashboard/CourseOfferSettings";
 import {
   LazyCourseFlowView,
   FlowViewSwitcher,
@@ -2578,6 +2579,7 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
           </TabsContent>
 
           <TabsContent value="settings" className="min-w-0 space-y-5">
+            {courseId && <CourseOfferSettings key={courseId} courseId={courseId} canUse={canUseFlow} loadingPlan={isPlanLoading} />}
             <div><h2 className="text-lg font-semibold">Course settings</h2><p className="mt-1 text-sm text-muted-foreground">Choose who can see your course and how you appear to learners.</p></div>
             <SettingsTab
               courseId={courseId}

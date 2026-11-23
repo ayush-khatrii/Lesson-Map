@@ -261,6 +261,7 @@ function CourseAccordionItem({
 
       <AccordionContent className="border-t border-border bg-muted/20 px-4 pt-4 pb-4 sm:px-5 sm:pt-5 sm:pb-5">
         <p className="mb-3 text-sm text-muted-foreground">{course.visits ?? 0} visits · {course.starts ?? 0} starts</p>
+        <div className="mb-4"><Button asChild variant="outline" size="sm"><Link href={canUseFlow ? `/dashboard/${course.id}/analytics` : "/pricing"}>{canUseFlow ? "Analytics" : "Analytics · Upgrade"}</Link></Button></div>
         <CourseLeads courseId={course.id} canCapture={canUseFlow} />
         {isOwner && (
           <div className="mb-4 rounded-lg border border-border bg-background/60 px-3 py-3">

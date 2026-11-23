@@ -88,6 +88,11 @@ model Course {
   // Per-course control over the creator's social links on the public page.
   showSocialLinks Boolean @default(true)
   emailCapture Boolean @default(false)
+  offerEnabled Boolean @default(false)
+  offerUrl String?
+  offerHeading String?
+  offerDescription String?
+  offerButtonLabel String?
   events CourseEvent[]
   leads Lead[]
   userId      String
@@ -352,6 +357,7 @@ model CourseEvent {
   createdAt DateTime @default(now())
 
   @@unique([courseId, sessionId, kind])
+  @@index([courseId, createdAt])
 }
 
 model Lead {
@@ -362,6 +368,7 @@ model Lead {
   createdAt DateTime @default(now())
 
   @@unique([courseId, email])
+  @@index([courseId, createdAt])
 }
 
 model LessonProgress {

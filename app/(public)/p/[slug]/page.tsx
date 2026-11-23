@@ -1,3 +1,5 @@
+import PublicCourseOffer from "@/components/PublicCourseOffer";
+import { safeOfferUrl } from "@/lib/course-offer";
 import PublicCourseActions from "@/components/PublicCourseActions";
 import { SITE_URL } from "@/lib/site";
 import { db } from "@/lib/prisma";
@@ -280,6 +282,9 @@ export default async function CoursePreviewPage({ params, searchParams }: Course
         isOwner={userId === course.userId}
         initialLessonId={initialLessonId}
       />
+      {course.isPublic && course.shareSlug && course.offerEnabled && safeOfferUrl(course.offerUrl ?? "") && effectiveAiPlan(course.user) !== "FREE" && (
+        <PublicCourseOffer offer={course} slug={course.shareSlug} isOwner={userId === course.userId} />
+      )}
     </>
   );
 }
