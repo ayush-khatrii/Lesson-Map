@@ -1,5 +1,12 @@
 {
   "crons": [
-    { "path": "/api/cron/cleanup-uploads", "schedule": "0 3 * * *" }
+    {
+      "path": "/api/cron/cleanup-uploads",
+      "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/cron/billing",
+      "schedule": "0 9 * * *"
+    }
   ]
 }

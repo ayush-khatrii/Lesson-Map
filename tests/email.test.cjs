@@ -52,6 +52,7 @@ function fixture(options = {}) {
         return {
           EMAIL_ACTIONS: actions,
           EMAIL_REPLY_TO: "support@lessonmap.org",
+          BILLING_REMINDER_LATE_SUBJECT: "Your LessonMap billing date is approaching",
         };
       if (id === "./templates") return { emailContent };
       if (id === "@react-email/render")
@@ -87,8 +88,8 @@ function fixture(options = {}) {
     calls,
     logs,
     clients: () => clients,
-    send: async (event = welcome) =>
-      JSON.parse(JSON.stringify(await module.exports.sendEmailAction(event))),
+    send: async (event = welcome, attachments) =>
+      JSON.parse(JSON.stringify(await module.exports.sendEmailAction(event, attachments))),
   };
 }
 
@@ -123,11 +124,13 @@ test("all registered actions select fixed senders, subjects, replyTo and escaped
     const event = {
       ...welcome,
       action,
+      paymentId: "pay_test",
+      periodEnd: "2099-12-01T00:00:00Z",
       plan: "CREATOR",
       resetUrl:
         "https://lessonmap.org/api/auth/reset-password/test-token?callbackURL=%2Ffuture-reset",
     };
-    assert.deepEqual(await f.send(event), { status: "sent", id: "email-1" });
+    assert.deepEqual(await f.send(event, action === "PAYMENT_RECEIPT" ? [{ filename: "invoice.pdf", content: Buffer.from("%PDF-test"), contentType: "application/pdf" }] : undefined), { status: "sent", id: "email-1" });
     const { message, sendOptions } = f.calls.at(-1);
     assert.equal(message.from, EMAIL_ACTIONS[action].from);
     assert.equal(message.subject, EMAIL_ACTIONS[action].subject);
@@ -250,4 +253,19 @@ test("internal Professional subscriptions use generic paid wording in customer e
     assert.match(content.text, /paid subscription/);
     assert.doesNotMatch(content.text, /Professional|Custom/);
   }
+});
+
+test("payment receipts require an invoice attachment", async () => {
+  const h = fixture();
+  const event = { ...welcome, action: "PAYMENT_RECEIPT", paymentId: "pay_1" };
+  assert.equal((await h.send(event)).status, "failed");
+  assert.equal(h.calls.length, 0);
+  const pdf = { filename: "invoice.pdf", content: Buffer.from("%PDF-invoice"), contentType: "application/pdf" };
+  assert.equal((await h.send(event, [pdf])).status, "sent");
+  assert.equal(h.calls[0].message.attachments[0].content, pdf.content);
+});
+test("cancellation confirmation explains access continues through the paid date", () => {
+  const content = emailContent({ ...welcome, action: "CANCELLATION_SCHEDULED", periodEnd: "2030-12-01T10:00:00Z" }, "https://lessonmap.org");
+  assert.match(content.text, /continue using your paid features until/);
+  assert.match(content.text, /December 1, 2030/);
 });

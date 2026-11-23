@@ -29,6 +29,44 @@ export function emailContent(event: EmailEvent, origin: string) {
       href = new URL("/settings", origin).href;
       button = "Manage your subscription";
       break;
+    case "PAYMENT_RECEIPT":
+      heading = "Your payment was successful";
+      message = `Thank you for your LessonMap payment. Your invoice PDF is attached. Payment reference: ${event.paymentId}.`;
+      href = new URL("/settings", origin).href;
+      button = "Manage billing";
+      break;
+    case "CANCELLATION_SCHEDULED":
+    case "PLAN_RENEWAL_REMINDER":
+    case "PLAN_EXPIRY_REMINDER":
+    case "PLAN_ACCESS_ENDED": {
+      const end = new Date(event.periodEnd);
+      if (Number.isNaN(end.getTime())) throw new Error("Invalid billing date");
+      const date =
+        end.toLocaleString("en-US", {
+          timeZone: "UTC",
+          dateStyle: "long",
+          timeStyle: "short",
+        }) + " UTC";
+      heading =
+        event.action === "CANCELLATION_SCHEDULED"
+          ? "Your cancellation is scheduled"
+          : event.action === "PLAN_RENEWAL_REMINDER"
+            ? "Your next renewal is approaching"
+            : event.action === "PLAN_EXPIRY_REMINDER"
+              ? "Your paid access is ending soon"
+              : "Your paid access has ended";
+      message =
+        event.action === "CANCELLATION_SCHEDULED"
+          ? `Future renewal is cancelled. You can continue using your paid features until ${date}. Your account switches to Free then.`
+          : event.action === "PLAN_RENEWAL_REMINDER"
+            ? `Your LessonMap plan is scheduled to renew on ${date}. You can manage your subscription in billing settings.`
+            : event.action === "PLAN_EXPIRY_REMINDER"
+              ? `Your LessonMap paid access ends on ${date}. Renewal is cancelled. You can use your paid features until that time.`
+              : `Your paid period ended on ${date}. Your LessonMap account is now on the Free plan. Your saved courses and resources are still available.`;
+      href = new URL("/settings", origin).href;
+      button = "Manage your subscription";
+      break;
+    }
     case "PASSWORD_RESET_REQUESTED":
       heading = "Reset your password";
       message =

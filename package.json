@@ -19,7 +19,7 @@
     "admin:bootstrap": "node --import tsx scripts/admin-bootstrap.ts",
     "test:admin": "node --import tsx --test tests/admin*.test.ts tests/admin*.test.cjs",
     "build:webpack": "next build --webpack",
-    "test:email": "node --import tsx --test tests/email.test.cjs",
+    "test:email": "node --import tsx --test tests/email.test.cjs tests/billing-email.test.cjs",
     "test:launch": "node --test tests/creator-launch.test.cjs tests/creator-routing.test.cjs",
     "test:youtube": "node --import tsx --test tests/youtube.test.ts tests/course-action-error.test.ts tests/database-url.test.ts tests/youtube-persistence.test.cjs"
   },

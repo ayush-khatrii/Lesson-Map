@@ -16,6 +16,7 @@ function fixture(options = {}) {
   };
   const events = new Map();
   const emails = [];
+  const pendingEmails = new Map();
   let committed = false;
   const tx = {
     user: {
@@ -39,15 +40,22 @@ function fixture(options = {}) {
     require(id) {
       if (id === "standardwebhooks") return { Webhook };
       if (id === "next/server") return { NextResponse: { json: (body, init) => Response.json(body, init) } };
-      if (id === "@/lib/payments/config") return { productIdForPlan: (plan) => plan === "CREATOR" ? "pdt_creator" : "pdt_pro" };
+      if (id === "@/lib/payments/config") return { paymentCredentials: () => ({ apiKey: "test", environment: "test_mode" }), productIdForPlan: (plan) => plan === "CREATOR" ? "pdt_creator" : "pdt_pro" };
       if (id === "@/lib/ai/schema") return require("./helpers/ai-schema.cjs");
-      if (id === "@/lib/email/send") return { sendEmailAction: async (event) => {
-        assert.equal(committed, true, "email must follow commit");
-        assert.ok(events.size > 0, "deduplication must be persisted before email");
-        emails.push(event);
-        if (options.emailThrows) throw new Error("Email transport unavailable");
-        return options.emailFails ? { status: "failed", reason: "provider_error" } : { status: "sent", id: "test-email" };
-      } };
+      if (id === "@/lib/payments/dodopayments") return { createDodoPayments: () => ({ subscriptions: { retrieve: async () => options.providerSubscription ?? { customer: { customer_id: "customer-1" }, product_id: "pdt_creator", next_billing_date: "2099-12-01T00:00:00Z" } } }) };
+      if (id === "@/lib/payments/billing-email") return {
+        queueBillingEmail: async (_tx, job) => { if (!pendingEmails.has(job.id)) pendingEmails.set(job.id, job); },
+        deliverBillingEmails: async (ids) => {
+          assert.equal(committed, true, "email must follow commit");
+          for (const id of ids) {
+            const job = pendingEmails.get(id);
+            if (job.completed) continue;
+            emails.push(job.event);
+            if (options.emailThrows) throw new Error("Email transport unavailable");
+            if (!options.emailFails) job.completed = true;
+          }
+        },
+      };
       if (id === "@/lib/prisma") return { db: { $transaction: async (callback) => {
         committed = false;
         const result = await callback(tx);
@@ -72,7 +80,7 @@ function fixture(options = {}) {
     });
     return module.exports.POST({ headers, text: async () => body });
   }
-  return { user, events, deliver, emails };
+  return { user, events, deliver, emails, pendingEmails };
 }
 
 for (const [environment, expected] of [["test_mode", "TEST"], ["live_mode", "LIVE"]]) {
@@ -90,39 +98,28 @@ test("invalid billing mode cannot classify or activate a subscription", async ()
   assert.equal(h.events.size, 0);
 });
 
-test("activation and renewal email the matched database user only after commit", async () => {
-  const { deliver, user, emails } = fixture();
-  await deliver("subscription.active", "activation", false, {
-    customer: { customer_id: "customer-1", email: "bounced@resend.dev" },
-  });
+test("successful payments queue one receipt after commit while subscription events do not duplicate billing emails", async () => {
+  const { deliver, user, emails, pendingEmails } = fixture();
+  await deliver();
+  await deliver("subscription.renewed", "renewal");
+  assert.equal(emails.length, 0);
+  const payment = { payment_id: "pay_first", status: "succeeded" };
+  assert.equal((await deliver("payment.succeeded", "payment1", false, payment)).status, 200);
   assert.equal(emails.length, 1);
-  assert.equal(emails[0].action, "PURCHASE_ACTIVATED");
+  assert.equal(emails[0].action, "PAYMENT_RECEIPT");
   assert.equal(emails[0].to, user.email);
-  assert.equal(emails[0].eventId, "sub-1");
-  await deliver("subscription.active", "activation");
+  await deliver("payment.succeeded", "payment2", false, payment);
   assert.equal(emails.length, 1);
-  await deliver("subscription.renewed", "renewal-1");
-  assert.equal(emails[1].action, "PLAN_RENEWED");
-  assert.equal(emails[1].eventId, "renewal-1");
-  await deliver("subscription.renewed", "renewal-1");
+  assert.equal(pendingEmails.size, 1);
+  await deliver("payment.succeeded", "payment3", false, { ...payment, payment_id: "pay_renewal" });
   assert.equal(emails.length, 2);
-  await deliver("subscription.renewed", "renewal-2");
-  assert.equal(emails.length, 3);
-});
-
-test("activation still emails when checkout recovery already linked the subscription", async () => {
-  const { user, deliver, emails } = fixture();
-  Object.assign(user, { plan: "CREATOR", subscriptionId: "sub-1", customerId: "customer-1", subscriptionStatus: "active" });
-  assert.equal((await deliver()).status, 200);
-  assert.equal(emails.length, 1);
-  assert.equal(emails[0].action, "PURCHASE_ACTIVATED");
 });
 
 test("rejected, rolled-back, unrelated and stale events send no emails", async () => {
   const { deliver, user, emails } = fixture();
   await deliver("subscription.active", "bad-signature", true);
   await deliver("subscription.active", "bad-product", false, { product_id: "unknown" });
-  await deliver("payment.succeeded", "payment");
+  await deliver("payment.succeeded", "payment", false, { subscription_id: undefined, metadata: {} });
   await deliver("subscription.plan_changed", "plan-change");
   await deliver("subscription.updated", "updated");
   user.subscriptionId = "replacement";
@@ -134,13 +131,13 @@ test("rejected, rolled-back, unrelated and stale events send no emails", async (
 });
 
 for (const options of [{ emailFails: true }, { emailThrows: true }]) {
-  test(`email failure does not undo billing or cause webhook redelivery: ${JSON.stringify(options)}`, async () => {
-    const { deliver, user, emails, events } = fixture(options);
-    assert.equal((await deliver()).status, 200);
+  test(`email failure retains a receipt job without undoing access: ${JSON.stringify(options)}`, async () => {
+    const { deliver, user, emails, pendingEmails } = fixture(options);
+    await deliver();
+    assert.equal((await deliver("payment.succeeded", "paid", false, { payment_id: "pay_first", status: "succeeded" })).status, 200);
     assert.equal(user.plan, "CREATOR");
-    assert.equal(events.size, 1);
-    assert.equal((await deliver()).status, 200);
     assert.equal(emails.length, 1);
+    assert.equal([...pendingEmails.values()][0].completed, undefined);
   });
 }
 
@@ -175,16 +172,16 @@ test("a signed subscription failure revokes paid access", async () => {
   assert.equal(user.subscriptionStatus, "failed");
 });
 
-test("a terminal cancellation revokes paid access even with a future billing date", async () => {
+test("cancellation preserves paid access until the future billing date", async () => {
   const { deliver, user } = fixture();
   await deliver();
-  const futurePeriodEnd = "2026-12-01T00:00:00.000Z";
+  const futurePeriodEnd = "2099-12-01T00:00:00.000Z";
   assert.equal((await deliver("subscription.cancelled", "event-2", false, {
     status: "cancelled",
     cancel_at_next_billing_date: true,
     next_billing_date: futurePeriodEnd,
   })).status, 200);
-  assert.equal(user.plan, "FREE");
+  assert.equal(user.plan, "CREATOR");
   assert.equal(user.subscriptionStatus, "cancelled");
   assert.equal(user.subscriptionCancelAtPeriodEnd, true);
   assert.equal(user.subscriptionCurrentPeriodEnd.toISOString(), futurePeriodEnd);
@@ -262,4 +259,44 @@ test("configured Creator product activates Creator access", async () => {
   const response = await f.deliver("subscription.active", "event-15", false, { product_id: "pdt_creator" });
   assert.equal(response.status, 200);
   assert.equal(f.user.plan, "CREATOR");
+});
+
+test("cancellation with no date preserves the previously verified paid end", async () => {
+  const h = fixture();
+  const end = "2099-12-01T10:00:00Z";
+  await h.deliver("subscription.active", "active", false, { next_billing_date: end });
+  await h.deliver("subscription.cancelled", "cancel", false, { status: "cancelled" });
+  assert.equal(h.user.plan, "CREATOR");
+  assert.equal(h.user.subscriptionCurrentPeriodEnd.toISOString(), new Date(end).toISOString());
+  assert.equal(h.emails[0].action, "CANCELLATION_SCHEDULED");
+  await h.deliver("subscription.cancelled", "cancel-duplicate", false, { status: "cancelled" });
+  assert.equal(h.emails.length, 1);
+});
+test("cancellation with no known period retrieves the provider's boundary", async () => {
+  const h = fixture();
+  await h.deliver();
+  assert.equal((await h.deliver("subscription.cancelled", "cancel", false, { status: "cancelled" })).status, 200);
+  assert.equal(h.user.plan, "CREATOR");
+  assert.equal(h.user.subscriptionCurrentPeriodEnd.getUTCFullYear(), 2099);
+});
+test("a cancelled subscription update preserves access and an ended period emails expiry", async () => {
+  const h = fixture();
+  await h.deliver("subscription.active", "active", false, { next_billing_date: "2099-12-01T10:00:00Z" });
+  await h.deliver("subscription.updated", "cancel", false, { status: "cancelled" });
+  assert.equal(h.user.plan, "CREATOR");
+  assert.equal(h.user.subscriptionStatus, "cancelled");
+  const expired = fixture();
+  await expired.deliver("subscription.active", "active", false, { next_billing_date: "2000-01-01T00:00:00Z" });
+  await expired.deliver("subscription.cancelled", "ended", false, { status: "cancelled" });
+  assert.equal(expired.user.plan, "FREE");
+  assert.equal(expired.emails[0].action, "PLAN_ACCESS_ENDED");
+});
+
+test("scheduling cancellation without a stored date verifies the end before retaining paid access", async () => {
+  const h = fixture();
+  await h.deliver();
+  assert.equal((await h.deliver("subscription.updated", "scheduled", false, { cancel_at_next_billing_date: true })).status, 200);
+  assert.equal(h.user.plan, "CREATOR");
+  assert.equal(h.user.subscriptionCurrentPeriodEnd.getUTCFullYear(), 2099);
+  assert.equal(require("./helpers/ai-schema.cjs").effectiveAiPlan(h.user), "CREATOR");
 });

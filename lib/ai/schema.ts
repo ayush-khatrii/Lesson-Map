@@ -28,9 +28,9 @@ export function effectiveAiPlan(user: {
 }): AiPlan {
   if (
     user.plan !== "FREE" &&
-    user.subscriptionStatus === "active" &&
-    // A scheduled cancellation stops renewal, not access to the paid period.
-    (!user.subscriptionCancelAtPeriodEnd ||
+    (user.subscriptionStatus === "active" || user.subscriptionStatus === "cancelled") &&
+    // Cancellation stops renewal while the remaining paid period stays usable.
+    ((user.subscriptionStatus === "active" && !user.subscriptionCancelAtPeriodEnd) ||
       (user.subscriptionCurrentPeriodEnd !== null &&
         user.subscriptionCurrentPeriodEnd.getTime() > Date.now()))
   ) return user.plan;

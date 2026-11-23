@@ -12,6 +12,15 @@ export type EmailEvent = Recipient &
         action: "PURCHASE_ACTIVATED" | "PLAN_RENEWED";
         plan: "CREATOR" | "PROFESSIONAL";
       }
+    | { action: "PAYMENT_RECEIPT"; paymentId: string }
+    | {
+        action:
+          | "CANCELLATION_SCHEDULED"
+          | "PLAN_RENEWAL_REMINDER"
+          | "PLAN_EXPIRY_REMINDER"
+          | "PLAN_ACCESS_ENDED";
+        periodEnd: string;
+      }
     | { action: "PASSWORD_RESET_REQUESTED"; resetUrl: string }
     | { action: "PASSWORD_RESET_COMPLETED" }
   );

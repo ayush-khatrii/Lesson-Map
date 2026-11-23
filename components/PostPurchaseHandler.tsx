@@ -146,7 +146,7 @@ export default function PostPurchaseHandler() {
             const isVerified =
               subscription.subscriptionId === subscriptionId &&
               subscription.plan !== "FREE" &&
-              subscription.subscriptionStatus === "active";
+              ["active", "cancelled"].includes(subscription.subscriptionStatus ?? "");
 
             if (isVerified) {
               stop();

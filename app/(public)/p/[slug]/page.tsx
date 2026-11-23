@@ -19,7 +19,7 @@ import {
 
 type CoursePageProps = {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ lesson?: string | string[]; clone?: string | string[] }>;
+  searchParams: Promise<{ lesson?: string | string[] }>;
 };
 
 export async function generateMetadata({ params }: CoursePageProps): Promise<Metadata> {
@@ -158,6 +158,14 @@ export default async function CoursePreviewPage({ params, searchParams }: Course
     socials.push(...candidates.filter((candidate) => candidate.url.length > 0));
   }
 
+  const savedProgress = userId
+    ? await db.lessonProgress.findMany({
+        where: { userId, lesson: { module: { courseId: course.id } }, completedAt: { not: null } },
+        select: { lessonId: true },
+      })
+    : [];
+  const completedLessons = new Set(savedProgress.map((row) => row.lessonId));
+
   const previewCourse: Course = {
     hideBranding: effectiveAiPlan(course.user) !== "FREE",
     id: course.shareSlug ?? course.id,
@@ -184,7 +192,7 @@ export default async function CoursePreviewPage({ params, searchParams }: Course
         videoDurationSeconds: lesson.videoDurationSeconds,
         title: lesson.lessonName,
         description: lesson.description,
-        done: false,
+        done: completedLessons.has(lesson.id),
         resources: lesson.resources.map((r) => ({
           id: r.id,
           title: r.name,
@@ -271,8 +279,9 @@ export default async function CoursePreviewPage({ params, searchParams }: Course
           dangerouslySetInnerHTML={{ __html: jsonLd(structuredData) }}
         />
       ) : null}
-      {course.isPublic && course.shareSlug && <PublicCourseActions key={course.id} slug={course.shareSlug} isOwner={userId === course.userId} emailCapture={course.emailCapture && effectiveAiPlan(course.user) !== "FREE"} mainOrigin={SITE_URL} cloneRequested={query.clone === "1"} />}
+      {course.isPublic && course.shareSlug && <PublicCourseActions key={course.id} slug={course.shareSlug} isOwner={userId === course.userId} emailCapture={course.emailCapture && effectiveAiPlan(course.user) !== "FREE"} mainOrigin={SITE_URL} isSignedIn={Boolean(userId)} />}
       <LessonMapPublicPage
+        key={`${course.id}:${userId ?? "guest"}`}
         course={previewCourse}
         slug={slug}
         canUseFlow={true}

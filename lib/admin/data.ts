@@ -12,8 +12,8 @@ import {
 import type { UserRow, ContentRow } from "./contracts";
 
 function effectivePlan(now: Date) {
-  return Prisma.sql`CASE WHEN u."plan" <> 'FREE' AND u."subscriptionStatus" = 'active'
-    AND (NOT u."subscriptionCancelAtPeriodEnd" OR u."subscriptionCurrentPeriodEnd" > ${now})
+  return Prisma.sql`CASE WHEN u."plan" <> 'FREE' AND u."subscriptionStatus" IN ('active', 'cancelled')
+    AND ((u."subscriptionStatus" = 'active' AND NOT u."subscriptionCancelAtPeriodEnd") OR u."subscriptionCurrentPeriodEnd" > ${now})
     THEN u."plan"::text ELSE 'FREE' END`;
 }
 
@@ -100,7 +100,7 @@ export async function usersData(params: URLSearchParams) {
         COALESCE(c.courses,0) AS courses, COALESCE(c.published,0) AS "publishedCourses",
         COALESCE(m.modules,0) AS modules, COALESCE(l.lessons,0) AS lessons,
         u."subscriptionCancelAtPeriodEnd" AS cancelling,
-        COALESCE(u."subscriptionStatus" = 'active', false) AND (${effectivePlan(now)}) <> 'FREE' AS "isActive",
+        (${effectivePlan(now)}) <> 'FREE' AS "isActive",
         GREATEST(0, FLOOR(EXTRACT(EPOCH FROM (${now}::timestamp - u."createdAt"))/86400))::int AS "accountAgeDays"
       FROM "user" u LEFT JOIN course_counts c ON c."userId"=u.id LEFT JOIN module_counts m ON m."userId"=u.id LEFT JOIN lesson_counts l ON l."userId"=u.id
     ), filtered AS (SELECT * FROM enriched WHERE

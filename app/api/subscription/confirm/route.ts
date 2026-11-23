@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
     if (subscription.metadata?.userId !== userId || subscription.product_id !== config.productId) {
       return NextResponse.json({ error: "This checkout does not match your account and plan." }, { status: 403 });
     }
-    if (subscription.status !== "active") {
+    if (!["active", "cancelled"].includes(subscription.status)) {
       return NextResponse.json(
         {
           subscriptionStatus: subscription.status,
@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
     if (!subscription.customer.customer_id || Number.isNaN(periodEnd.getTime())) {
       throw new Error("Incomplete subscription response");
     }
-    if (subscription.cancel_at_next_billing_date && periodEnd.getTime() <= Date.now()) {
+    if ((subscription.cancel_at_next_billing_date || subscription.status === "cancelled") && periodEnd.getTime() <= Date.now()) {
       return NextResponse.json({ subscriptionStatus: "cancelled" }, {
         headers: { "Cache-Control": "no-store" },
       });
@@ -69,13 +69,13 @@ export async function POST(req: NextRequest) {
         subscriptionProductId: subscription.product_id,
         subscriptionStatus: subscription.status,
         subscriptionCurrentPeriodEnd: periodEnd,
-        subscriptionCancelAtPeriodEnd: subscription.cancel_at_next_billing_date,
+        subscriptionCancelAtPeriodEnd: subscription.cancel_at_next_billing_date || subscription.status === "cancelled",
       },
     });
     if (!updated.count) {
       return NextResponse.json({ error: "Your account already has a different subscription. Please contact support." }, { status: 409 });
     }
-    return NextResponse.json({ plan: body.plan, subscriptionId: body.subscriptionId, subscriptionStatus: "active" }, {
+    return NextResponse.json({ plan: body.plan, subscriptionId: body.subscriptionId, subscriptionStatus: subscription.status }, {
       headers: { "Cache-Control": "no-store" },
     });
   } catch (error) {

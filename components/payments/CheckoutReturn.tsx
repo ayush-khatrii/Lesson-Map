@@ -43,7 +43,7 @@ export function CheckoutReturn() {
         if (controller.signal.aborted) return;
         // Only the authenticated database state can confirm access. Never trust
         // the payment status supplied in the redirect's query parameters.
-        if (subscription.subscriptionStatus === "active" &&
+        if (["active", "cancelled"].includes(subscription.subscriptionStatus) &&
             ["CREATOR", "PROFESSIONAL"].includes(subscription.plan) &&
             (!subscriptionId || subscription.subscriptionId === subscriptionId) &&
             (!plan || subscription.plan === plan)) {

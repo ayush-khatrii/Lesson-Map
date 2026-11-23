@@ -2,7 +2,11 @@ import "server-only";
 import { createHash } from "node:crypto";
 import { Resend } from "resend";
 import { render } from "@react-email/render";
-import { EMAIL_ACTIONS, EMAIL_REPLY_TO } from "@/constants/email";
+import {
+  EMAIL_ACTIONS,
+  EMAIL_REPLY_TO,
+  BILLING_REMINDER_LATE_SUBJECT,
+} from "@/constants/email";
 import { emailContent } from "./templates";
 import type { EmailEvent, EmailResult } from "./types";
 
@@ -15,7 +19,10 @@ function failed(
   return { status: "failed", reason };
 }
 
-export async function sendEmailAction(event: EmailEvent): Promise<EmailResult> {
+export async function sendEmailAction(
+  event: EmailEvent,
+  attachments?: { filename: string; content: Buffer; contentType: string }[],
+): Promise<EmailResult> {
   if (!Object.hasOwn(EMAIL_ACTIONS, event.action))
     return failed(event, "invalid_event");
   const config = EMAIL_ACTIONS[event.action];
@@ -23,6 +30,14 @@ export async function sendEmailAction(event: EmailEvent): Promise<EmailResult> {
   const apiKey = process.env.RESEND_API_KEY?.trim();
   if (!apiKey) return { status: "skipped", reason: "not_configured" };
 
+  if (
+    event.action === "PAYMENT_RECEIPT" &&
+    !attachments?.some(
+      (file) =>
+        file.contentType === "application/pdf" && file.content.length > 0,
+    )
+  )
+    return failed(event, "invalid_event");
   let content: { html: string; text: string };
   try {
     const origin = new URL(
@@ -62,9 +77,15 @@ export async function sendEmailAction(event: EmailEvent): Promise<EmailResult> {
       {
         from: config.from,
         to: [event.to],
-        subject: config.subject,
+        subject:
+          (event.action === "PLAN_RENEWAL_REMINDER" ||
+            event.action === "PLAN_EXPIRY_REMINDER") &&
+          new Date(event.periodEnd).getTime() - Date.now() < 2 * 86400000
+            ? BILLING_REMINDER_LATE_SUBJECT
+            : config.subject,
         replyTo: EMAIL_REPLY_TO,
         ...content,
+        ...(attachments ? { attachments } : {}),
       },
       { idempotencyKey, signal: AbortSignal.timeout(10_000) },
     );

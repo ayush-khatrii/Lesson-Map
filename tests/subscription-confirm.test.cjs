@@ -104,3 +104,11 @@ test("checkout recovery cannot extend a scheduled cancellation past period end",
   assert.equal((await (await h.post()).json()).subscriptionStatus, "cancelled");
   assert.equal(h.writes.length, 0);
 });
+
+test("checkout recovery keeps a cancelled subscription with paid time remaining", async () => {
+  const h = fixture({ subscription: { status: "cancelled", cancel_at_next_billing_date: true } });
+  const response = await h.post();
+  assert.equal(response.status, 200);
+  assert.equal(h.writes[0].data.plan, "CREATOR");
+  assert.equal(h.writes[0].data.subscriptionStatus, "cancelled");
+});

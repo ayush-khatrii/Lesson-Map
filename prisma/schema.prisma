@@ -398,3 +398,22 @@ model UploadAllocation {
   @@index([userId])
   @@index([savedAt, createdAt, key])
 }
+
+// Billing notifications are committed with webhook state and delivered afterwards.
+model BillingEmail {
+  id String @id
+  userId String
+  event Json
+  subscriptionId String
+  paymentEnvironment PaymentEnvironment
+  paymentId String?
+  periodEnd DateTime?
+  createdAt DateTime @default(now())
+  nextAttemptAt DateTime @default(now())
+  lockedUntil DateTime?
+  completedAt DateTime?
+  attempts Int @default(0)
+  lastError String?
+
+  @@index([completedAt, nextAttemptAt])
+}

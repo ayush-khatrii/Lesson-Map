@@ -65,3 +65,13 @@ test("scheduled cancellation ends exactly at the billing boundary without a webh
     subscriptionCurrentPeriodEnd: new Date(now.getTime() + 1000),
   }), "FREE");
 });
+
+test("cancelled subscriptions retain access until the exact paid boundary", (t) => {
+  const now = new Date("2030-12-01T10:00:00Z");
+  t.mock.method(Date, "now", () => now.getTime());
+  for (const offset of [-1, 0, 1]) {
+    assert.equal(effectiveAiPlan({ plan: "CREATOR", subscriptionStatus: "cancelled",
+      subscriptionCancelAtPeriodEnd: true, subscriptionCurrentPeriodEnd: new Date(now.getTime() + offset),
+    }), offset > 0 ? "CREATOR" : "FREE");
+  }
+});

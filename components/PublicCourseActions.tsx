@@ -1,9 +1,7 @@
 "use client";
-import { useSession } from "@/lib/auth-client";
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { toast } from "sonner";
 import {
   Dialog,
   DialogClose,
@@ -44,70 +42,25 @@ export default function PublicCourseActions({
   isOwner,
   emailCapture,
   mainOrigin,
-  cloneRequested = false,
+  isSignedIn = false,
 }: {
   slug: string;
   isOwner: boolean;
   emailCapture: boolean;
   mainOrigin: string;
-  cloneRequested?: boolean;
+  isSignedIn?: boolean;
 }) {
-  const { data: session, isPending } = useSession();
-  const [cloning, setCloning] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [signedUp, setSignedUp] = useState(false);
   const [signupOpen, setSignupOpen] = useState(false);
   const [signupError, setSignupError] = useState("");
   const emailId = useId();
-  const cloneRoadmap = useCallback(async () => {
-    if (window.location.origin !== mainOrigin) {
-      window.location.assign(
-        `${mainOrigin}/p/${encodeURIComponent(slug)}?clone=1`,
-      );
-      return;
-    }
-    setCloning(true);
-    try {
-      const response = await fetch(
-        `/api/public/${encodeURIComponent(slug)}/clone`,
-        { method: "POST" },
-      );
-      if (response.status === 401) {
-        window.location.assign(
-          `/sign-in?callbackUrl=${encodeURIComponent(`/p/${slug}?clone=1`)}`,
-        );
-        return;
-      }
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error);
-      window.location.assign(`/outline/${result.courseId}`);
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Could not clone roadmap.",
-      );
-    } finally {
-      setCloning(false);
-    }
-  }, [mainOrigin, slug]);
-  const resumedClone = useRef(false);
-  useEffect(() => {
-    if (
-      !cloneRequested ||
-      !session ||
-      resumedClone.current ||
-      window.location.origin !== mainOrigin
-    )
-      return;
-    resumedClone.current = true;
-    window.history.replaceState(null, "", `/p/${encodeURIComponent(slug)}`);
-    void cloneRoadmap();
-  }, [cloneRequested, session, mainOrigin, slug, cloneRoadmap]);
   useEffect(() => {
     if (!isOwner) trackCourseEvent(slug, "visit");
   }, [slug, isOwner]);
   return (
     <div className="mx-auto max-w-7xl space-y-4 px-4 py-4">
-      {!isPending && !session && (
+      {!isSignedIn && (
         <p className="text-sm text-muted-foreground">
           <a
             className="underline"
@@ -119,9 +72,6 @@ export default function PublicCourseActions({
         </p>
       )}
       <div className="flex flex-wrap items-center gap-2">
-        <Button variant="outline" disabled={cloning} onClick={cloneRoadmap}>
-          {cloning ? "Copying…" : "Use this roadmap"}
-        </Button>
         {emailCapture && (
           <Dialog open={signupOpen} onOpenChange={setSignupOpen}>
             <DialogTrigger asChild>

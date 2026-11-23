@@ -1074,8 +1074,8 @@ export default function LessonMapPublicPage({
   );
   const courseId = slug ?? course.id ?? "default-course";
 
-  const { isDone, toggle, completedCount, hydrated, markStarted } =
-    useLessonProgress(courseId);
+  const { isDone, toggle, completedCount, markStarted } =
+    useLessonProgress(courseId, course.modules.flatMap((module) => module.lessons.filter((lesson) => lesson.done).map((lesson) => lesson.id)));
 
   const [view, setView] = useState<ViewMode>("accordion");
   const [upgradeOpen, setUpgradeOpen] = useState(false);
@@ -1118,7 +1118,6 @@ export default function LessonMapPublicPage({
 
   useEffect(() => {
     if (
-      !hydrated ||
       !initialLessonId ||
       !isListView ||
       didAlignInitialLesson.current
@@ -1129,7 +1128,7 @@ export default function LessonMapPublicPage({
       didAlignInitialLesson.current = true;
     });
     return () => cancelAnimationFrame(frame);
-  }, [hydrated, initialLessonId, isListView, alignReader]);
+  }, [initialLessonId, isListView, alignReader]);
 
   useEffect(() => {
     if (slug && selectedLessonId && !isOwner) trackCourseEvent(slug, "start");
@@ -1192,14 +1191,6 @@ export default function LessonMapPublicPage({
         .flatMap((module) => module.lessons)
         .findIndex((lesson) => lesson.id === selectedLessonId) + 1
     : 0;
-
-  if (!hydrated) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-      </div>
-    );
-  }
 
   return (
     <div
@@ -1267,8 +1258,7 @@ export default function LessonMapPublicPage({
             </div>
             <Progress value={overallPct} className="mt-2 h-2 bg-secondary" />
             <p className="mt-1.5 text-xs text-muted-foreground">
-              {completedCount} of {totalLessons} lessons · saved locally in your
-              browser
+              {completedCount} of {totalLessons} lessons · saved to your account
             </p>
           </div>
 
