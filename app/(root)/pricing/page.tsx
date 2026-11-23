@@ -159,7 +159,7 @@ const PricingPage = () => {
           </p>
         )}
 
-        <div className="grid rounded-xl border border-border bg-card md:grid-cols-2">
+        <div className="grid items-stretch gap-6 md:grid-cols-2">
           {plans.map((plan) => {
             const isCurrentPlan = Boolean(currentPlan === plan.type);
             const hasPaidPlan = Boolean(currentPlan && currentPlan !== "FREE");
@@ -185,10 +185,10 @@ const PricingPage = () => {
                 key={plan.type}
                 aria-label={plan.name}
                 className={cn(
-                  "relative flex min-w-0 flex-col p-6 sm:p-8",
+                  "relative flex min-w-0 flex-col rounded-xl border border-border bg-card p-6 sm:p-8",
                   plan.isPopular
-                    ? "rounded-b-xl border-t border-border bg-muted/30 md:-my-1 md:-me-px md:rounded-xl md:border md:py-9"
-                    : "rounded-t-xl md:rounded-s-xl md:rounded-tr-none",
+                    ? "bg-muted/30"
+                    : "bg-card",
                 )}
               >
                 <div className="flex min-h-7 flex-wrap items-center justify-between gap-2">
