@@ -145,6 +145,7 @@ export const plans = [
     features: [
       `Up to ${COURSE_LIMITS.FREE} courses`,
       "One complete AI course outline, included once",
+      "One YouTube playlist import, included once",
       "Unlimited manual modules and lessons",
       `${formatStorageLimit(UPLOAD_LIMITS.FREE.storageBytes)} total file storage`,
       `Uploads up to ${maxFileSize} per file · ${UPLOAD_LIMITS.FREE.requestsPerMinute} uploads/minute`,
@@ -167,6 +168,7 @@ export const plans = [
     features: [
       `${COURSE_LIMITS.CREATOR} course maps`,
       `${AI_LIMITS.CREATOR.generations} AI generations/month · full multi-module courses (Only successful AI generations count, failed attempts are never charged)`,
+      "Unlimited YouTube playlist imports",
       "Unlimited modules and lessons in every course",
       `${formatStorageLimit(UPLOAD_LIMITS.CREATOR.storageBytes)} total file storage`,
       `Uploads up to ${maxFileSize} per file · ${UPLOAD_LIMITS.CREATOR.requestsPerMinute} uploads/minute`,
@@ -191,6 +193,11 @@ export const comparisonRows = [
     label: "AI outline generation",
     free: "One complete outline per account · one-time allowance",
     creator: `${AI_LIMITS.CREATOR.generations} generations/month · full multi-module courses`,
+  },
+  {
+    label: "YouTube playlist imports",
+    free: "One import per account · one-time allowance",
+    creator: "Unlimited",
   },
   {
     label: "Failed AI generations",

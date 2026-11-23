@@ -346,6 +346,10 @@ const PricingPage = () => {
             or unfinished uploads is released after cleanup, following a minimum
             24-hour safety window.
           </p>
+          <p className="mt-3 text-xs leading-5 text-muted-foreground">
+            YouTube imports support playlists with up to 500 videos. Rate limits
+            apply. Each imported playlist counts toward your plan’s course limit.
+          </p>
 
           <div className="mt-6 grid gap-4 md:grid-cols-2">
             <div className="rounded-2xl border border-border bg-background/70 p-4">

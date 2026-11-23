@@ -1,0 +1,98 @@
+.lessonmap-toaster { font-family: inherit; }
+
+/* Keep Sonner's positioning, swipe dismissal, and live announcements. */
+.lessonmap-toaster [data-sonner-toast].lessonmap-toast {
+  --status-color: var(--muted-foreground);
+  width: var(--width);
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 18px 44px 18px 18px;
+  border: 1px solid var(--border);
+  border-inline-start: 3px solid var(--status-color);
+  border-radius: 14px;
+  background: var(--popover);
+  color: var(--popover-foreground);
+  box-shadow: 0 8px 32px rgb(0 0 0 / 14%), 0 2px 6px rgb(0 0 0 / 6%);
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.lessonmap-toaster [data-sonner-toast].lessonmap-toast[data-type="success"] { --status-color: #15803d; }
+.lessonmap-toaster [data-sonner-toast].lessonmap-toast[data-type="error"] { --status-color: #dc2626; }
+.lessonmap-toaster [data-sonner-toast].lessonmap-toast[data-type="warning"] { --status-color: #a16207; }
+.lessonmap-toaster [data-sonner-toast].lessonmap-toast[data-type="info"] { --status-color: #2563eb; }
+.dark .lessonmap-toaster [data-sonner-toast].lessonmap-toast[data-type="success"] { --status-color: #4ade80; }
+.dark .lessonmap-toaster [data-sonner-toast].lessonmap-toast[data-type="error"] { --status-color: #f87171; }
+.dark .lessonmap-toaster [data-sonner-toast].lessonmap-toast[data-type="warning"] { --status-color: #facc15; }
+.dark .lessonmap-toaster [data-sonner-toast].lessonmap-toast[data-type="info"] { --status-color: #60a5fa; }
+
+.lessonmap-toaster [data-sonner-toast].lessonmap-toast [data-icon] {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  color: var(--status-color);
+  background: color-mix(in srgb, var(--status-color) 12%, transparent);
+}
+
+.lessonmap-toaster [data-sonner-toast].lessonmap-toast [data-content] { min-width: 0; flex: 1; }
+.lessonmap-toaster [data-sonner-toast].lessonmap-toast [data-title] { font-weight: 600; }
+.lessonmap-toaster [data-sonner-toast].lessonmap-toast [data-description] {
+  margin-top: 4px;
+  color: var(--muted-foreground);
+  line-height: 1.6;
+}
+
+.lessonmap-toaster [data-sonner-toast].lessonmap-toast [data-close-button] {
+  position: absolute;
+  inset: 10px 8px auto auto;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted-foreground);
+  cursor: pointer;
+}
+
+.lessonmap-toaster [data-sonner-toast].lessonmap-toast [data-close-button]:hover {
+  background: var(--muted);
+  color: var(--foreground);
+}
+
+.lessonmap-toaster [data-sonner-toast].lessonmap-toast [data-button] {
+  align-self: center;
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--foreground);
+  color: var(--background);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.lessonmap-toaster [data-sonner-toast].lessonmap-toast [data-cancel] {
+  background: var(--muted);
+  color: var(--foreground);
+}
+
+.lessonmap-toaster [data-sonner-toast].lessonmap-toast:focus-visible,
+.lessonmap-toaster [data-sonner-toast].lessonmap-toast button:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lessonmap-toaster, .lessonmap-toaster [data-sonner-toast] {
+    transition: none !important;
+    animation: none !important;
+  }
+}

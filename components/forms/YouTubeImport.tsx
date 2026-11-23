@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,6 +30,7 @@ export default function YouTubeImport({
     null,
   );
   const router = useRouter();
+  const queryClient = useQueryClient();
   return (
     <form
       className="grid overflow-hidden rounded-2xl border bg-card lg:grid-cols-[1.3fr_1fr]"
@@ -42,6 +44,10 @@ export default function YouTubeImport({
         const requestId =
           attempt?.url === url ? attempt.id : crypto.randomUUID();
         setAttempt({ url, id: requestId });
+        const toastId = toast.loading("Importing playlist", {
+          description: "Collecting videos and saving your course.",
+          closeButton: false,
+        });
         try {
           const response = await fetch("/api/import/youtube", {
             method: "POST",
@@ -55,18 +61,35 @@ export default function YouTubeImport({
                 ? result.error
                 : `Import failed (HTTP ${response.status}). Please try again.`;
             setImportError({ message, reference: result?.requestId });
-            toast.error(message);
+            toast.error("Playlist import failed", {
+              id: toastId,
+              description: message,
+              duration: 8000,
+              closeButton: true,
+            });
             return;
           }
           if (!result?.courseId)
             throw new Error(
               "The server returned an incomplete import response. Please try again.",
             );
-          if (result.skipped)
-            toast.info(`Skipped ${result.skipped} unavailable videos.`);
-          if (result.missingDurationCount)
-            toast.info(`Video duration was unavailable for ${result.missingDurationCount} lessons. You can enter it in the lesson editor.`);
-          router.push(`/outline/${result.courseId}`);
+          queryClient.removeQueries({ queryKey: ["courses"], exact: true });
+          const details = [
+            "Your course is saved in the dashboard and ready to edit.",
+            result.skipped
+              ? `Skipped ${result.skipped} unavailable videos.`
+              : null,
+            result.missingDurationCount
+              ? `Duration is missing for ${result.missingDurationCount} lessons. You can add it in the editor.`
+              : null,
+          ].filter(Boolean).join(" ");
+          toast.success("Playlist imported", {
+            id: toastId,
+            description: details,
+            duration: result.skipped || result.missingDurationCount ? 8000 : 5000,
+            closeButton: true,
+          });
+          router.push("/dashboard");
           router.refresh();
         } catch (error) {
           const message =
@@ -76,7 +99,12 @@ export default function YouTubeImport({
                 ? error.message
                 : "Import failed. Please try again.";
           setImportError({ message });
-          toast.error(message);
+          toast.error("Playlist import failed", {
+            id: toastId,
+            description: message,
+            duration: 8000,
+            closeButton: true,
+          });
         } finally {
           setBusy(false);
           onBusyChange?.(false);
