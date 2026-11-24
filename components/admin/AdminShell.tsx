@@ -192,7 +192,7 @@ function AdminShellContent({
             <div className="mx-2 my-4 border-t" />
           )}
           <Link
-            prefetch={false}
+            prefetch={true}
             onPointerEnter={() => prefetch(href)}
             onFocus={() => prefetch(href)}
             onPointerDown={() => prefetch(href)}

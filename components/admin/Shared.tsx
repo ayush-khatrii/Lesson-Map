@@ -1,6 +1,6 @@
 "use client";
 import { useRef, useState, type ReactNode, type FormEvent } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import {
   keepPreviousData,
   useQuery,
@@ -37,11 +37,10 @@ import { percentageChange, dateKey } from "@/lib/admin/filters";
 export const selectClass =
   "h-9 rounded-md border border-input bg-background px-2.5 text-xs shadow-xs outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 disabled:opacity-50";
 export function useAdminParams() {
-  const router = useRouter(),
-    pathname = usePathname(),
+  const pathname = usePathname(),
     params = useSearchParams();
   function set(values: Record<string, string | undefined>, resetPage = true) {
-    const next = new URLSearchParams(params.toString());
+    const next = new URLSearchParams(window.location.search);
     for (const [key, value] of Object.entries(values)) {
       if (
         value === undefined ||
@@ -52,14 +51,18 @@ export function useAdminParams() {
       else next.set(key, value);
     }
     if (resetPage && !("page" in values)) next.delete("page");
-    router.replace(`${pathname}${next.size ? `?${next}` : ""}`, {
-      scroll: false,
-    });
+    // Filters are client-owned. Updating history also updates useSearchParams
+    // without waiting for another server render before fetching the report.
+    window.history.replaceState(
+      null,
+      "",
+      `${pathname}${next.size ? `?${next}` : ""}`,
+    );
   }
   return {
     params,
     set,
-    reset: () => router.replace(pathname, { scroll: false }),
+    reset: () => window.history.replaceState(null, "", pathname),
   };
 }
 export function useAdminReport<T>(resource: string, search?: string) {
