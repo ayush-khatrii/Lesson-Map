@@ -16,7 +16,7 @@
     "test:timing": "node --import tsx --test tests/lesson-time*.test.*",
     "typecheck": "tsc --noEmit --incremental false",
     "postinstall": "prisma generate",
-    // "admin:bootstrap": "node --import tsx scripts/admin-bootstrap.ts",
+    "admin:bootstrap": "node --import tsx scripts/admin-bootstrap.ts",
     "test:admin": "node --import tsx --test tests/admin*.test.ts tests/admin*.test.cjs",
     "build:webpack": "next build --webpack",
     "test:email": "node --import tsx --test tests/email.test.cjs tests/billing-email.test.cjs",
