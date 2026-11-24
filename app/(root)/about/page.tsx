@@ -2,11 +2,31 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, ArrowUpRight, Github } from "lucide-react";
 import Reveal from "@/components/marketing/Reveal";
+import { SITE_NAME } from "@/lib/site";
+
+const title = "About LessonMap | Course Planning and Sharing";
+const description =
+  "Meet LessonMap, an online course builder for educators and creators. Organize lessons and learning materials, then share your course with a link.";
 
 export const metadata: Metadata = {
-  title: "About LessonMap",
-  description: "LessonMap is a simple workspace for organizing and sharing courses, built by Ayush Khatri.",
+  title: { absolute: title },
+  description,
   alternates: { canonical: "/about" },
+  openGraph: {
+    title,
+    description,
+    url: "/about",
+    siteName: SITE_NAME,
+    type: "website",
+    locale: "en_US",
+    images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: SITE_NAME }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title,
+    description,
+    images: [{ url: "/opengraph-image", alt: SITE_NAME }],
+  },
 };
 
 export default function AboutPage() {

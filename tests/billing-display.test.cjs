@@ -5,6 +5,10 @@ const vm = require('node:vm');
 const ts = require('typescript');
 const React = require('react');
 const { renderToStaticMarkup } = require('react-dom/server');
+const pricingModule = { exports: {} };
+vm.runInNewContext(ts.transpileModule(fs.readFileSync('constants/pricing.ts', 'utf8'), {
+  compilerOptions: { module: ts.ModuleKind.CommonJS },
+}).outputText, { module: pricingModule, exports: pricingModule.exports });
 function renderBilling(plan) {
   const module = { exports: {} };
   const Container = ({ children }) => React.createElement('div', null, children);
@@ -15,6 +19,7 @@ function renderBilling(plan) {
     require(id) {
       if (id === 'react' || id === 'react/jsx-runtime') return require(id);
       if (id === 'next/link') return { __esModule: true, default: Container };
+      if (id === '@/constants/pricing') return pricingModule.exports;
       if (id === '@/lib/ai/schema') return { AI_LIMITS: { [plan]: { generations: plan === 'FREE' ? 1 : 200 } } };
       if (id === '@/lib/plans') return { COURSE_LIMITS: { [plan]: plan === 'FREE' ? 3 : 'Unlimited' } };
       if (id === 'sonner') return { toast: {} };
@@ -38,4 +43,18 @@ test('billing shows the account plan and delegates subscription-specific prices 
   assert.match(renderBilling('CREATOR'), /Creator plan/);
   assert.match(renderBilling('CREATOR'), /See billing portal/);
   assert.doesNotMatch(renderBilling('CREATOR'), /\$12|\$15/);
+});
+test('free billing price and period follow the shared pricing configuration', () => {
+  const pricing = pricingModule.exports.PLAN_PRICING;
+  const original = { amount: pricing.plans.FREE.amount, period: pricing.billingPeriod };
+  try {
+    pricing.plans.FREE.amount = 3;
+    pricing.billingPeriod = 'year';
+    const html = renderBilling('FREE');
+    assert.match(html, /\$3/);
+    assert.match(html, /\/ year/);
+  } finally {
+    pricing.plans.FREE.amount = original.amount;
+    pricing.billingPeriod = original.period;
+  }
 });

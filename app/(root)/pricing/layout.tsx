@@ -1,15 +1,29 @@
 import type { Metadata } from "next";
-import { absoluteUrl, jsonLd } from "@/lib/site";
+import { PLAN_PRICING } from "@/constants/pricing";
+import { absoluteUrl, jsonLd, SITE_NAME } from "@/lib/site";
+
+const title = "LessonMap Pricing | Free and Creator Plans";
+const description =
+  "Compare LessonMap's Free and Creator plans. Build and share courses for free, or upgrade for more AI outlines, exports, email capture, and unbranded sharing.";
 
 export const metadata: Metadata = {
-  title: "Pricing — Course Planning Plans for Creators",
-  description:
-    "Compare LessonMap plans for creating, organizing, exporting, and sharing course outlines. Start free and upgrade when you need more AI generations and creator features.",
+  title: { absolute: title },
+  description,
   alternates: { canonical: "/pricing" },
   openGraph: {
-    title: "LessonMap Pricing",
-    description: "Choose a LessonMap plan for planning and sharing structured online courses.",
+    title,
+    description,
     url: "/pricing",
+    siteName: SITE_NAME,
+    type: "website",
+    locale: "en_US",
+    images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: SITE_NAME }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title,
+    description,
+    images: [{ url: "/opengraph-image", alt: SITE_NAME }],
   },
 };
 
@@ -21,28 +35,19 @@ export default function PricingLayout({ children }: { children: React.ReactNode 
     applicationCategory: "EducationalApplication",
     operatingSystem: "Web",
     url: absoluteUrl("/pricing"),
-    offers: [
-      {
-        "@type": "Offer",
-        name: "Free Plan",
-        price: "0",
-        priceCurrency: "USD",
-        url: absoluteUrl("/pricing"),
+    offers: Object.values(PLAN_PRICING.plans).map((plan) => ({
+      "@type": "Offer",
+      name: `${plan.name} Plan`,
+      price: plan.amount,
+      priceCurrency: PLAN_PRICING.currency,
+      url: absoluteUrl("/pricing"),
+      priceSpecification: {
+        "@type": "UnitPriceSpecification",
+        price: plan.amount,
+        priceCurrency: PLAN_PRICING.currency,
+        unitText: PLAN_PRICING.billingPeriod.toUpperCase(),
       },
-      {
-        "@type": "Offer",
-        name: "Creator Plan",
-        price: "12",
-        priceCurrency: "USD",
-        url: absoluteUrl("/pricing"),
-        priceSpecification: {
-          "@type": "UnitPriceSpecification",
-          price: "12",
-          priceCurrency: "USD",
-          unitText: "MONTH",
-        },
-      },
-    ],
+    })),
   };
 
   return (

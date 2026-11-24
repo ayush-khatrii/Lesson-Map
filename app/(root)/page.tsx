@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import LandingPage from "@/components/marketing/LandingPage";
 import { SUPPORT_EMAIL } from "@/constants/email";
+import { PLAN_PRICING } from "@/constants/pricing";
 import { absoluteUrl, jsonLd, SITE_DESCRIPTION, SITE_NAME, SITE_TITLE } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -11,6 +12,9 @@ export const metadata: Metadata = {
     title: SITE_TITLE,
     description: SITE_DESCRIPTION,
     url: "/",
+    siteName: SITE_NAME,
+    type: "website",
+    locale: "en_US",
     images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: SITE_TITLE }],
   },
   twitter: {
@@ -55,8 +59,8 @@ export default function Page() {
         description: SITE_DESCRIPTION,
         offers: {
           "@type": "Offer",
-          price: "0",
-          priceCurrency: "USD",
+          price: PLAN_PRICING.plans.FREE.amount,
+          priceCurrency: PLAN_PRICING.currency,
           description: "Free plan available",
         },
       },

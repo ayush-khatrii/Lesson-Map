@@ -16,12 +16,17 @@ function fixture(env = {}) {
       module, exports: module.exports, process: { env }, URL, console,
       require(id) {
         if (id === '@/lib/site') return load('lib/site.ts');
+        if (id === '@/constants/pricing') return load('constants/pricing.ts');
+        if (id === '@/lib/ai/schema') return load('lib/ai/schema.ts');
+        if (id === '@/lib/plans') return load('lib/plans.ts');
+        if (id === '@/lib/r2/upload-policy') return load('lib/r2/upload-policy.ts');
+        if (id === 'zod') return require(id);
         if (id === '@/constants/email') return { SUPPORT_EMAIL: 'support@lessonmap.org' };
         if (id === '@/lib/prisma') return { db: { course: { findMany: async () => [{ shareSlug: 'python basics', updatedAt: new Date('2026-11-01') }] } } };
         if (id === 'next/cache') return { cacheLife() {}, cacheTag() {} };
         if (id === 'next/font/local') return { __esModule: true, default: () => ({ className: 'font' }) };
         if (id === 'react/jsx-runtime') return require(id);
-        if (id === '@/app/globals.css' || id.startsWith('@/components/')) return {};
+        if (id === '@/app/globals.css' || id.startsWith('@/components/') || id === 'next/link' || id === 'lucide-react') return {};
         throw new Error(`Unexpected import ${id}`);
       },
     });
@@ -53,6 +58,52 @@ test('root and home metadata consistently describe LessonMap on the new domain',
   assert.equal(root.description, home.description);
   assert.equal(home.openGraph.title, home.title.absolute);
   assert.equal(root.twitter.card, 'summary_large_image');
+});
+test('public pages have their own matching search and social metadata', () => {
+  const { load } = fixture();
+  const descriptions = new Set();
+  for (const file of ['app/(root)/page.tsx', 'app/(root)/examples/layout.tsx', 'app/(root)/pricing/layout.tsx', 'app/(root)/about/page.tsx']) {
+    const { metadata } = load(file);
+    assert.equal(metadata.description, metadata.openGraph.description);
+    assert.equal(metadata.description, metadata.twitter.description);
+    assert.equal(metadata.openGraph.url, metadata.alternates.canonical);
+    assert.equal(metadata.openGraph.siteName, 'LessonMap');
+    assert.equal(metadata.openGraph.type, 'website');
+    assert.equal(metadata.openGraph.locale, 'en_US');
+    assert.ok(metadata.openGraph.images.length);
+    assert.ok(metadata.twitter.images.length);
+    descriptions.add(metadata.description);
+  }
+  assert.equal(descriptions.size, 4);
+});
+test('changing shared prices updates pricing cards and home and pricing structured data', () => {
+  const { load } = fixture();
+  const { PLAN_PRICING } = load('constants/pricing.ts');
+  // Different fixture values catch hardcoded prices and billing periods in consumers.
+  PLAN_PRICING.plans.FREE.amount = 2;
+  PLAN_PRICING.plans.CREATOR.amount = 27;
+  PLAN_PRICING.currency = 'EUR';
+  PLAN_PRICING.currencySymbol = '€';
+  PLAN_PRICING.billingPeriod = 'year';
+
+  const { plans } = load('constants/index.ts');
+  assert.equal(plans.find(plan => plan.type === 'FREE').price, '€2');
+  assert.equal(plans.find(plan => plan.type === 'CREATOR').price, '€27');
+  assert.ok(plans.every(plan => plan.period === '/year'));
+
+  const home = load('app/(root)/page.tsx').default();
+  const homeData = JSON.parse(home.props.children[0].props.dangerouslySetInnerHTML.__html);
+  const app = homeData['@graph'].find(item => item['@type'] === 'SoftwareApplication');
+  assert.equal(app.offers.price, 2);
+  assert.equal(app.offers.priceCurrency, 'EUR');
+
+  const pricing = load('app/(root)/pricing/layout.tsx').default({ children: null });
+  const pricingData = JSON.parse(pricing.props.children[0].props.dangerouslySetInnerHTML.__html);
+  assert.deepEqual(Array.from(pricingData.offers, offer => offer.price), [2, 27]);
+  assert.ok(pricingData.offers.every(offer => offer.priceCurrency === 'EUR'
+    && offer.priceSpecification.price === offer.price
+    && offer.priceSpecification.priceCurrency === 'EUR'
+    && offer.priceSpecification.unitText === 'YEAR'));
 });
 test('robots and sitemap advertise the new domain, including public course links', async () => {
   const { load } = fixture({ DATABASE_URL: 'test-only-placeholder' });

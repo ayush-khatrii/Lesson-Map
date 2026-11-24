@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { AI_LIMITS } from "@/lib/ai/schema";
 import { COURSE_LIMITS } from "@/lib/plans";
+import { formatPlanPrice, PLAN_PRICING } from "@/constants/pricing";
 import { toast } from "sonner";
 import {
   ArrowUpRight,
@@ -21,8 +22,12 @@ import {
 type PlanName = "FREE" | "CREATOR" | "PROFESSIONAL";
 
 const PLAN_META: Record<PlanName, { name: string; price: string; period: string }> = {
-  FREE: { name: "Free", price: "$0", period: "/ month" },
-  CREATOR: { name: "Creator", price: "See billing portal", period: "" },
+  FREE: {
+    name: PLAN_PRICING.plans.FREE.name,
+    price: formatPlanPrice("FREE"),
+    period: `/ ${PLAN_PRICING.billingPeriod}`,
+  },
+  CREATOR: { name: PLAN_PRICING.plans.CREATOR.name, price: "See billing portal", period: "" },
   PROFESSIONAL: { name: "Paid", price: "See billing portal", period: "" },
 };
 

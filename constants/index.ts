@@ -1,6 +1,7 @@
 import { AI_LIMITS } from "@/lib/ai/schema";
 import { COURSE_LIMITS } from "@/lib/plans";
 import { MAX_UPLOAD_BYTES, UPLOAD_LIMITS } from "@/lib/r2/upload-policy";
+import { formatPlanPrice, PLAN_PRICING } from "@/constants/pricing";
 
 const formatStorageLimit = (bytes: number) =>
   bytes >= 1024 ** 3 ? `${bytes / 1024 ** 3} GB` : `${bytes / 1024 ** 2} MB`;
@@ -134,12 +135,12 @@ export function getExampleCourseTemplate(id?: string) {
 
 export const plans = [
   {
-    name: "Free Plan",
+    name: `${PLAN_PRICING.plans.FREE.name} Plan`,
     type: "FREE",
     description:
       "Try your idea, build a roadmap, and share it with your audience.",
-    price: "$0",
-    period: "/month",
+    price: formatPlanPrice("FREE"),
+    period: `/${PLAN_PRICING.billingPeriod}`,
     cta: "Start Free",
     accent: "Starter",
     features: [
@@ -156,12 +157,12 @@ export const plans = [
     ],
   },
   {
-    name: "Creator Plan",
+    name: `${PLAN_PRICING.plans.CREATOR.name} Plan`,
     type: "CREATOR",
     description:
       "Publish polished roadmaps, collect leads, and share without branding.",
-    price: "$15",
-    period: "/month",
+    price: formatPlanPrice("CREATOR"),
+    period: `/${PLAN_PRICING.billingPeriod}`,
     isPopular: true,
     cta: "Start Creator Plan",
     accent: "Early-bird",
