@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/prisma";
@@ -68,7 +69,8 @@ export async function requireAdmin(
   return { user: identity.user, session, access };
 }
 
-export async function requireAdminPage() {
+// Deduplicate layout/page checks within this render, while rechecking every request.
+export const requireAdminPage = cache(async function requireAdminPage() {
   try {
     return await requireAdmin();
   } catch (error) {
@@ -82,4 +84,4 @@ export async function requireAdminPage() {
       redirect("/dashboard/admin/login");
     throw error;
   }
-}
+});
