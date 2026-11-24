@@ -32,23 +32,23 @@ export default function Hero() {
             Visual course planning, all in one place
           </div> */}
           <h1 className="max-w-2xl text-balance text-5xl font-semibold leading-[0.98] tracking-[-0.055em] sm:text-6xl lg:text-6xl">
-            Turn your knowledge into a course people can follow.
+            Give your lessons a place to come together.
           </h1>
           <p className="mt-7 max-w-lg text-pretty text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8">
-            Plan modules and lessons, keep every resource in one place, and
-            share the finished course with a simple link.
+            LessonMap turns your course outline, videos, and files into an organized course page.
+            Share one link so learners can find each lesson and its supporting materials.
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <Button asChild size="lg">
               <Link href="/start" prefetch={false}>
-                Start now
+                Create your free course
                 <ArrowRight aria-hidden="true" />
               </Link>
             </Button>
             <Button asChild variant="outline" size="lg">
               <Link href="/examples">
                 <Play aria-hidden="true" />
-                Explore examples
+                Know more
               </Link>
             </Button>
           </div>
