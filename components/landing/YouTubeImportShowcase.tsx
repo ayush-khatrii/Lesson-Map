@@ -145,10 +145,6 @@ export default function YouTubeImportShowcase() {
                 Start now
               </Link>
             </Button>
-            <p className="mt-3 text-sm leading-5 text-muted-foreground">
-              Free includes one playlist import per account. Creator includes
-              unlimited imports, subject to rate limits and YouTube availability.
-            </p>
           </div>
         </Reveal>
       </div>
