@@ -288,6 +288,9 @@ export default function CoursePreview() {
   return (
     <motion.div
       initial={false}
+      whileInView={shouldReduce ? undefined : { y: [12, 0], opacity: [0.72, 1] }}
+      viewport={{ once: false, amount: 0.15 }}
+      transition={{ duration: 0.6, ease: "easeOut" }}
       className="relative mx-auto w-full max-w-[640px] [perspective:1200px]"
     >
       <div className="absolute -inset-8 -z-10 rounded-[3rem] bg-primary/15 blur-3xl" />

@@ -22,9 +22,10 @@ export default function Hero() {
       >
         <motion.div
           initial={false}
-          animate={
+          whileInView={
             shouldReduce ? undefined : { opacity: [0.72, 1], y: [12, 0] }
           }
+          viewport={{ once: false, amount: 0.15 }}
           transition={{ duration: 0.6, ease: "easeOut" }}
         >
           {/* <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-foreground">

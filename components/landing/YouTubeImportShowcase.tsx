@@ -2,6 +2,7 @@ import Link from "next/link";
 import { FaYoutube } from "react-icons/fa6";
 import { RiLinksFill, RiShareForwardFill, RiStackFill } from "react-icons/ri";
 import { Button } from "@/components/ui/button";
+import Reveal from "@/components/marketing/Reveal";
 import { shell } from "./styles";
 
 const steps = [
@@ -37,7 +38,8 @@ export default function YouTubeImportShowcase() {
       aria-describedby="youtube-import-description"
       className="scroll-mt-20 py-10 sm:py-12 lg:py-16"
     >
-      <div
+      <Reveal
+        once={false}
         className={`${shell} grid gap-y-7 sm:gap-y-10 lg:grid-cols-2 lg:gap-x-14 lg:gap-y-8`}
       >
         <header className="mx-auto max-w-2xl text-center lg:col-start-2 lg:row-start-1 lg:mx-0 lg:max-w-none lg:text-left">
@@ -147,7 +149,7 @@ export default function YouTubeImportShowcase() {
             </p>
           </div>
         </div>
-      </div>
+      </Reveal>
     </section>
   );
 }

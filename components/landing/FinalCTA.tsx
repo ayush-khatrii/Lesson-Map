@@ -21,7 +21,7 @@ export default function FinalCTA() {
           className="pointer-events-none absolute -bottom-16 -right-4 -z-10 h-64 w-64 rounded-full bg-primary/10 blur-[100px] dark:bg-primary/20"
         />
 
-        <Reveal className="relative overflow-hidden rounded-[2rem] border border-black/10 bg-white/65 shadow-[0_20px_60px_-24px_rgba(120,90,0,0.18),inset_0_1px_0_rgba(255,255,255,0.95)] backdrop-blur-2xl backdrop-saturate-150 sm:rounded-[2.5rem] dark:border-border dark:bg-black/5 dark:shadow-xl dark:shadow-black/40">
+        <Reveal once={false} className="relative overflow-hidden rounded-[2rem] border border-black/10 bg-white/65 shadow-[0_20px_60px_-24px_rgba(120,90,0,0.18),inset_0_1px_0_rgba(255,255,255,0.95)] backdrop-blur-2xl backdrop-saturate-150 sm:rounded-[2.5rem] dark:border-border dark:bg-black/5 dark:shadow-xl dark:shadow-black/40">
           <div
             aria-hidden="true"
             className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/80 to-transparent dark:via-white/40"
