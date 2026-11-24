@@ -14,7 +14,7 @@ export default function PrivacyPage() {
   return (
     <LegalPage
       current="privacy"
-      lastUpdated="November 18, 2026"
+      lastUpdated="November 24, 2026"
       title="Privacy Policy"
       intro={`This policy explains what ${LEGAL_ENTITY} collects when you use our course planning and sharing service, why we need it, and the choices you have.`}
     >
@@ -74,6 +74,8 @@ export default function PrivacyPage() {
               <strong className="text-foreground">Billing records.</strong> If you subscribe, we store
               a subscription identifier, a customer identifier, the product, the subscription status,
               the current period end, and whether it is set to cancel at the end of the period.
+              We also keep payment identifiers and email delivery records to send receipts,
+              renewal or expiry reminders, and cancellation messages, and to retry failed deliveries.
             </>,
             <>
               <strong className="text-foreground">Application logs.</strong> Our hosting provider
@@ -99,9 +101,11 @@ export default function PrivacyPage() {
         </p>
         <p>
           Public course pages use session storage for a randomly generated visitor identifier
-          and visit/start deduplication flags. We send that identifier and the event type to our
-          server, where we store it with the course and event time to provide visit and start
-          counts to the creator. These counts are separate from account-based lesson progress.
+          and flags that help count each visit, learning start, and paid-course link click once
+          per visitor session per course. We send the identifier and event type to our server
+          and store them with the course and event time. Creators receive aggregate counts
+          for these events according to their plan. Signed-in owner activity is excluded.
+          The counts describe recorded activity and can include repeat visitors across sessions.
         </p>
         <p>
           Earlier versions may have left lesson progress in local storage. The current progress
@@ -118,8 +122,8 @@ export default function PrivacyPage() {
             "To store and display your courses, modules, lessons, and resources.",
             "To publish a course on a share link when you choose to make it public.",
             "To save and retrieve signed-in learners’ lesson progress across devices.",
-            "To provide creators with public-course visit/start counts and consent-based email signup lists.",
-            "To import public YouTube playlist details when you request an import.",
+            "To provide creators with public-course visits, learning starts, paid-course link click counts, and consent-based email signup lists according to their plan.",
+            "To import available video details from public or unlisted YouTube playlists when you request an import.",
             "To send account, password-reset, and subscription-related emails.",
             "To generate course outlines when you request them and enforce your plan limits.",
             "To charge for paid plans, verify payments, and manage subscriptions and refunds.",
@@ -168,13 +172,15 @@ export default function PrivacyPage() {
           ]}
         />
         <p>
-          Resend processes recipient names, email addresses, and message content to deliver
-          transactional emails when email delivery is configured, including welcome, password-reset,
-          and subscription messages.
+          Resend processes recipient names, email addresses, message content, and attachments
+          to deliver transactional emails when email delivery is configured. These include welcome,
+          password-reset, and subscription messages, and payment receipts with invoice PDFs
+          retrieved from Dodo Payments.
         </p>
         <p>
-          If you open an external resource or a creator&apos;s social link, that destination may
-          receive information such as your IP address and browser details under its own privacy policy.
+          Opening or previewing an external resource, or following a creator&apos;s social,
+          website, or paid-course link, may share your IP address and browser details with
+          that destination under its own privacy policy.
         </p>
       </LegalSection>
 
@@ -191,8 +197,11 @@ export default function PrivacyPage() {
           engines. Your own signed-in owner preview can remain available.
         </p>
         <p>
-          Creators receive visit and start counts, not a list of individual learners&apos; lesson
-          progress. If you voluntarily submit your email for course updates, the creator receives
+          Creators can view aggregate visit and learning-start counts. Paid plans also provide
+          email signup counts and recorded clicks on paid-course links. Click counts measure
+          interaction with those links. Purchase confirmation is handled by the destination.
+          Account-based lesson progress is saved for the signed-in learner. If you voluntarily submit your email
+          for course updates, the creator receives
           that email and signup date. You can ask the creator to remove it or contact LessonMap
           using the address below. Turning off email collection does not delete existing signups
           or copies the creator has already exported.

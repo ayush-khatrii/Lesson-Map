@@ -8,7 +8,7 @@ const steps = [
   {
     icon: RiLinksFill,
     title: "Paste the link",
-    description: "Drop in any public or unlisted playlist.",
+    description: "Paste a public or unlisted playlist link.",
   },
   {
     icon: RiStackFill,
@@ -48,11 +48,11 @@ export default function YouTubeImportShowcase() {
             id="youtube-import-heading"
             className="mt-3 text-balance text-3xl font-semibold leading-tight tracking-[-0.04em] sm:text-5xl"
           >
-            Turn any YouTube playlist into a course
+            Turn a YouTube playlist into a course
           </h2>
           <p className="mt-4 text-pretty text-base leading-7 text-muted-foreground">
-            Paste a link. LessonMap imports your videos as lessons in playlist
-            order, ready to edit and share.
+            Import available videos from a public or unlisted playlist with up to
+            500 videos. Each becomes a lesson in playlist order, ready to edit and share.
           </p>
           <p id="youtube-import-description" className="sr-only">
             Example preview: a YouTube playlist becomes React for Beginners, an
@@ -142,7 +142,8 @@ export default function YouTubeImportShowcase() {
               </Link>
             </Button>
             <p className="mt-3 text-sm leading-5 text-muted-foreground">
-              Works with public and unlisted playlists.
+              Free includes one playlist import per account. Creator includes
+              unlimited imports, subject to rate limits and YouTube availability.
             </p>
           </div>
         </div>

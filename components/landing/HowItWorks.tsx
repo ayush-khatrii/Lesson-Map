@@ -34,11 +34,11 @@ const items = [
   {
     number: "03",
     title: "Share it with learners.",
-    description: "Publish one link. Learners can open the course and track progress without an account.",
+    description: "Publish one link. Learners can browse without an account and sign in to save their progress.",
     visual: (
       <div className="rounded-xl border border-border bg-background/70 p-4">
-        <div className="flex items-center gap-2 rounded-md bg-muted px-3 py-2 font-mono text-[9px] text-muted-foreground"><Link2 className="size-3" />lessonmap.app/p/your-course</div>
-        <div className="mt-4 flex items-center justify-between"><div><p className="text-xs font-semibold">Your first website</p><p className="mt-1 text-[10px] text-muted-foreground">Public · no sign-in needed</p></div><span className="grid size-9 place-items-center rounded-full bg-primary text-primary-foreground"><Send className="size-4" /></span></div>
+        <div className="flex items-center gap-2 rounded-md bg-muted px-3 py-2 font-mono text-[9px] text-muted-foreground"><Link2 className="size-3" />lessonmap.org/p/your-course</div>
+        <div className="mt-4 flex items-center justify-between"><div><p className="text-xs font-semibold">Your first website</p><p className="mt-1 text-[10px] text-muted-foreground">Browse publicly · sign in to save progress</p></div><span className="grid size-9 place-items-center rounded-full bg-primary text-primary-foreground"><Send className="size-4" /></span></div>
         <div className="mt-5 h-1.5 overflow-hidden rounded-full bg-muted"><div className="h-full w-2/3 rounded-full bg-primary" /></div>
       </div>
     ),

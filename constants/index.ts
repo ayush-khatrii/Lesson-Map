@@ -152,7 +152,7 @@ export const plans = [
       "Accordion-style course builder",
       "Shareable public link with LessonMap branding",
       "View-only Flow map with LessonMap watermark",
-      "Roadmap cloning and basic visit/start counts",
+      "Basic visit and learning-start counts",
     ],
   },
   {
