@@ -38,11 +38,10 @@ export default function YouTubeImportShowcase() {
       aria-describedby="youtube-import-description"
       className="scroll-mt-20 py-10 sm:py-12 lg:py-16"
     >
-      <Reveal
-        once={false}
+      <div
         className={`${shell} grid gap-y-7 sm:gap-y-10 lg:grid-cols-2 lg:gap-x-14 lg:gap-y-8`}
       >
-        <header className="mx-auto max-w-2xl text-center lg:col-start-2 lg:row-start-1 lg:mx-0 lg:max-w-none lg:text-left">
+        <Reveal as="header" rise once={false} className="mx-auto max-w-2xl text-center lg:col-start-2 lg:row-start-1 lg:mx-0 lg:max-w-none lg:text-left">
           <p className="text-sm font-semibold text-primary-text">
             YouTube import
           </p>
@@ -60,9 +59,12 @@ export default function YouTubeImportShowcase() {
             Example preview: a YouTube playlist becomes React for Beginners, an
             editable course with one module and four video lessons.
           </p>
-        </header>
+        </Reveal>
 
-        <div
+        <Reveal
+          rise
+          once={false}
+          delay={0.2}
           aria-hidden="true"
           className="pointer-events-none min-w-0 w-full max-w-xl justify-self-center self-center rounded-2xl border border-border bg-card p-3 text-card-foreground shadow-sm sm:p-6 lg:col-start-1 lg:row-span-2 lg:row-start-1 lg:max-w-none"
         >
@@ -113,9 +115,9 @@ export default function YouTubeImportShowcase() {
               ))}
             </div>
           </div>
-        </div>
+        </Reveal>
 
-        <div className="mx-auto w-full max-w-lg lg:col-start-2 lg:row-start-2 lg:mx-0 lg:max-w-none">
+        <Reveal rise once={false} delay={0.4} className="mx-auto w-full max-w-lg lg:col-start-2 lg:row-start-2 lg:mx-0 lg:max-w-none">
           <ol className="space-y-4 sm:space-y-5">
             {steps.map(({ icon: Icon, title, description }) => (
               <li key={title} className="flex items-start gap-3">
@@ -148,8 +150,8 @@ export default function YouTubeImportShowcase() {
               unlimited imports, subject to rate limits and YouTube availability.
             </p>
           </div>
-        </div>
-      </Reveal>
+        </Reveal>
+      </div>
     </section>
   );
 }

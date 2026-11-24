@@ -5,6 +5,7 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { ChevronDown, FileText, GripVertical, Layers3 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { TextAnimate } from "@/components/ui/text-animate";
+import Reveal from "@/components/marketing/Reveal";
 
 type CourseModule = {
   title: string;
@@ -286,11 +287,10 @@ export default function CoursePreview() {
   };
 
   return (
-    <motion.div
-      initial={false}
-      whileInView={shouldReduce ? undefined : { y: [12, 0], opacity: [0.72, 1] }}
-      viewport={{ once: false, amount: 0.15 }}
-      transition={{ duration: 0.6, ease: "easeOut" }}
+    <Reveal
+      rise
+      once={false}
+      delay={0.6}
       className="relative mx-auto w-full max-w-[640px] [perspective:1200px]"
     >
       <div className="absolute -inset-8 -z-10 rounded-[3rem] bg-primary/15 blur-3xl" />
@@ -481,6 +481,6 @@ export default function CoursePreview() {
           </div>
         </div>
       </div>
-    </motion.div>
+    </Reveal>
   );
 }

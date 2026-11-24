@@ -1,45 +1,32 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
-import { motion, useReducedMotion } from "motion/react";
+import Reveal from "@/components/marketing/Reveal";
 import { ArrowRight, Play } from "lucide-react";
 import CoursePreview from "./CoursePreview";
 import { shell } from "./styles";
 import { Button } from "../ui/button";
 
 export default function Hero() {
-  const reduceMotion = useReducedMotion();
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-  const shouldReduce = mounted && reduceMotion;
-
   return (
     <section className="relative flex min-h-dvh items-center overflow-hidden pb-8 pt-24 sm:pb-12 sm:pt-28">
       <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[700px] bg-[radial-gradient(ellipse_60%_50%_at_50%_0%,color-mix(in_oklab,var(--primary)_20%,transparent),transparent_72%)]" />
       <div
         className={`${shell} grid items-center gap-14 lg:grid-cols-2 lg:gap-14`}
       >
-        <motion.div
-          initial={false}
-          whileInView={
-            shouldReduce ? undefined : { opacity: [0.72, 1], y: [12, 0] }
-          }
-          viewport={{ once: false, amount: 0.15 }}
-          transition={{ duration: 0.6, ease: "easeOut" }}
-        >
+        <div>
           {/* <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-foreground">
             <span className="size-1.5 rounded-full bg-primary shadow-[0_0_12px_var(--primary)]" />
             Visual course planning, all in one place
           </div> */}
-          <h1 className="max-w-2xl text-balance text-5xl font-semibold leading-[0.98] tracking-[-0.055em] sm:text-6xl lg:text-6xl">
+          <Reveal as="h1" rise once={false} className="max-w-2xl text-balance text-5xl font-semibold leading-[0.98] tracking-[-0.055em] sm:text-6xl lg:text-6xl">
             Give your lessons a place to come together.
-          </h1>
-          <p className="mt-7 max-w-lg text-pretty text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8">
+          </Reveal>
+          <Reveal as="p" rise once={false} delay={0.2} className="mt-7 max-w-lg text-pretty text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8">
             LessonMap turns your course outline, videos, and files into an organized course page.
             Share one link so learners can find each lesson and its supporting materials.
-          </p>
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+          </Reveal>
+          <Reveal rise once={false} delay={0.4} className="mt-8 flex flex-col gap-3 sm:flex-row">
             <Button asChild size="lg">
               <Link href="/start" prefetch={false}>
                 Create your free course
@@ -52,9 +39,9 @@ export default function Hero() {
                 Know more
               </Link>
             </Button>
-          </div>
+          </Reveal>
           {/* <p className="mt-5 flex items-center gap-2 text-xs text-muted-foreground"><span className="flex -space-x-1.5" aria-hidden="true">{["bg-amber-300", "bg-orange-300", "bg-yellow-200"].map((color) => <span key={color} className={`size-5 rounded-full border-2 border-background ${color}`} />)}</span>Build from scratch, use a template, or start with AI.</p> */}
-        </motion.div>
+        </div>
         <CoursePreview />
       </div>
     </section>

@@ -21,7 +21,7 @@ export default function FinalCTA() {
           className="pointer-events-none absolute -bottom-16 -right-4 -z-10 h-64 w-64 rounded-full bg-primary/10 blur-[100px] dark:bg-primary/20"
         />
 
-        <Reveal once={false} className="relative overflow-hidden rounded-[2rem] border border-black/10 bg-white/65 shadow-[0_20px_60px_-24px_rgba(120,90,0,0.18),inset_0_1px_0_rgba(255,255,255,0.95)] backdrop-blur-2xl backdrop-saturate-150 sm:rounded-[2.5rem] dark:border-border dark:bg-black/5 dark:shadow-xl dark:shadow-black/40">
+        <div className="relative overflow-hidden rounded-[2rem] border border-black/10 bg-white/65 shadow-[0_20px_60px_-24px_rgba(120,90,0,0.18),inset_0_1px_0_rgba(255,255,255,0.95)] backdrop-blur-2xl backdrop-saturate-150 sm:rounded-[2.5rem] dark:border-border dark:bg-black/5 dark:shadow-xl dark:shadow-black/40">
           <div
             aria-hidden="true"
             className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/80 to-transparent dark:via-white/40"
@@ -33,26 +33,26 @@ export default function FinalCTA() {
           />
 
           <div className="relative px-6 py-14 text-center sm:px-12 sm:py-20">
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary-text">
+            <Reveal as="p" rise once={false} className="text-xs font-bold uppercase tracking-[0.2em] text-primary-text">
               Start building
-            </p>
-            <h2 className="mt-5 text-balance text-4xl font-semibold tracking-[-0.045em] text-foreground sm:text-6xl">
+            </Reveal>
+            <Reveal as="h2" rise once={false} delay={0.15} className="mt-5 text-balance text-4xl font-semibold tracking-[-0.045em] text-foreground sm:text-6xl">
               Ready to build your course?
-            </h2>
-            <p className="mx-auto mt-5 max-w-md text-base leading-7 text-muted-foreground sm:text-lg">
+            </Reveal>
+            <Reveal as="p" rise once={false} delay={0.3} className="mx-auto mt-5 max-w-md text-base leading-7 text-muted-foreground sm:text-lg">
               Create the first lesson today. Add the rest when you are ready.
-            </p>
+            </Reveal>
 
-            <div className="mt-9">
+            <Reveal rise once={false} delay={0.45} className="mt-9">
               <Button asChild size="lg" className="rounded-full">
                 <Link href="/start" prefetch={false}>
                   Start now
                   <ArrowRight aria-hidden="true" />
                 </Link>
               </Button>
-            </div>
+            </Reveal>
           </div>
-        </Reveal>
+        </div>
       </div>
     </section>
   );

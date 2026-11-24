@@ -49,13 +49,13 @@ export default function HowItWorks() {
   return (
     <section id="how-it-works" className="border-y border-border/70 bg-muted/20 py-20 sm:py-24">
       <div className={shell}>
-        <Reveal once={false} className="mx-auto max-w-2xl text-center">
+        <Reveal rise once={false} className="mx-auto max-w-2xl text-center">
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary-text">How it works</p>
           <h2 className="mt-4 text-balance text-3xl font-semibold tracking-[-0.04em] sm:text-5xl">Plan it. Add the material. <span className="text-muted-foreground">Share it.</span></h2>
         </Reveal>
         <div className="mt-12 grid gap-5 md:grid-cols-3">
           {items.map((item, index) => (
-            <Reveal once={false} key={item.number} delay={index * 0.07}>
+            <Reveal rise once={false} key={item.number} delay={0.2 + index * 0.2}>
               <Card className="group h-full overflow-hidden rounded-2xl border-border/80 bg-card/70 p-2 shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-xl">
                 <div className="min-h-56 rounded-xl border border-border/60 bg-muted/30 p-5">{item.visual}</div>
                 <div className="px-4 pb-5 pt-2"><div className="mb-4 flex items-center gap-2"><span className="font-mono text-[10px] text-muted-foreground">{item.number}</span><Sparkles className="size-3.5 text-primary-text" /></div><h3 className="text-lg font-semibold tracking-tight">{item.title}</h3><p className="mt-2 text-sm leading-6 text-muted-foreground">{item.description}</p></div>

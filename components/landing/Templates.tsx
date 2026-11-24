@@ -11,7 +11,7 @@ export default function Templates() {
       <div
         className={`${shell} grid items-center gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:gap-16`}
       >
-        <Reveal once={false}>
+        <Reveal rise once={false}>
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary-text">
             Choose how to begin
           </p>
@@ -33,7 +33,7 @@ export default function Templates() {
         </Reveal>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <Reveal once={false}>
+          <Reveal rise once={false} delay={0.2}>
             <Card className="h-full gap-0 rounded-2xl border-border/80 bg-background p-6 shadow-sm">
               <span className="grid size-10 place-items-center rounded-xl bg-muted">
                 <Plus className="size-4" />
@@ -44,7 +44,7 @@ export default function Templates() {
               </p>
             </Card>
           </Reveal>
-          <Reveal once={false} delay={0.06}>
+          <Reveal rise once={false} delay={0.4}>
             <Card className="h-full gap-0 rounded-2xl border-primary/35 bg-primary/10 p-6 shadow-sm">
               <span className="grid size-10 place-items-center rounded-xl bg-primary text-primary-foreground">
                 <LayoutTemplate className="size-4" />
