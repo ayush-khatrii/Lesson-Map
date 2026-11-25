@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Analytics } from "@vercel/analytics/next";
 // @ts-ignore
 import "@/app/globals.css";
 import localFont from "next/font/local";
@@ -62,6 +63,7 @@ export default function MainRootLayout({
         <Providers>
           <main>{children}</main>
         </Providers>
+        <Analytics />
       </body>
     </html>
   );
