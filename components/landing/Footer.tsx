@@ -26,13 +26,15 @@ export default function Footer() {
             </div>
           ))}
         </div>
-        <div className="mt-12 flex flex-col gap-3 border-t border-border/70 pt-6 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-12 flex flex-col gap-3 pb-4 border-t border-border/70 pt-6 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
           <p>{FOOTER.copyrightSymbol} <CurrentYear /> {FOOTER.copyright}</p>
           <p>{FOOTER.tagline}</p>
         </div>
-        <a href="https://launchbuff.com/products/lessonmap-a28ove" className="py-5" target="_blank" rel="noopener noreferrer" title="Featured on LaunchBuff">
-          <img src="https://launchbuff.com/badge-featured-dark.svg" alt="Featured on LaunchBuff" width="256" height="80" />
-        </a>
+       <div className="flex items-center justify-center">
+         <a href="https://launchbuff.com/products/lessonmap-a28ove" className="py-5" target="_blank" rel="noopener noreferrer" title="Featured on LaunchBuff">
+           <img src="https://launchbuff.com/badge-featured-dark.svg" alt="Featured on LaunchBuff" width="256" height="20" />
+         </a>
+       </div>
       </div>
     </footer>
   );
