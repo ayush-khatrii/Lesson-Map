@@ -19,6 +19,7 @@
     "hooks": "@/hooks"
   },
   "registries": {
+    "@ss-blocks": "https://shadcnstudio.com/r/blocks/new-york-v4/{name}.json",
     "@magicui": "https://magicui.design/r/{name}.json",
     "@aceternity": "https://ui.aceternity.com/registry/{name}.json",
     "@kibo-ui": "https://www.kibo-ui.com/r/{name}.json"

@@ -5,7 +5,8 @@ import FeaturesGrid from "@/components/landing/FeaturesGrid";
 import Templates from "@/components/landing/Templates";
 import StepsToShare from "@/components/landing/StepsToShare";
 import FinalCTA from "@/components/landing/FinalCTA";
-import Testimonials from "@/components/landing/Testimonials";
+import Testimonials from "@/components/shadcn-studio/blocks/testimonials-component-01/testimonials-component-01";
+import { TESTIMONIALS } from "@/constants/testimonials";
 
 export default function LandingPage() {
   return (
@@ -17,7 +18,7 @@ export default function LandingPage() {
       <Templates />
       <StepsToShare />
       <FinalCTA />
-      <Testimonials />
+      <Testimonials testimonials={TESTIMONIALS} />
     </div>
   );
 }
