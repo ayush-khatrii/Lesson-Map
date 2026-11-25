@@ -5,6 +5,7 @@ import FeaturesGrid from "@/components/landing/FeaturesGrid";
 import Templates from "@/components/landing/Templates";
 import StepsToShare from "@/components/landing/StepsToShare";
 import FinalCTA from "@/components/landing/FinalCTA";
+import Testimonials from "@/components/landing/Testimonials";
 
 export default function LandingPage() {
   return (
@@ -16,6 +17,7 @@ export default function LandingPage() {
       <Templates />
       <StepsToShare />
       <FinalCTA />
+      <Testimonials />
     </div>
   );
 }
