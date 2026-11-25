@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 // @ts-ignore
 import "@/app/globals.css";
 import localFont from "next/font/local";
@@ -64,6 +65,7 @@ export default function MainRootLayout({
           <main>{children}</main>
         </Providers>
         <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );
